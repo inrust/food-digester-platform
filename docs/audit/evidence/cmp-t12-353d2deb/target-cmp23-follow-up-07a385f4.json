@@ -1,0 +1,649 @@
+{
+  "task": "T12 CMP-23 follow-up",
+  "candidate": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+  "parent": "fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5",
+  "environment": "shared-test",
+  "recordedAtUtc": "2026-11-19T08:04:57.147643+00:00",
+  "historicalEvidence": "target-execution-fc1793dc.json",
+  "rootCause": {
+    "correlation": {
+      "apiGatewayRequestId": "31d18d9d-73b7-4c28-96e5-d03ae2c40ea3",
+      "lambdaIntegrationRequestId": "c5cf6ec0-eb41-4d80-8d44-f2ced4c706fa",
+      "operationId": "listMedia",
+      "gatewayHttpStatus": 500,
+      "lambdaIntegrationTransportStatus": 200,
+      "lambdaHttpStatus": 500,
+      "authenticationAndAccountQueryPassed": true,
+      "requestTimeEpochMs": 1795069279220
+    },
+    "diagnosis": "The live-image authority wrapper extracted a root Prisma method from its receiver in the non-transactional branch. All three media list modes use $queryRaw and threw before media SQL execution.",
+    "localReproduction": "The exact S3-pinned prior Lambda ZIP matched the runtime CodeSha256. A local copy exporting the original media and authority functions reproduced TypeError reading _createPrismaPromise for legacy, ascending and descending with the actual PrismaPg client over a local PostgreSQL wire connection; the repaired wrapper returned pages and cursors.",
+    "fix": "Invoke the method on its Prisma delegate in both root and existing transaction paths. Lazy execution, authority checks and SQL are unchanged.",
+    "formerLambdaAssetSha256Base64": "jffbL2czP/4J9VRH36P2Qfu8qGXTynNi6kYYX6Oidi0="
+  },
+  "local": {
+    "verify": {
+      "command": "pnpm verify",
+      "result": "PASS",
+      "startedAtUtc": "2026-11-19T07:04:08Z",
+      "endedAtUtc": "2026-11-19T07:15:41Z",
+      "logSha256": "96e65452cdbcd5cef2ab716b57d912cfc63eaa8886aa5eb1279a613361f57918",
+      "patchSha256": "0d9756ad9735e5f6623ab1e46ace56c85b29f2b05a283fc1c640cf0b9d6da8f3",
+      "hostFixtureTool": "Temporary PATH adapter applies explicit SHA-256 and named P-256 encoding to local LibreSSL-generated test certificates."
+    },
+    "priorAttempts": [
+      {
+        "command": "pnpm verify",
+        "result": "FAIL",
+        "reason": "sandbox denied local Playwright loopback binding"
+      },
+      {
+        "command": "pnpm verify",
+        "result": "FAIL",
+        "reason": "one offline timing proof reported DISPATCH_PARENT_BOUND; isolated rerun 16 passed"
+      },
+      {
+        "command": "pnpm verify",
+        "result": "FAIL",
+        "reason": "host LibreSSL defaults rejected by local synthetic mTLS; SHA-256 and named curve rerun passed"
+      }
+    ],
+    "targetedVitest": {
+      "file": "apps/cloud-api/test/media.test.ts",
+      "passed": 13,
+      "failed": 0
+    }
+  },
+  "binding": {
+    "expectedCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+    "checkedAtUtc": "2026-11-19T07:48:03.099818+00:00",
+    "environment": "test",
+    "state": "BOUND",
+    "blockers": [],
+    "contract": {
+      "complete": true,
+      "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "sha256": "5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73",
+      "apiVersion": "0.2.0",
+      "expectedRuntimePaths": [
+        "/api/v1/admin/account/profile",
+        "/api/v1/admin/configurations/{id}/effective-devices",
+        "/api/v1/admin/media"
+      ]
+    },
+    "ci": {
+      "conclusion": "success",
+      "headSha": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "jobs": [
+        {
+          "name": "verify",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/44478308675/job/135404101987"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/inrust/food-digester-platform/actions/runs/44478308675",
+      "complete": true
+    },
+    "frontend": {
+      "complete": true,
+      "jobId": "171",
+      "commit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "status": "SUCCEED",
+      "endTime": "2026-11-19T15:19:08.088000+08:00",
+      "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76"
+    },
+    "deployment": {
+      "conclusion": "success",
+      "headSha": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "jobs": [
+        {
+          "name": "deploy-test",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/inrust/food-digester-platform/actions/runs/44478308608/job/135404102051"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/inrust/food-digester-platform/actions/runs/44478308608",
+      "complete": true
+    },
+    "migration": {
+      "complete": true,
+      "buildId": "fdp-test-migration-runner:27012522-f744-49fb-a5f7-7da0f621c585",
+      "buildStatus": "SUCCEEDED",
+      "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "sourceVersion": "hcdyCjy7ZwU5mQgmYoVB5NJvGpVK__m2",
+      "archiveSha256": "c34d883e2cb15c5eb3ba358a46de80d97392435a6ff942876257a67ad7d8f9e5",
+      "archiveContent": "FIXED_COMMITTED_RUNNER_INPUTS",
+      "sqlSha256": "cd19697688901516e5164cee6e207ec3b15417f3a60851e2e71bb86dcd772fe8",
+      "runnerReceipt": {
+        "kind": "fdp-database-migration/v1",
+        "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+        "buildId": "fdp-test-migration-runner:27012522-f744-49fb-a5f7-7da0f621c585",
+        "migrations": "PASS",
+        "dictionarySeed": "PASS",
+        "verification": {
+          "schema": "PASS",
+          "tableCount": 61,
+          "migrationCount": 45,
+          "unfinishedMigrationCount": 0,
+          "roleCount": 5,
+          "esgSeedCount": 1
+        }
+      },
+      "logStream": "27012522-f744-49fb-a5f7-7da0f621c585"
+    },
+    "api": {
+      "name": "fdp-test-api",
+      "codeSha256": "LKncHeZGcmWtOOxBJB/XN8vYixpsaU4YkNMHui4KL4M=",
+      "lastModified": "2026-11-19T07:47:42.000+0000",
+      "state": "Active",
+      "update": "Successful",
+      "stack": "fdp-test-app",
+      "stackUpdated": "2026-11-19T07:47:34.616000+00:00",
+      "logicalId": "ApiFnE0725F78",
+      "version": "us9iT11tIF6cJU47BkcMqQvYpB1b6B8x",
+      "assetKey": "0dd9aa4ec9327d55e4eb0be8ffcb8a1fa2723757f3d838f22e929e0298019db2.zip",
+      "artifactSha256": "LKncHeZGcmWtOOxBJB/XN8vYixpsaU4YkNMHui4KL4M=",
+      "artifactCheck": "S3_VERSIONED_FULL_OBJECT_SHA256",
+      "complete": true,
+      "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "deployWorkflowRunId": "44478308608"
+    }
+  },
+  "target": {
+    "cmp": "CMP-23",
+    "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+    "startedAtUtc": "2026-11-19T07:49:02.136Z",
+    "checks": [
+      {
+        "name": "seed-visibility-and-tenant-ownership",
+        "result": "PASS",
+        "tenantACount": 4,
+        "tenantBCount": 1,
+        "sameCaptureTime": "2026-11-19T06:08:13.784Z"
+      },
+      {
+        "name": "keyset-legacy",
+        "result": "PASS",
+        "mode": "legacy",
+        "orderedMediaIds": [
+          "2e70bb83-a78e-45b6-8599-3d39734a3212",
+          "4b10b513-0a89-4c70-9881-af599fe7434f",
+          "7e8c6a49-1046-415b-9735-f215ffd9ff16",
+          "c5727416-dbea-4ff3-ad23-25c974296289"
+        ],
+        "pageSize": 2
+      },
+      {
+        "name": "keyset-asc",
+        "result": "PASS",
+        "mode": "asc",
+        "orderedMediaIds": [
+          "2e70bb83-a78e-45b6-8599-3d39734a3212",
+          "4b10b513-0a89-4c70-9881-af599fe7434f",
+          "7e8c6a49-1046-415b-9735-f215ffd9ff16",
+          "c5727416-dbea-4ff3-ad23-25c974296289"
+        ],
+        "pageSize": 2
+      },
+      {
+        "name": "keyset-desc",
+        "result": "PASS",
+        "mode": "desc",
+        "orderedMediaIds": [
+          "c5727416-dbea-4ff3-ad23-25c974296289",
+          "7e8c6a49-1046-415b-9735-f215ffd9ff16",
+          "4b10b513-0a89-4c70-9881-af599fe7434f",
+          "2e70bb83-a78e-45b6-8599-3d39734a3212"
+        ],
+        "pageSize": 2
+      },
+      {
+        "name": "tenant-isolation-and-invalid-direction",
+        "result": "PASS",
+        "variants": [
+          "legacy",
+          "asc",
+          "desc"
+        ]
+      },
+      {
+        "name": "download-permission-and-ttl",
+        "result": "PASS",
+        "downloadHttpStatus": 200,
+        "foreignDownloadHttpStatus": 404,
+        "downloadExpiresAt": "2026-11-19T08:04:41.700Z",
+        "downloadDigest": "7dfd14be2099179bf3b0dd16e40e36444112a4cd581edf2c03b497aeeb950484"
+      },
+      {
+        "name": "browser-zh-CN",
+        "result": "PASS",
+        "lang": "zh-CN",
+        "width": 375,
+        "transport": "genuine API responses with test limit=2",
+        "requests": [
+          {
+            "mode": "desc",
+            "deviceId": null,
+            "cursorPresent": false,
+            "realLimit": "2"
+          },
+          {
+            "mode": "desc",
+            "deviceId": null,
+            "cursorPresent": true,
+            "realLimit": "2"
+          },
+          {
+            "mode": "asc",
+            "deviceId": null,
+            "cursorPresent": false,
+            "realLimit": "2"
+          },
+          {
+            "mode": "asc",
+            "deviceId": null,
+            "cursorPresent": true,
+            "realLimit": "2"
+          },
+          {
+            "mode": "asc",
+            "deviceId": "ce37383a-f32a-4ce2-b30b-d95d10b9c338",
+            "cursorPresent": false,
+            "realLimit": "2"
+          }
+        ]
+      },
+      {
+        "name": "browser-en",
+        "result": "PASS",
+        "lang": "en",
+        "width": 1440,
+        "transport": "genuine API responses with test limit=2",
+        "requests": [
+          {
+            "mode": "desc",
+            "deviceId": null,
+            "cursorPresent": false,
+            "realLimit": "2"
+          },
+          {
+            "mode": "desc",
+            "deviceId": null,
+            "cursorPresent": true,
+            "realLimit": "2"
+          },
+          {
+            "mode": "asc",
+            "deviceId": null,
+            "cursorPresent": false,
+            "realLimit": "2"
+          },
+          {
+            "mode": "asc",
+            "deviceId": null,
+            "cursorPresent": true,
+            "realLimit": "2"
+          },
+          {
+            "mode": "asc",
+            "deviceId": "ce37383a-f32a-4ce2-b30b-d95d10b9c338",
+            "cursorPresent": false,
+            "realLimit": "2"
+          }
+        ]
+      },
+      {
+        "name": "download-after-expiry",
+        "result": "PASS",
+        "httpStatus": 403,
+        "checkedAtUtc": "2026-11-19T08:04:49.833Z"
+      }
+    ],
+    "requests": [
+      {
+        "step": "fixtures-a",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "287896d7-72f6-42da-9f7e-c279fc31178f",
+        "rows": 4
+      },
+      {
+        "step": "fixtures-b",
+        "role": "CustomerViewer",
+        "httpStatus": 200,
+        "requestId": "d8e163b2-001b-45f1-8789-d988f984d2c7",
+        "rows": 1
+      },
+      {
+        "step": "legacy-first",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "5c061b8c-436b-4e54-a109-dd5cf9f6e89d",
+        "rows": 2
+      },
+      {
+        "step": "legacy-second",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "1e296ee6-93e4-4c56-9708-812c334e7ce4",
+        "rows": 2,
+        "cursorPresent": true
+      },
+      {
+        "step": "existing-v1-cursor",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "1d52ee57-674f-4ea7-9fe8-4134216ed893",
+        "rows": 2,
+        "cursorPresent": true
+      },
+      {
+        "step": "v1-cursor-on-sorted",
+        "role": "CustomerAdmin",
+        "httpStatus": 400,
+        "requestId": "e7507fe0-2f11-4ad0-8ae6-17b750d5692e",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true,
+        "order": "asc"
+      },
+      {
+        "step": "legacy-first",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "3d360b5d-111c-46c2-87da-e89412386b8c",
+        "rows": 2
+      },
+      {
+        "step": "legacy-second",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "c65facf4-56b1-4537-9812-95f064e87a3c",
+        "rows": 2,
+        "cursorPresent": true
+      },
+      {
+        "step": "existing-v1-cursor",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "62859264-c1c9-4f0d-924e-d3baab1faf11",
+        "rows": 2,
+        "cursorPresent": true
+      },
+      {
+        "step": "v1-cursor-on-sorted",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 400,
+        "requestId": "291d70a9-bf6e-410f-a018-e6e2c1d86172",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true,
+        "order": "asc"
+      },
+      {
+        "step": "asc-first",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "320172a6-c16d-4b53-9279-873d82a18ec9",
+        "rows": 2,
+        "order": "asc"
+      },
+      {
+        "step": "asc-second",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "85644088-8873-4175-bbdc-d52966d3d985",
+        "rows": 2,
+        "cursorPresent": true,
+        "order": "asc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "CustomerAdmin",
+        "httpStatus": 400,
+        "requestId": "011e8f5d-de4b-4a5b-b784-9ae1c910b434",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true,
+        "order": "desc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "CustomerAdmin",
+        "httpStatus": 400,
+        "requestId": "6605276f-c662-4dcc-9059-db764569de3b",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true
+      },
+      {
+        "step": "asc-first",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "8856192c-31e2-4ba9-b4be-036a67fd252f",
+        "rows": 2,
+        "order": "asc"
+      },
+      {
+        "step": "asc-second",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "fbdb943f-aafa-461d-8c25-f05e6961dcc8",
+        "rows": 2,
+        "cursorPresent": true,
+        "order": "asc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 400,
+        "requestId": "14321b7e-3664-4ece-b0ce-57eeed4ce6d5",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true,
+        "order": "desc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 400,
+        "requestId": "41db2693-0ab8-4391-94f4-abdc06b89239",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true
+      },
+      {
+        "step": "desc-first",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "505c283d-d86b-4aac-8648-d542c9f3dde9",
+        "rows": 2,
+        "order": "desc"
+      },
+      {
+        "step": "desc-second",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "6160c074-1c06-4676-9a17-017e635a0176",
+        "rows": 2,
+        "cursorPresent": true,
+        "order": "desc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "CustomerAdmin",
+        "httpStatus": 400,
+        "requestId": "27917962-0ca0-4373-8303-525e7291348a",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true,
+        "order": "asc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "CustomerAdmin",
+        "httpStatus": 400,
+        "requestId": "02b583e4-6083-48a1-aa6f-ba5efde01b55",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true
+      },
+      {
+        "step": "desc-first",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "d11f0646-64df-4504-ab94-e28073825cc3",
+        "rows": 2,
+        "order": "desc"
+      },
+      {
+        "step": "desc-second",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 200,
+        "requestId": "d65f6d1d-8ae1-484f-8bf8-72f49080c790",
+        "rows": 2,
+        "cursorPresent": true,
+        "order": "desc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 400,
+        "requestId": "407c66a4-8269-4cf2-a8a6-a94f4254c9f2",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true,
+        "order": "asc"
+      },
+      {
+        "step": "cursor-direction-or-mode-mismatch",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 400,
+        "requestId": "55da0918-5b10-4255-855b-52764f1f9f10",
+        "errorCode": "CURSOR_INVALID",
+        "cursorPresent": true
+      },
+      {
+        "step": "A-to-B-customer-filter",
+        "role": "CustomerAdmin",
+        "httpStatus": 403,
+        "requestId": "d148a0f1-4eac-47c6-a411-c91db66e51eb",
+        "errorCode": "FORBIDDEN",
+        "order": "asc"
+      },
+      {
+        "step": "A-to-B-device-filter",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "202fb65a-fbab-4d6e-90ae-bad8c19e404c",
+        "rows": 0,
+        "order": "asc"
+      },
+      {
+        "step": "B-to-A-customer-filter",
+        "role": "CustomerViewer",
+        "httpStatus": 403,
+        "requestId": "840881e0-47b7-4854-9435-dbebd5bb1a3d",
+        "errorCode": "FORBIDDEN",
+        "order": "asc"
+      },
+      {
+        "step": "B-to-A-device-filter",
+        "role": "CustomerViewer",
+        "httpStatus": 200,
+        "requestId": "d6645cf9-99b6-4263-8b2b-43d5e174c666",
+        "rows": 0,
+        "order": "asc"
+      },
+      {
+        "step": "A-to-B-customer-filter",
+        "role": "CustomerAdmin",
+        "httpStatus": 403,
+        "requestId": "7ca8df61-3bb0-48d0-881a-a629d924245b",
+        "errorCode": "FORBIDDEN",
+        "order": "desc"
+      },
+      {
+        "step": "A-to-B-device-filter",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "f75990ad-6b94-4a5d-9e8b-8c2b945fdc58",
+        "rows": 0,
+        "order": "desc"
+      },
+      {
+        "step": "B-to-A-customer-filter",
+        "role": "CustomerViewer",
+        "httpStatus": 403,
+        "requestId": "a45d3a32-60e2-4942-b573-1b0b4c48c909",
+        "errorCode": "FORBIDDEN",
+        "order": "desc"
+      },
+      {
+        "step": "B-to-A-device-filter",
+        "role": "CustomerViewer",
+        "httpStatus": 200,
+        "requestId": "45873e4a-4e21-445e-81e9-759c9c15a366",
+        "rows": 0,
+        "order": "desc"
+      },
+      {
+        "step": "A-to-B-customer-filter",
+        "role": "CustomerAdmin",
+        "httpStatus": 403,
+        "requestId": "5d0f304d-ce79-4c3c-9f7d-969b11368ce7",
+        "errorCode": "FORBIDDEN"
+      },
+      {
+        "step": "A-to-B-device-filter",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "3f274fd6-bf39-4b03-8085-98e16ecfc1bc",
+        "rows": 0
+      },
+      {
+        "step": "B-to-A-customer-filter",
+        "role": "CustomerViewer",
+        "httpStatus": 403,
+        "requestId": "c0c1fffc-24d1-4179-b9bd-e126d96c0bc1",
+        "errorCode": "FORBIDDEN"
+      },
+      {
+        "step": "B-to-A-device-filter",
+        "role": "CustomerViewer",
+        "httpStatus": 200,
+        "requestId": "8e1fd6aa-b879-4dab-ac6f-aee3a98fedf8",
+        "rows": 0
+      },
+      {
+        "step": "invalid-direction",
+        "role": "PlatformSuperAdmin",
+        "httpStatus": 400,
+        "requestId": "e5a279a7-a773-4e4f-a65a-2caad7579824",
+        "errorCode": "VALIDATION_FAILED",
+        "order": "bad"
+      },
+      {
+        "step": "owned-download",
+        "role": "CustomerAdmin",
+        "httpStatus": 200,
+        "requestId": "f02ff370-a9bc-4bb3-8c0a-cc8e519cca9d"
+      },
+      {
+        "step": "cross-tenant-download",
+        "role": "CustomerViewer",
+        "httpStatus": 404,
+        "requestId": "ba79b4e0-efda-4961-96f7-c10efa9801b8",
+        "errorCode": "NOT_FOUND"
+      }
+    ],
+    "blocked": [],
+    "businessChecksCompleteAtUtc": "2026-11-19T07:50:11.846Z",
+    "pendingExpiryAtUtc": "2026-11-19T08:04:41.700Z",
+    "completedAtUtc": "2026-11-19T08:04:49.835Z"
+  },
+  "status": "PASS",
+  "releaseBlocker": "RESOLVED",
+  "targetDatabaseExplain": "NOT_RUN",
+  "migrationFileChanged": false,
+  "priorCandidateTargetEvidence": "PRESERVED_ON_ORIGINAL_SHA",
+  "rollback": {
+    "knownLastSuccessfulBeforeOriginal": "97cdd503db32f350a4f1d283b70200c817bbf8c1",
+    "execute": "NOT_RUN"
+  }
+}

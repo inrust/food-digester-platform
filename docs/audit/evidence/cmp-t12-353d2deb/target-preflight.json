@@ -1,0 +1,538 @@
+{
+  "task": "T12",
+  "scope": "VERIFY_AND_TARGET_DEPLOYMENT_PREFLIGHT",
+  "recordedAtUtc": "2026-11-19T04:59:21+00:00",
+  "originalVerification": {
+    "sourceCommit": "353d2deb643b5068450ec77c4626d9289df97514",
+    "command": "pnpm verify",
+    "status": "FAIL",
+    "exitCode": 1,
+    "verifyLogSha256": "47530b63176de31ab372de44d0aa5e8129b20aea6ebfb906f90242f4729e4fb8",
+    "lastInvokedStage": "test:scripts",
+    "stagesInvoked": [
+      "verify",
+      "lint",
+      "format:check",
+      "typecheck",
+      "openapi:check",
+      "test",
+      "test:contracts",
+      "test:scripts"
+    ],
+    "vitestPassed": 2206,
+    "contractTests": {
+      "total": 321,
+      "passed": 321,
+      "failed": 0
+    },
+    "scriptTests": {
+      "total": 1694,
+      "passed": 1689,
+      "failed": 5
+    },
+    "scriptFailures": [
+      {
+        "check": "scripts/admin-e2e.test.mjs",
+        "observed": "48 registered, 73 discovered",
+        "reason": "BROWSER_DISCOVERY_MANIFEST_MISMATCH"
+      },
+      {
+        "check": "scripts/check-aws-admin-business-evidence.test.mjs",
+        "observed": "58 required, 59 delivered",
+        "missingOperationId": "listEffectiveConfigurationDevices"
+      },
+      {
+        "check": "scripts/check-aws-med-rbac-aud-dash-set-evidence.test.mjs",
+        "observed": "15 required, 16 delivered",
+        "missingOperationId": "getOwnAccountProfile"
+      },
+      {
+        "check": "scripts/check-delivered-runtime.test.mjs",
+        "observed": "134 expected, 136 delivered"
+      },
+      {
+        "check": "scripts/qa09-db-readonly-probe.test.mjs",
+        "observed": "44 expected, 45 migrations"
+      }
+    ],
+    "remainingVerifyStages": "NOT_RUN_AFTER_FAILURE",
+    "sourceTree": "dbd8b257c5a8d737f9c28181254779cd01552c6e"
+  },
+  "repairVerification": {
+    "sourceCommit": "fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5",
+    "command": "pnpm verify",
+    "status": "PASS",
+    "exitCode": 0,
+    "verifyLogSha256": "471d2e73df403ec9561c125c81cc3769a97e09e7fbf0a4c1986f52b69ecca58e",
+    "lastInvokedStage": "test:prototype-regression",
+    "stagesInvoked": [
+      "verify",
+      "lint",
+      "format:check",
+      "typecheck",
+      "openapi:check",
+      "test",
+      "test:contracts",
+      "test:scripts",
+      "build",
+      "check:boundaries",
+      "check:schemas",
+      "check:migrations",
+      "check:evidence",
+      "check:secrets",
+      "check:sensitive-sinks",
+      "check:admin-web-delivery",
+      "check:admin-web-e2e",
+      "check:cmd-ota-delivery",
+      "check:runtime",
+      "check:cdk",
+      "test:device-contracts",
+      "test:iot-integration",
+      "test:core-api-integration",
+      "test:admin-e2e-suite",
+      "test:security-suite",
+      "test:reliability-suite",
+      "test:prototype-regression"
+    ],
+    "vitestPassed": 2206,
+    "contractTests": {
+      "total": 321,
+      "passed": 321,
+      "failed": 0
+    },
+    "scriptTests": {
+      "total": 1694,
+      "passed": 1694,
+      "failed": 0
+    },
+    "playwrightSanityPassCounts": [
+      73,
+      73,
+      146,
+      24
+    ],
+    "changedFiles": [
+      "scripts/admin-e2e.test.mjs",
+      "scripts/check-aws-admin-business-evidence.mjs",
+      "scripts/check-aws-admin-business-evidence.test.mjs",
+      "scripts/check-aws-med-rbac-aud-dash-set-evidence.mjs",
+      "scripts/check-aws-med-rbac-aud-dash-set-evidence.test.mjs",
+      "scripts/check-delivered-runtime.test.mjs",
+      "scripts/qa09-db-readonly-probe.test.mjs",
+      "scripts/run-admin-e2e.mjs"
+    ],
+    "sourceTree": "4a1c7e7412ad749d24557b4c3cbb71865b91372a",
+    "sameApplicationAndContractsAsOriginal": true,
+    "adminE2eReceipt": {
+      "status": "PASS",
+      "scope": "LOCAL_BROWSER_E2E",
+      "baselineCommit": "fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5",
+      "sha256": "f34d11d7b339be303635e58098818c9ec5d292d194c2ebffae06b1b9120b2426",
+      "totalExecutions": 219,
+      "phaseExecutions": {
+        "serial": 73,
+        "parallel-repeat": 146
+      }
+    },
+    "prototypeReceipt": {
+      "status": "PASS",
+      "scope": "LOCAL_PROTOTYPE_BROWSER_REGRESSION",
+      "baselineCommit": "fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5",
+      "sha256": "98acdf03ecc9df3949df162f51c0329e5940a672d8c507bbe5059a26024d4706",
+      "executions": 24
+    }
+  },
+  "deployment": {
+    "githubMainObserved": "97cdd503db32f350a4f1d283b70200c817bbf8c1",
+    "backend": {
+      "path": "GitHub Deploy test API / CDK AppDependencies",
+      "branch": "main",
+      "enabled": true,
+      "lastSuccessfulRun": "https://github.com/inrust/food-digester-platform/actions/runs/43667829780",
+      "lastSuccessfulSourceCommit": "97cdd503db32f350a4f1d283b70200c817bbf8c1",
+      "candidateDeploy": "NOT_RUN",
+      "lastRunRecheckedAtUtc": "2026-11-19T05:35:08+00:00"
+    },
+    "frontend": {
+      "path": "Amplify Hosting",
+      "branch": "main",
+      "publication": "ACTIVE_JOB_DOES_NOT_MATCH_CANDIDATE",
+      "observedAtUtc": "2026-11-19T05:32:02.761298+00:00",
+      "activeJobId": "169",
+      "activeSourceCommit": "97cdd503db32f350a4f1d283b70200c817bbf8c1",
+      "activeJobStatus": "SUCCEED",
+      "autoBuild": true,
+      "candidateInRecentSuccessfulJobs": {
+        "original": false,
+        "repair": false
+      }
+    },
+    "contract": {
+      "pathVersion": "/api/v1",
+      "openApiInfoVersion": "0.2.0",
+      "bundleSha256": "5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73",
+      "targetBinding": "NOT_RUN"
+    },
+    "migration": {
+      "path": "CodeBuild Migration Runner / fixed S3 VersionId and source SHA",
+      "migrationSqlSha256": "cd19697688901516e5164cee6e207ec3b15417f3a60851e2e71bb86dcd772fe8",
+      "originalLocalZipSha256": "b7c9398daaa36102742b042c47772651539225e5e020e845e3a91bda9ac4a1ce",
+      "repairLocalZipSha256": "1b2b45fb107c79a3c77601f799b5468073338ea616a027cd63fca309d34868b9",
+      "targetMigration": "NOT_RUN",
+      "recentCodeBuildRuns": {
+        "status": "OBSERVED",
+        "data": [
+          {
+            "status": "SUCCEEDED",
+            "ended": "2026-11-08T18:43:11.263000+08:00",
+            "expectedCommit": "69c76e1dd508bf6e03dd21992194a8280109cd0a"
+          },
+          {
+            "status": "SUCCEEDED",
+            "ended": "2026-10-18T17:35:18.714000+08:00",
+            "expectedCommit": "24317c4cbe22318666c2ac7caae9e82f7e437eaa"
+          },
+          {
+            "status": "SUCCEEDED",
+            "ended": "2026-10-02T10:11:31.486000+08:00",
+            "expectedCommit": "f63b56ed39ce99deb4b0177df9afcde386dd30df"
+          }
+        ]
+      },
+      "actualDatabaseState": "NOT_VERIFIED"
+    },
+    "sameShaTargetBinding": "BLOCKED"
+  },
+  "awsReadOnlyPreflight": {
+    "checkedAtUtc": "2026-11-19T05:32:02.761298+00:00",
+    "mode": "TARGET_READ_ONLY_PREFLIGHT",
+    "identity": {
+      "status": "OBSERVED",
+      "verifiedReadOnlyTestAccount": true
+    },
+    "stack": {
+      "status": "OBSERVED",
+      "name": "fdp-test-app",
+      "environment": "test",
+      "state": "UPDATE_COMPLETE"
+    },
+    "writes": 0,
+    "sanitizedObservationSha256": "9dce0b637055da7bfc0ae13c055154e86c692d3f7a226832c2b130ad41292d4b"
+  },
+  "awsReadOnlyAttempts": [
+    {
+      "checkedAtUtc": "2026-11-19T04:41:46.281334+00:00",
+      "identity": {
+        "status": "UNVERIFIED",
+        "error": "SSO_INVALID_OR_EXPIRED"
+      },
+      "writes": 0
+    },
+    {
+      "checkedAtUtc": "2026-11-19T04:52:55.494797+00:00",
+      "identity": {
+        "status": "UNVERIFIED",
+        "error": "SSO_INVALID_OR_EXPIRED"
+      },
+      "writes": 0
+    },
+    {
+      "checkedAtUtc": "2026-11-19T05:32:02.761298+00:00",
+      "identity": {
+        "status": "OBSERVED",
+        "verifiedReadOnlyTestAccount": true
+      },
+      "writes": 0
+    }
+  ],
+  "roleMaterials": {
+    "PlatformSuperAdmin": {
+      "targetTest": "NOT_RUN",
+      "approvedFixtureLogin": "NOT_VERIFIED",
+      "tenantDataOwnership": "NOT_VERIFIED",
+      "inventory": {
+        "status": "OBSERVED",
+        "enabledConfirmedCount": 3,
+        "distinctClaimScopes": 0,
+        "approvedFixtureLogin": "NOT_VERIFIED"
+      }
+    },
+    "PlatformOperator": {
+      "targetTest": "NOT_RUN",
+      "approvedFixtureLogin": "NOT_VERIFIED",
+      "tenantDataOwnership": "NOT_VERIFIED",
+      "inventory": {
+        "status": "OBSERVED",
+        "enabledConfirmedCount": 1,
+        "distinctClaimScopes": 0,
+        "approvedFixtureLogin": "NOT_VERIFIED"
+      }
+    },
+    "Auditor": {
+      "targetTest": "NOT_RUN",
+      "approvedFixtureLogin": "NOT_VERIFIED",
+      "tenantDataOwnership": "NOT_VERIFIED",
+      "inventory": {
+        "status": "OBSERVED",
+        "enabledConfirmedCount": 0,
+        "distinctClaimScopes": 0,
+        "approvedFixtureLogin": "NOT_VERIFIED"
+      }
+    },
+    "CustomerAdmin": {
+      "targetTest": "NOT_RUN",
+      "approvedFixtureLogin": "NOT_VERIFIED",
+      "tenantDataOwnership": "NOT_VERIFIED",
+      "inventory": {
+        "status": "OBSERVED",
+        "enabledConfirmedCount": 0,
+        "distinctClaimScopes": 0,
+        "approvedFixtureLogin": "NOT_VERIFIED"
+      }
+    },
+    "CustomerViewer": {
+      "targetTest": "NOT_RUN",
+      "approvedFixtureLogin": "NOT_VERIFIED",
+      "tenantDataOwnership": "NOT_VERIFIED",
+      "inventory": {
+        "status": "OBSERVED",
+        "enabledConfirmedCount": 0,
+        "distinctClaimScopes": 0,
+        "approvedFixtureLogin": "NOT_VERIFIED"
+      }
+    }
+  },
+  "target": {
+    "phase": "BLOCKED",
+    "targetResults": [
+      {
+        "id": "CMP-01",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-02",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-03",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-04",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-05",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-06",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-07",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-08",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-09",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-10",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-11",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-12",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-13",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-14",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-15",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-16",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-17",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-18",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-19",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-20",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-21",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-22",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-23",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-24",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-25",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-26",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-27",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-28",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-29",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-30",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-31",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-32",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-33",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-34",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-35",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-36",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-37",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-38",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-39",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-40",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-41",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-42",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-43",
+        "priority": "remaining",
+        "status": "NOT_RUN"
+      },
+      {
+        "id": "CMP-44",
+        "priority": "P1",
+        "status": "NOT_RUN"
+      }
+    ],
+    "p1Executed": 0,
+    "totalExecuted": 0,
+    "projectAcceptance": "OPEN",
+    "release": "OPEN",
+    "blockers": [
+      "APPROVED_CANDIDATE_DEPLOYMENT_AND_ARTIFACT_BINDING_REQUIRED",
+      "TARGET_FIVE_ROLE_FIXTURES_AND_WRITE_SCOPE_NOT_VERIFIED"
+    ]
+  }
+}

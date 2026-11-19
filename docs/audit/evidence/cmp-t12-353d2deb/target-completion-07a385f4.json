@@ -1,0 +1,3605 @@
+{
+  "task": "T12",
+  "candidate": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+  "environment": "shared-test",
+  "recordedAtUtc": "2026-11-19T08:56:27.128339+00:00",
+  "disposition": "BLOCKED",
+  "binding": {
+    "beforeUtc": "2026-11-19T08:12:22.705527+00:00",
+    "afterUtc": "2026-11-19T08:55:29.631955+00:00",
+    "frontendJob": "171",
+    "apiCodeSha256": "LKncHeZGcmWtOOxBJB/XN8vYixpsaU4YkNMHui4KL4M=",
+    "openApiSha256": "5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73",
+    "migrationBuildId": "fdp-test-migration-runner:27012522-f744-49fb-a5f7-7da0f621c585",
+    "migrationCount": 45,
+    "ciRun": "https://github.com/inrust/food-digester-platform/actions/runs/44478308675",
+    "deploymentRun": "https://github.com/inrust/food-digester-platform/actions/runs/44478308608"
+  },
+  "historicalReceipt": "target-execution-fc1793dc.json",
+  "cmp23Retained": {
+    "receipt": "target-cmp23-follow-up-07a385f4.json",
+    "sha256": "14937b168bf6bbe9b41d74d0cf53ad34381c18c0d10e08b3ea2424ecfe48b5d1",
+    "result": "PASS",
+    "sameSha": "07a385f4a1193e70334b9438914b0e1e2d9cca76"
+  },
+  "localChecks": [
+    {
+      "command": "pnpm exec vitest run apps/cloud-api/test/admin-audit.test.ts",
+      "result": "PASS",
+      "passed": 7,
+      "sourceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "scope": "合成数据脱敏回归"
+    }
+  ],
+  "controlledScope": {
+    "tenants": [
+      "A",
+      "B"
+    ],
+    "businessUser": {
+      "activeRoleAfter": "CustomerViewer",
+      "roleChangeAudited": true,
+      "provisionRequests": [
+        {
+          "step": "invite-owned-business-user",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "users",
+          "status": 201,
+          "id": "486e01d7-9167-4f5a-b951-f1ed7e097def"
+        },
+        {
+          "step": "owned-business-profile",
+          "role": "OwnedBusinessUser",
+          "method": "GET",
+          "path": "account/profile",
+          "status": 200,
+          "id": "7d1ce156-d350-4402-aa2b-7ba11dcdb2b7"
+        }
+      ]
+    },
+    "data": "仅写专用租户内的授权、账号、合约、站点、告警和纯模拟设备。其他受控临时报告与媒体用于真实查询。",
+    "testControlNotes": [
+      "本轮按开发计划更正旧回执中 CMP-07 快捷操作与 CMP-09 设备群重置的编号映射，原始记录保留。",
+      "客户端故障和迟到响应明确标注。为验收分页限制请求页长，响应均来自现场 API。",
+      "CMP-33 首轮把版本写入了错误的 If-Match 头，服务按正文原版本实际接受同值保存。审计确认设置值相同，版本增加一次。后续按真实请求体 version 测得 409。"
+    ]
+  },
+  "summary": {
+    "all": {
+      "PASS": 38,
+      "NOT_RUN": 4,
+      "FAIL": 2
+    },
+    "p1": {
+      "PASS": 15
+    },
+    "passOnCandidate": 38,
+    "passCarriedFromPrior": 0,
+    "blockers": [
+      "CMP-20",
+      "CMP-43"
+    ]
+  },
+  "batches": [
+    {
+      "batch": "专用业务用户角色",
+      "startedAtUtc": "2026-11-19T08:15:31.418Z",
+      "completedAtUtc": "2026-11-19T08:15:57.105Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "P1 首轮",
+      "startedAtUtc": "2026-11-19T08:17:44.941Z",
+      "completedAtUtc": "2026-11-19T08:19:22.945Z",
+      "state": "COMPLETED",
+      "caseCount": 8
+    },
+    {
+      "batch": "P1 真实目标与退役",
+      "startedAtUtc": "2026-11-19T08:20:45.949Z",
+      "completedAtUtc": "2026-11-19T08:21:35.458Z",
+      "state": "COMPLETED",
+      "caseCount": 3
+    },
+    {
+      "batch": "P1 三项复查",
+      "startedAtUtc": "2026-11-19T08:22:18.657Z",
+      "completedAtUtc": "2026-11-19T08:22:58.837Z",
+      "state": "COMPLETED",
+      "caseCount": 3
+    },
+    {
+      "batch": "P1 同候选锚点",
+      "startedAtUtc": "2026-11-19T08:43:09.037Z",
+      "completedAtUtc": "2026-11-19T08:44:12.432Z",
+      "state": "COMPLETED",
+      "caseCount": 7
+    },
+    {
+      "batch": "ESG 实际分页和导出",
+      "startedAtUtc": "2026-11-19T08:31:21.375Z",
+      "completedAtUtc": "2026-11-19T08:31:47.182Z",
+      "state": "COMPLETED",
+      "caseCount": 2
+    },
+    {
+      "batch": "其余账号、筛选和站点",
+      "startedAtUtc": "2026-11-19T08:25:27.295Z",
+      "completedAtUtc": "2026-11-19T08:27:14.032Z",
+      "state": "COMPLETED",
+      "caseCount": 15
+    },
+    {
+      "batch": "其余配置、合同与权限",
+      "startedAtUtc": "2026-11-19T08:28:07.600Z",
+      "completedAtUtc": "2026-11-19T08:29:36.357Z",
+      "state": "COMPLETED",
+      "caseCount": 11
+    },
+    {
+      "batch": "同型号第一轮",
+      "startedAtUtc": "2026-11-19T08:29:21.993Z",
+      "completedAtUtc": "2026-11-19T08:29:34.687Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "版本发布与 Sync 对照",
+      "startedAtUtc": "2026-11-19T08:33:27.498Z",
+      "completedAtUtc": null,
+      "state": "INTERRUPTED_HARNESS",
+      "caseCount": 3
+    },
+    {
+      "batch": "现行契约与稳定站点复查",
+      "startedAtUtc": "2026-11-19T08:35:51.804Z",
+      "completedAtUtc": "2026-11-19T08:36:57.461Z",
+      "state": "COMPLETED",
+      "caseCount": 7
+    },
+    {
+      "batch": "模拟器告警图片造数",
+      "startedAtUtc": "2026-11-19T08:34:53.493Z",
+      "completedAtUtc": "2026-11-19T08:37:07.352Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "独立告警和媒体读回",
+      "startedAtUtc": "2026-11-19T08:41:41.756Z",
+      "completedAtUtc": "2026-11-19T08:41:52.460Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "耗材与命令时间窗首轮",
+      "startedAtUtc": "2026-11-19T08:38:37.603Z",
+      "completedAtUtc": "2026-11-19T08:38:44.315Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "耗材与命令时间窗复查",
+      "startedAtUtc": "2026-11-19T08:39:41.071Z",
+      "completedAtUtc": "2026-11-19T08:40:09.923Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "真实 TTL 与前端默认档",
+      "startedAtUtc": "2026-11-19T08:44:16.836Z",
+      "completedAtUtc": "2026-11-19T08:49:31.237Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "真实设备用户确认、设备或版本详情",
+      "startedAtUtc": "2026-11-19T08:41:12.188Z",
+      "completedAtUtc": "2026-11-19T08:42:06.252Z",
+      "state": "COMPLETED",
+      "caseCount": 3
+    },
+    {
+      "batch": "告警详情证据图片及租户隔离",
+      "startedAtUtc": "2026-11-19T08:50:42.721Z",
+      "completedAtUtc": "2026-11-19T08:51:05.436Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "真实脱敏与界面长内容投影",
+      "startedAtUtc": "2026-11-19T08:49:57.421Z",
+      "completedAtUtc": "2026-11-19T08:50:15.586Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    },
+    {
+      "batch": "五角色、设置入口和筛选可访问性",
+      "startedAtUtc": "2026-11-19T08:53:09.365Z",
+      "completedAtUtc": "2026-11-19T08:54:25.424Z",
+      "state": "COMPLETED",
+      "caseCount": 21
+    },
+    {
+      "batch": "设备群客户范围组合和重置",
+      "startedAtUtc": "2026-11-19T08:53:58.479Z",
+      "completedAtUtc": "2026-11-19T08:54:12.242Z",
+      "state": "COMPLETED",
+      "caseCount": 1
+    }
+  ],
+  "acceptanceIndex": [
+    {
+      "cmp": "CMP-01",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "专用客户业务 displayName、业务 userId、Cognito 登录标识和键盘入口均读回。窄屏截断并提供完整文本。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "业务显示名、用户 ID 和 Cognito 标识",
+          "role": "OwnedBusinessUser",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "专用客户业务 displayName、业务 userId、Cognito 登录标识和键盘入口均读回。窄屏截断并提供完整文本。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-01-read-business-profile",
+          "role": "OwnedBusinessUser",
+          "method": "GET",
+          "path": "account/profile",
+          "status": 200,
+          "id": "adc6352c-ca80-4ca4-b21a-0804ecc9fa9d"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-02",
+      "priority": "P2/P3",
+      "result": "NOT_RUN",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "PARTIAL_TARGET",
+      "observation": "两组客户和平台的固定范围、预览上限与排序已查。",
+      "remaining": "专用 0 台与超过 10 台的场景仍待造数。",
+      "disposition": "OPEN",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "设备总数、卡片上限、排序和可见范围",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "概览说明当前范围，预览最多十台并按 ID 排序，客户可见设备不跨受控租户。"
+          ],
+          "remaining": "两组受控租户都有设备。0 台和超过 10 台的专用分组未准备。"
+        },
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "设备总数、卡片上限、排序和可见范围",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "概览说明当前范围，预览最多十台并按 ID 排序，客户可见设备不跨受控租户。"
+          ],
+          "remaining": "两组受控租户都有设备。0 台和超过 10 台的专用分组未准备。"
+        },
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "设备总数、卡片上限、排序和可见范围",
+          "role": "CustomerViewer",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "概览说明当前范围，预览最多十台并按 ID 排序，客户可见设备不跨受控租户。"
+          ],
+          "remaining": "两组受控租户都有设备。0 台和超过 10 台的专用分组未准备。"
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-03",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "实际顶部栏没有通知铃入口。",
+      "attempts": [
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色实际顶部栏铃铛",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际顶部栏没有通知铃入口。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色实际顶部栏铃铛",
+          "role": "PlatformOperator",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际顶部栏没有通知铃入口。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色实际顶部栏铃铛",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际顶部栏没有通知铃入口。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色实际顶部栏铃铛",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际顶部栏没有通知铃入口。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色实际顶部栏铃铛",
+          "role": "CustomerViewer",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际顶部栏没有通知铃入口。"
+          ]
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-04",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。",
+      "attempts": [
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色旧时区回退与 UTC 持久化",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色旧时区回退与 UTC 持久化",
+          "role": "PlatformOperator",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色旧时区回退与 UTC 持久化",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色旧时区回退与 UTC 持久化",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色旧时区回退与 UTC 持久化",
+          "role": "CustomerViewer",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。"
+          ]
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-05",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "客户访问失败重试、租户路径和无地区标签的平台直接查询均通过。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "设备选择范围和访问失败重试",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "首次设备列表连接中止时展示错误且应用禁用，点重新加载后真实列表仅显示租户内选项，按地区和站点应用后读回正确设备。"
+          ]
+        },
+        {
+          "batch": "P1 首轮",
+          "label": "无地区标签平台直接选择",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "B 站点没有地区标签，平台无需补填地区即可选中并执行真实查询。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-05-picker-retry",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "94b48bcc-bee2-425b-8913-bd127f3d18c1"
+        },
+        {
+          "step": "CMP-05-retry-applied-owned-device",
+          "method": "GET",
+          "path": "/api/v1/admin/devices/ce37383a-f32a-4ce2-b30b-d95d10b9c338/console",
+          "status": 200,
+          "id": "2347d4f5-f4b7-49c6-9430-d85f74040e6b"
+        },
+        {
+          "step": "CMP-05-regionless",
+          "method": "GET",
+          "path": "/api/v1/admin/devices/ab6005f7-8d5a-452a-b939-fcef86cde96d/console",
+          "status": 200,
+          "id": "06d5c601-a135-48fe-9389-02d5df183a19"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-06",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实迟到和重试不会恢复旧目标，真实命令只下发到已应用纯模拟设备。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "目标失败、响应迟到和命令入口门控",
+          "role": "PlatformOperator",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "应用 A 时延后真实 200，B 首次连接中止后禁发，重试读回 B，放行 A 迟到响应也不会恢复 A。全过程零命令写请求。"
+          ],
+          "remaining": "本次在候选验证命令入口和目标状态。此前 fc1793dc 单独实测命令请求仅发往纯模拟器 B。"
+        },
+        {
+          "batch": "P1 真实目标与退役",
+          "label": "真实命令仅下发到已应用模拟设备 B",
+          "role": "PlatformOperator",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "真实 POST 仅发往确认的纯模拟设备 B，草稿未确认时禁用命令，命令表单同时明示 B 的 ID。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-06-apply-b-after-error",
+          "method": "GET",
+          "path": "/api/v1/admin/devices/ab6005f7-8d5a-452a-b939-fcef86cde96d",
+          "status": 200,
+          "id": "5de13f2a-beb3-4c71-b0f9-611785d3b0aa"
+        },
+        {
+          "step": "CMP-06-late-a-actual",
+          "method": "GET",
+          "path": "/api/v1/admin/devices/ce37383a-f32a-4ce2-b30b-d95d10b9c338",
+          "status": 200,
+          "id": "1992052c-96d0-45a3-b745-b53cddfb19ff"
+        },
+        {
+          "step": "CMP-06-verify-simulator-online",
+          "role": "PlatformOperator",
+          "method": "GET",
+          "path": "devices/ab6005f7-8d5a-452a-b939-fcef86cde96d",
+          "status": 200,
+          "id": "7a889817-4e58-41df-a7a1-1e7e9dc424c7"
+        },
+        {
+          "step": "CMP-06-real-command-only-simulator-b",
+          "method": "POST",
+          "path": "/api/v1/admin/devices/ab6005f7-8d5a-452a-b939-fcef86cde96d/commands",
+          "status": 201,
+          "id": "f9e93494-8503-4186-a7dd-fc2e521613c5"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-07",
+      "priority": "P2/P3",
+      "result": "NOT_RUN",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "PARTIAL_TARGET",
+      "observation": "无目标与已应用目标的快捷分类和禁用说明已查，真实高风险命令门控见 CMP-06。",
+      "remaining": "缺正常运行、离线和无授权的全组合齐套执行。",
+      "disposition": "OPEN",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "零目标与已应用目标的快捷操作组和禁用说明",
+          "role": "PlatformOperator",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "窄屏的快捷键按类别排列，零目标与真实应用设备后的禁用入口均有可访问说明。"
+          ],
+          "remaining": "运行、离线和无授权分别造数的完整状态组合待补测。"
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-08",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "375/768/1440 显示无重叠，长命令标签实际提交到查询。",
+      "attempts": [
+        {
+          "batch": "P1 同候选锚点",
+          "label": "命令筛选按钮和命令下拉双语无重叠",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "375/768/1440 显示无重叠，长命令标签实际提交到查询。"
+          ]
+        },
+        {
+          "batch": "P1 同候选锚点",
+          "label": "命令筛选按钮和命令下拉双语无重叠",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "375/768/1440 显示无重叠，长命令标签实际提交到查询。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-08-filter-command-actual",
+          "method": "GET",
+          "path": "/api/v1/admin/commands",
+          "status": 200,
+          "id": "fc9a3b84-c2f7-4dc2-8990-116a98674c61"
+        },
+        {
+          "step": "CMP-08-filter-command-actual",
+          "method": "GET",
+          "path": "/api/v1/admin/commands",
+          "status": 200,
+          "id": "34a03c67-6c57-42d9-b23f-e77d5f028057"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-09",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "客户组筛选、真正第二页、单一重置及固定租户均通过。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "设备群实际两页后仅用一个重置回到第一页",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "请求页长限定为 1，后端真实返回自有设备第二页。单一重置清空关键字和游标。"
+          ]
+        },
+        {
+          "batch": "设备群客户范围组合和重置",
+          "label": "客户组合筛选、实际分页及单一重置",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "CustomerAdmin 窄屏真实发送站点、关键字和状态组合。扩大站点条件后实际跨两页，唯一重置按钮清除可编辑条件和游标，并保持本租户。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-09-owned-first",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "6ceddf59-99c0-48a0-8c68-c5781bae1a6f"
+        },
+        {
+          "step": "CMP-09-owned-second",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "0ff25da8-d053-4d43-9185-56f07cccae77"
+        },
+        {
+          "step": "CMP-09-reset-no-old-cursor",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "4d676672-a833-424c-80b9-e1f8f51d59c2"
+        },
+        {
+          "step": "CMP-09-own-sites",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "sites",
+          "status": 200,
+          "id": "5a549eb6-3613-4502-bd16-15eceaad8c81"
+        },
+        {
+          "step": "CMP-09-own-site-keyword-axis",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "42a1bdb5-3532-4ba5-9a70-c9dc17267f37"
+        },
+        {
+          "step": "CMP-09-own-first-page",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "2b15cd9c-e2fb-4a24-ad23-148e5cfee568"
+        },
+        {
+          "step": "CMP-09-own-second-page",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "2b4e6066-dc54-41e5-b7a4-a5e47c15369c"
+        },
+        {
+          "step": "CMP-09-own-reset-first-page",
+          "method": "GET",
+          "path": "/api/v1/admin/devices",
+          "status": 200,
+          "id": "90465051-178f-4fc1-a6ed-65d70b9c1bcf"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-10",
+      "priority": "P2/P3",
+      "result": "NOT_RUN",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "PARTIAL_TARGET",
+      "observation": "目标详情失败后恢复，真实长备注、证书和分配历史已核对。",
+      "remaining": "无证书及无分配历史的独立空态未形成。",
+      "disposition": "OPEN",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "设备详情空值及真实读取失败",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 768,
+          "observedState": "PARTIAL",
+          "checks": [
+            "设备详情在浏览器连接失败时显示错误，刷新后真实读取恢复，状态、证书、配置和分配分区可操作。"
+          ],
+          "remaining": "超长设备备注与证书历史空态的专用完整组合待测。"
+        },
+        {
+          "batch": "真实设备用户确认、设备或版本详情",
+          "label": "实际长设备备注、许可与空态",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "自有设备长备注实际保存并显示，键盘编辑可取消，分配和证书分区稳定。样本备注恢复。"
+          ],
+          "remaining": "无证书或分配历史的独立空态组合仍未造数。此前已验证详情连接失败与恢复。"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-10-actual-recovery",
+          "method": "GET",
+          "path": "/api/v1/admin/devices/ce37383a-f32a-4ce2-b30b-d95d10b9c338",
+          "status": 200,
+          "id": "21c60a71-056e-4bc5-bfec-d6d51609f314"
+        },
+        {
+          "step": "CMP-10-check-owned-model-device",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/6fd0746f-4a27-48bc-bd15-99192fdbbdde",
+          "status": 200,
+          "id": "6fd71b4c-f2e2-4efd-b823-e6e691a0926a"
+        },
+        {
+          "step": "CMP-10-create-owned-long-alias",
+          "role": "PlatformSuperAdmin",
+          "method": "PATCH",
+          "path": "devices/6fd0746f-4a27-48bc-bd15-99192fdbbdde/metadata",
+          "status": 200,
+          "id": "1822285a-a65a-4223-87cd-9fbac64b4e13"
+        },
+        {
+          "step": "CMP-10-read-current-for-restore",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/6fd0746f-4a27-48bc-bd15-99192fdbbdde",
+          "status": 200,
+          "id": "b9e968fa-8872-403a-ad8e-f9e389796c05"
+        },
+        {
+          "step": "CMP-10-restore-original-owned-alias",
+          "role": "PlatformSuperAdmin",
+          "method": "PATCH",
+          "path": "devices/6fd0746f-4a27-48bc-bd15-99192fdbbdde/metadata",
+          "status": 200,
+          "id": "40997797-d576-4d2a-9774-50013a838193"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-11",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "审批详情连接失败可重试，嵌套确认独立关闭，带版本批准并按设备序列号导航。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "详情失败后重试与真实批准导航",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "详情连接错误后重试读取真实记录。确认可独立取消。真实批准携当前 If-Match，跳转到该专用序列号的设备管理。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-11-own-pending",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "onboarding/requests/de914e6f-7474-45ca-8fd2-e5bb36485536",
+          "status": 200,
+          "id": "cd79bfe0-18b5-4b39-909e-9032bd0679f8"
+        },
+        {
+          "step": "CMP-11-retry-real",
+          "method": "GET",
+          "path": "/api/v1/admin/onboarding/requests/de914e6f-7474-45ca-8fd2-e5bb36485536",
+          "status": 200,
+          "id": "5b8dfe5d-4cff-4875-adff-d773af39d2a9"
+        },
+        {
+          "step": "CMP-11-owned-approve",
+          "method": "POST",
+          "path": "/api/v1/admin/onboarding/requests/de914e6f-7474-45ca-8fd2-e5bb36485536/approve",
+          "status": 200,
+          "id": "05389e58-b61e-4d5b-b7b3-3448a210a370",
+          "ifMatch": "1"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-12",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "中止的首次拒绝保留详情和重试入口。实际重试带原因与当前版本，关闭后移出待审批，在已拒绝标签读回。",
+      "attempts": [
+        {
+          "batch": "P1 同候选锚点",
+          "label": "拒绝失败后重试、版本和拒绝读回",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "中止的首次拒绝保留详情和重试入口。实际重试带原因与当前版本，关闭后移出待审批，在已拒绝标签读回。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-12-create-disposable-pending",
+          "method": "POST",
+          "status": 201,
+          "id": "7f60189e-6406-4f1f-a546-6ec410629adb"
+        },
+        {
+          "step": "CMP-12-owned-initial",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "onboarding/requests/d6a188cb-5eb2-4ea3-b833-785149d5ac06",
+          "status": 200,
+          "id": "09c395ac-b057-4f69-95c7-6ff112ace3f8"
+        },
+        {
+          "step": "CMP-12-real-reject-retry",
+          "method": "POST",
+          "path": "/api/v1/admin/onboarding/requests/d6a188cb-5eb2-4ea3-b833-785149d5ac06/reject",
+          "status": 200,
+          "id": "77a4e361-1904-47f9-a159-2d727a328866",
+          "ifMatch": "1"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-13",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "新建配置位于工具栏第一个操作，Escape 恢复焦点。",
+      "attempts": [
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "配置新建位于最左且能返回焦点",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "新建配置位于工具栏第一个操作，Escape 恢复焦点。"
+          ]
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-14",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实多版历史可独立展开。首次详情连接失败后可退出重开，专用空方案直接展示空历史。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "真实配置多版历史、空方案及读取失败",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "真实多版历史可独立展开。首次详情连接失败后可退出重开，专用空方案直接展示空历史。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-14-create-owned-empty-config",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations",
+          "status": 201,
+          "id": "0ebc4b5b-0331-4562-9ce7-5f67e89077de"
+        },
+        {
+          "step": "CMP-14-current-owned-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/86476757-ab45-4b97-8f4a-17602ae4795a",
+          "status": 200,
+          "id": "0bc9fb52-3c6f-4f0e-9c89-5af740d0301d"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-15",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "八个真实未发布版本形成滚动容器，派生站点展示与 API 一致。审计员能访问最早版本且无发布权限。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "审计员只读历史高度及派生内容",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "窄屏历史容器高度受控，键盘进入旧版本，审计员实际不具备发布能力。"
+          ],
+          "remaining": "超量历史滚动及派生内容详尽合并仍需校验。"
+        },
+        {
+          "batch": "真实设备用户确认、设备或版本详情",
+          "label": "较长真实版本历史滚动、旧版与派生范围",
+          "role": "Auditor",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "八个真实未发布版本形成滚动容器，派生站点展示与 API 一致。审计员能访问最早版本且无发布权限。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-15-auditor-history",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/86476757-ab45-4b97-8f4a-17602ae4795a",
+          "status": 200,
+          "id": "5345fce3-a323-48b8-9954-e2e9f98dc04e"
+        },
+        {
+          "step": "CMP-15-owned-overflow-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations",
+          "status": 201,
+          "id": "961279dd-593f-4a56-aa40-ef06d4d7d8d7"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-1",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "3a9a66d8-7b02-4c33-9aa4-7bf08740b0d2"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-2",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "7f782208-cf5e-4f25-9f28-63f19baed55b"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-3",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "5d9eb33b-0337-4b0f-aae2-f464d4ab1eb3"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-4",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "391cfd6e-c505-4538-8985-96cd79e3e627"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-5",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "8f14cf08-02fb-4d6e-8740-5b0d14e920e6"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-6",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "8be0895e-201e-4bd6-bd25-066cbb0c03ab"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-7",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "27249d77-3641-44ec-9ad4-3320c87a8f75"
+        },
+        {
+          "step": "CMP-15-add-owned-draft-8",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e/versions",
+          "status": 201,
+          "id": "8037934e-7f81-464c-99f5-e971861ce511"
+        },
+        {
+          "step": "CMP-15-owned-version-history-with-derived-site",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/60c85bd1-551c-42f6-899e-90843e56d30e",
+          "status": 200,
+          "id": "58a09191-ef33-40a9-9994-4f9e0bf3f0f0"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-16",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "原生 datetime-local 输入毫秒时展示错误且提交禁用，没有请求。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "非法日期禁用和 UTC 实际发布",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "locator.fill: Error: Malformed value Call log:   - waiting for getByTestId('publish-effective-at')     - locator resolved to <input step=\"1\" aria-invalid=\"true\" type=\"datetime-local\" id=\"publish-effective-at\" value=\"2026-11-21T00:30:00.123\" data-testid=\"publish-effective-at\" aria-describedby=\"publish-time-help publish-time-error\" class=\"ant-input css-oc1rc0 ant-input-outlined css-var-_r_0_ ant-input-css-var\"/>     - fill(\"2026-11-21T0"
+        },
+        {
+          "batch": "版本发布与 Sync 对照",
+          "label": "UTC 选择器非法值零写和实际发布",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "原生 datetime-local 输入毫秒时展示错误且提交禁用，没有请求。",
+            "UTC 合法未来时间发出唯一实际发布请求，服务端版本的生效时间读回一致。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-16-list-own-versions",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/86476757-ab45-4b97-8f4a-17602ae4795a",
+          "status": 200,
+          "id": "f1d0a620-fe7c-4ce5-89aa-bca294b242f3"
+        },
+        {
+          "step": "CMP-16-own-current-version",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/86476757-ab45-4b97-8f4a-17602ae4795a",
+          "status": 200,
+          "id": "3203fe40-e020-448b-9a62-6d5fe8a9add6"
+        },
+        {
+          "step": "CMP-16-utc-real-publish",
+          "method": "POST",
+          "path": "/api/v1/admin/configurations/86476757-ab45-4b97-8f4a-17602ae4795a/versions/3/publish",
+          "status": 200,
+          "id": "01d13a7f-fd9e-424e-8b53-f5acbe580f71"
+        },
+        {
+          "step": "CMP-16-utc-real-readback",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/86476757-ab45-4b97-8f4a-17602ae4795a/versions/3",
+          "status": 200,
+          "id": "a7a9996d-14c6-4f2a-b181-2c9e7fac8fe3"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-17",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "两真实相邻页各一台，设备定向和型号定向各自胜出。与对应版冻结参数逐项比对，两次真实 mTLS Sync 一致。逐版本通知包含实际目标，无匹配应用回执继续显示未知。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "真实配置生效与模拟器 Sync 对照",
+          "role": "Auditor",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "Expected values to be strictly equal: undefined !== 1"
+        },
+        {
+          "batch": "同型号第一轮",
+          "label": "同型号两设备分页、定向优先级与真实 mTLS Sync",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [
+            "两台专用同型号设备初始无云端生效和实际应用版本。"
+          ],
+          "failedAssertion": "Expected values to be strictly equal: undefined !== 2"
+        },
+        {
+          "batch": "版本发布与 Sync 对照",
+          "label": "实际云端版本、两页和 Sync 冻结负载对照",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "两真实相邻页各一台，设备定向和型号定向各自胜出。与对应版冻结参数逐项比对，两次真实 mTLS Sync 一致。逐版本通知包含实际目标，无匹配应用回执继续显示未知。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-17-effective-current",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/86476757-ab45-4b97-8f4a-17602ae4795a/effective-devices",
+          "status": 200,
+          "id": "48d5f077-8b90-452e-9bec-f378490fe7fb"
+        },
+        {
+          "step": "CMP-17-own-mtls-device-sync",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "c9368bf1-e8a2-4692-9e37-a2eed2954489"
+        },
+        {
+          "step": "CMP-17-distinct-model-scope",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices",
+          "status": 200,
+          "id": "58b10a78-2b8a-4df3-bf39-7ae50f6c7a7a"
+        },
+        {
+          "step": "CMP-17-create-model-walkthrough",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations",
+          "status": 201,
+          "id": "c8d1a0b4-81b2-4146-94db-f4b31d57a2d6"
+        },
+        {
+          "step": "CMP-17-create-device-walkthrough",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations",
+          "status": 201,
+          "id": "5daa4049-0063-421c-9f93-bbec84c5b9f4"
+        },
+        {
+          "step": "CMP-17-read-effective",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/effective-devices",
+          "status": 200,
+          "id": "81a7d662-d57e-41db-8cf9-cea1b846daa4"
+        },
+        {
+          "step": "CMP-17-draft",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/versions",
+          "status": 201,
+          "id": "5b0b167b-7b60-4843-abd4-46140848b6e2"
+        },
+        {
+          "step": "CMP-17-publish-1",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/versions/1/publish",
+          "status": 200,
+          "id": "007850b2-1e55-4e3e-9a39-87d528f8d797"
+        },
+        {
+          "step": "CMP-17-draft",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/0023c5b6-6983-4aa7-acd9-bd57deeffc0b/versions",
+          "status": 201,
+          "id": "5b021063-8a16-438e-88b4-1ccf7f453462"
+        },
+        {
+          "step": "CMP-17-draft",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/0023c5b6-6983-4aa7-acd9-bd57deeffc0b/versions",
+          "status": 201,
+          "id": "9c78acd6-6002-494c-bc4d-db4a85bdb878"
+        },
+        {
+          "step": "CMP-17-publish-2",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "configurations/0023c5b6-6983-4aa7-acd9-bd57deeffc0b/versions/2/publish",
+          "status": 200,
+          "id": "25db83e7-61b0-40e0-8cdc-bcae0f1347a2"
+        },
+        {
+          "step": "CMP-17-read-effective",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/effective-devices",
+          "status": 200,
+          "id": "34c39961-79e7-4d54-b919-c08d565e79a1"
+        },
+        {
+          "step": "CMP-17-read-effective",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/effective-devices",
+          "status": 200,
+          "id": "3c4d5ba3-6915-4344-8180-3c3db864bf51"
+        },
+        {
+          "step": "CMP-17-real-sync-m1",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "1b1aed70-7faa-443d-95b2-dde1f6b8175e"
+        },
+        {
+          "step": "CMP-17-find-only-owned-model",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "configurations",
+          "status": 200,
+          "id": "1bc93f96-9053-48e9-bc2b-600ba4903b7a"
+        },
+        {
+          "step": "CMP-17-page1",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/effective-devices",
+          "status": 200,
+          "id": "9c5b3e55-6ce7-4c2e-bb01-ddcbccaf2895"
+        },
+        {
+          "step": "CMP-17-page2",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/effective-devices",
+          "status": 200,
+          "id": "80a757b2-c747-44e5-aac9-1a4aaa4285f3"
+        },
+        {
+          "step": "CMP-17-own-effective-version-m1",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/0023c5b6-6983-4aa7-acd9-bd57deeffc0b/versions/2",
+          "status": 200,
+          "id": "84215e9c-3341-4efd-903a-6acb6d3ebfa1"
+        },
+        {
+          "step": "CMP-17-own-device-sync-m1",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "f82cf575-75c2-4752-ba15-0c3db55475f1"
+        },
+        {
+          "step": "CMP-17-per-version-notification-m1",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/0023c5b6-6983-4aa7-acd9-bd57deeffc0b/versions/2/status",
+          "status": 200,
+          "id": "c644d612-66a0-46d5-8780-56f37124fdbf"
+        },
+        {
+          "step": "CMP-17-own-effective-version-m2",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/versions/1",
+          "status": 200,
+          "id": "b6f3cef4-7c86-4406-8e19-048f990949bd"
+        },
+        {
+          "step": "CMP-17-own-device-sync-m2",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "565c840c-fb2a-4d8e-a1ff-19cb4914beb1"
+        },
+        {
+          "step": "CMP-17-per-version-notification-m2",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "configurations/77448010-66c1-46bd-85eb-e4af22f2c06b/versions/1/status",
+          "status": 200,
+          "id": "bae79e7c-553d-45a1-831f-022f5d4f8433"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-18",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "两种列表按真实请求保留固定租户，耗材状态筛选重置清除占比，申请查询进入指定自有设备。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "客户角色固定范围、耗材筛选与重置",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "两种列表按真实请求保留固定租户，耗材状态筛选重置清除占比，申请查询进入指定自有设备。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-18-tenant-filter",
+          "method": "GET",
+          "path": "/api/v1/admin/consumables",
+          "status": 200,
+          "id": "b73b3b90-aea2-41a3-88f6-e154beaa54e2"
+        },
+        {
+          "step": "CMP-18-tenant-reset",
+          "method": "GET",
+          "path": "/api/v1/admin/consumables",
+          "status": 200,
+          "id": "fb1158a9-b08b-4f77-9fb2-0c2f5aeab7da"
+        },
+        {
+          "step": "CMP-18-request-filter-own",
+          "method": "GET",
+          "path": "/api/v1/admin/consumable-requests",
+          "status": 200,
+          "id": "91c0ae79-1be2-4af4-bf86-ca51d9e4bbc9"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-19",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "受控设备提交前真实退役，服务端拒绝与字段提示一致。不存在、未分配、越权、合法及幂等也通过。",
+      "attempts": [
+        {
+          "batch": "P1 真实目标与退役",
+          "label": "专用设备从选择到退役后被真实服务拒绝",
+          "role": "PlatformOperator",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "选择后退役的专用设备由服务端返回 409 并在设备字段附近给出提示。重开不可选退役设备。失败、未分配、越权、合法及幂等路径均走现场服务。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-19-verify-only-owned-active",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0",
+          "status": 200,
+          "id": "d9b90d9d-7353-4bfd-a760-955c55d88298"
+        },
+        {
+          "step": "CMP-19-retire-only-disposable-simulator",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0/retire",
+          "status": 200,
+          "id": "7a72c09e-6046-45ec-a7ba-96bfb93ec1ff"
+        },
+        {
+          "step": "CMP-19-stale-selection-rejected",
+          "method": "POST",
+          "path": "/api/v1/admin/consumable-requests",
+          "status": 409,
+          "id": "81564532-0a58-4190-a83d-e523d0e0d3c5",
+          "code": "CONFLICT"
+        },
+        {
+          "step": "CMP-19-missing",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "consumable-requests",
+          "status": 404,
+          "id": "893e533d-4963-4003-acca-c4a6c98e3524",
+          "code": "NOT_FOUND"
+        },
+        {
+          "step": "CMP-19-customer-cannot-create-cross-tenant",
+          "role": "CustomerAdmin",
+          "method": "POST",
+          "path": "consumable-requests",
+          "status": 403,
+          "id": "72cba0e2-e99f-4654-8e98-8fb9385eab8c",
+          "code": "FORBIDDEN"
+        },
+        {
+          "step": "CMP-19-locate-owned-unassigned",
+          "role": "PlatformOperator",
+          "method": "GET",
+          "path": "devices",
+          "status": 200,
+          "id": "fb851a93-e331-49cf-8c34-6069219c5c95"
+        },
+        {
+          "step": "CMP-19-unassigned",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "consumable-requests",
+          "status": 409,
+          "id": "945ebe94-1d4f-48fc-9abb-c5898a2d304b",
+          "code": "CONFLICT"
+        },
+        {
+          "step": "CMP-19-valid-owned",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "consumable-requests",
+          "status": 201,
+          "id": "6719654f-7a30-4d2a-9ab2-7703ffb8b74f"
+        },
+        {
+          "step": "CMP-19-valid-idempotent",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "consumable-requests",
+          "status": 200,
+          "id": "34d265a2-5b8d-4254-9a05-bc9dcc9124f0"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-20",
+      "priority": "P2/P3",
+      "result": "FAIL",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_FAIL",
+      "observation": "告警、事件和防拆服务端均强制当前租户。告警实际查询与手动清空筛选已查。",
+      "remaining": "页面仅提供查询，缺可见的统一重置入口。",
+      "disposition": "BLOCKED",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "客户告警实际查询范围和条件重置",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "Expected values to be strictly equal: 200 !== 403"
+        },
+        {
+          "batch": "版本发布与 Sync 对照",
+          "label": "客户固定范围忽略外租户筛选并按标签重置",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "NOT_RUN",
+          "checks": [],
+          "remaining": "浏览器等待在首轮脚本中断。改用契约字段与正确控件复验，见后续批次。"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "客户固定范围忽略外租户筛选并按标签重置",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "三个实际 endpoint 均强制本客户范围，带外租户筛选返回 200 且只返回本租户。告警栏筛选和手动清空后提交产生对应真实请求。"
+          ],
+          "remaining": "告警筛选栏只有查询入口。统一的可见重置操作仍需按走查口径确认。"
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "验收要求的独立重置入口",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "FAIL",
+          "checks": [
+            "在候选的 zh-CN 窄屏中，查询可见，筛选区域中可访问的重置按钮数量 0。"
+          ],
+          "failedAssertion": "FILTER_RESET_ACTION_MISSING"
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "验收要求的独立重置入口",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "FAIL",
+          "checks": [
+            "在候选的 en 窄屏中，查询可见，筛选区域中可访问的重置按钮数量 0。"
+          ],
+          "failedAssertion": "FILTER_RESET_ACTION_MISSING"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-20-customer-alarms",
+          "method": "GET",
+          "path": "/api/v1/admin/alarms",
+          "status": 200,
+          "id": "e66c8b2f-f831-435f-8540-5af47672a1f1"
+        },
+        {
+          "step": "CMP-20-own-alarms",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "77cd1093-ed3e-43c2-a2e0-08576c34358b"
+        },
+        {
+          "step": "CMP-20-cross-scope",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "aa8ce5ae-08ae-4fe8-b4f2-b271a1b81c30"
+        },
+        {
+          "step": "CMP-20-fixed-tenant-alarms",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "db58d848-4594-4dcb-8b37-3ce33947392f"
+        },
+        {
+          "step": "CMP-20-fixed-tenant-events",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "events",
+          "status": 200,
+          "id": "d31e7e70-3034-4134-803a-98e8799499de"
+        },
+        {
+          "step": "CMP-20-fixed-tenant-tamper-events",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "tamper-events",
+          "status": 200,
+          "id": "624319d6-56dc-454d-8239-577144a6ae68"
+        },
+        {
+          "step": "CMP-20-real-filter",
+          "method": "GET",
+          "path": "/api/v1/admin/alarms",
+          "status": 200,
+          "id": "3c74719a-58ae-4354-ba39-336bf42ebe99"
+        },
+        {
+          "step": "CMP-20-real-reset",
+          "method": "GET",
+          "path": "/api/v1/admin/alarms",
+          "status": 200,
+          "id": "8c736c27-973c-428e-9649-10216b2a7df3"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-21",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "实际告警确认与清除已读回。另一个专用告警从详情读回已关联图片，授权浏览器加载真实像素，外租户详情和签发均为 404。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "合成告警实际确认、清除、只读权限",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "The expression evaluated to a falsy value:   assert(after.status==='CLEARED'&&after.clearedTime)"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "清除告警时间和只读 ACL",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "复读真实确认、清除事件，含 clearedAt 和原因；审计员实际写入为 403。"
+          ],
+          "remaining": "暂缺可下载的告警证据图片。"
+        },
+        {
+          "batch": "模拟器告警图片造数",
+          "label": "真实合成告警证据图片及签发权限",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "CONTROLLED_ALARM_EVIDENCE_NOT_AVAILABLE",
+          "interpretation": "早期脚本从告警列表读取图片字段。该字段由现行契约的详情接口返回，以后续详情复查为准。"
+        },
+        {
+          "batch": "独立告警和媒体读回",
+          "label": "告警图片上传、关联和权限读回",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "实际专用告警已读回，证据图片状态 ABSENT。",
+            "专用媒体已在实际媒体列表登记，状态 AVAILABLE。"
+          ],
+          "remaining": "经过独立读回，专用合成告警尚未得到 AVAILABLE 证据图片，不能验证详情图片入口和下载权限。",
+          "interpretation": "早期脚本从告警列表读取图片字段。该字段由现行契约的详情接口返回，以后续详情复查为准。"
+        },
+        {
+          "batch": "告警详情证据图片及租户隔离",
+          "label": "真实告警详情证据关联、签发和越权拒绝",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际告警列表定位专用事件，详情 GET 的 evidenceImage 状态为 AVAILABLE。同租户实际媒体为 AVAILABLE。",
+            "真实详情关联的媒体 ID 与已上传图片一致，授权浏览器显示真实像素。另一租户读取告警详情和签发图片均被拒绝。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-21-own-alert-list",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "6868d512-51a9-4fe6-9d13-93d9bfd5e987"
+        },
+        {
+          "step": "CMP-21-auditor-own-detail",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0",
+          "status": 200,
+          "id": "61611b7d-4c92-492b-b5d9-187370b0e208"
+        },
+        {
+          "step": "CMP-21-auditor-denied-write",
+          "role": "Auditor",
+          "method": "POST",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0/clear",
+          "status": 403,
+          "id": "6bd50fd6-9e34-474d-aed5-c9927afe7c64",
+          "code": "FORBIDDEN"
+        },
+        {
+          "step": "CMP-21-read-real-before",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0",
+          "status": 200,
+          "id": "ac24f2bf-526a-4461-a6b1-f1dae8469661"
+        },
+        {
+          "step": "CMP-21-ack-owned-alarm",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0/acknowledge",
+          "status": 200,
+          "id": "7ce8ee1c-6e10-4207-a594-b0ced1139b2f"
+        },
+        {
+          "step": "CMP-21-clear-owned-alarm",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0/clear",
+          "status": 200,
+          "id": "a3e76fe1-9308-41c7-8a9c-18e1ed40f818"
+        },
+        {
+          "step": "CMP-21-own-cleared-alert-list",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "b19400ea-583c-4da7-aec4-a3c147286cde"
+        },
+        {
+          "step": "CMP-21-read-real-cleared-at",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0",
+          "status": 200,
+          "id": "17e0fb2b-8c11-400b-9aa5-bd3024e1bec2"
+        },
+        {
+          "step": "CMP-21-no-auditor-write",
+          "role": "Auditor",
+          "method": "POST",
+          "path": "alarms/4f94593a-8877-43ce-9a59-dd31440dc3d0/clear",
+          "status": 403,
+          "id": "81769b8d-255f-4e5d-9707-6e299ccff2c1",
+          "code": "FORBIDDEN"
+        },
+        {
+          "step": "CMP-21-test-device-image-session",
+          "method": "POST",
+          "path": "/api/v1/device/media/upload-sessions",
+          "status": 201,
+          "id": "98f6c55a-2d10-4e38-b53f-64504bd174b6"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "35fb8386-0632-401e-a806-1089748e3d74"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "65615d11-7860-430d-824e-5b79ababe24a"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "ddedb88a-d832-4f9c-ae66-873103284e7d"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "548507db-2c27-478c-92a5-692b058839f1"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "55f478e6-8641-4e6c-9771-2143b5eadb50"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "ec561d6a-66da-48af-88d0-d6a74f00e6e6"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "0e224de8-ac5e-4877-95c6-8c76c1a9147a"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "c638cc93-1bd1-4d0e-aa11-4ff80f3b1d53"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "a89f1c40-f0e3-436d-b142-62001aace3e6"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "e1e78bf1-30b6-4223-9a02-5c3179a261a5"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "232793dd-ba20-43e4-aead-53f9033da5dc"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "dddbf877-043c-4b95-96ea-ba503ca31aa1"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "bce6528b-350c-4d91-a070-83c18661e1cd"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "2996925e-920e-46e5-929d-7e1928ff7eb3"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "9deb1314-e3d7-47c3-bb2e-cc5c1243f9df"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "587ddbd0-455e-4d54-a2e5-993290c6de37"
+        },
+        {
+          "step": "CMP-21-own-alarm-image-readback",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "6e27503a-1baf-43c2-bc4e-bc0b758d307b"
+        },
+        {
+          "step": "CMP-21-find-own-real-alarm",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "a8d64edb-5a24-4054-b8be-d636bfab37d1"
+        },
+        {
+          "step": "CMP-21-find-owned-real-image",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "media",
+          "status": 200,
+          "id": "16bd5fba-1eaa-44fa-88ea-16c0929e6c2b"
+        },
+        {
+          "step": "CMP-21-own-alarm-list",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms",
+          "status": 200,
+          "id": "6b2ab551-dc60-4fb3-972f-06af26dec3e1"
+        },
+        {
+          "step": "CMP-21-own-media-list",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "media",
+          "status": 200,
+          "id": "d8d586bc-7dc1-4c39-b3fe-a975b4f2d20a"
+        },
+        {
+          "step": "CMP-21-own-alarm-detail-link",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "alarms/168e01ab-aba6-4723-a651-e48a67b36507",
+          "status": 200,
+          "id": "59732079-8c49-4d86-a15e-30be66622e3b"
+        },
+        {
+          "step": "CMP-21-foreign-detail-denied",
+          "role": "CustomerViewer",
+          "method": "GET",
+          "path": "alarms/168e01ab-aba6-4723-a651-e48a67b36507",
+          "status": 404,
+          "id": "646d0c70-6d56-4813-a912-1047780b4019",
+          "code": "NOT_FOUND"
+        },
+        {
+          "step": "CMP-21-foreign-evidence-auth-denied",
+          "role": "CustomerViewer",
+          "method": "GET",
+          "path": "media/af1e0a17-e201-4343-9315-cbed3a928664/download-url",
+          "status": 404,
+          "id": "2706e1ff-a3e0-4218-ab8a-75af8bf624dc",
+          "code": "NOT_FOUND"
+        },
+        {
+          "step": "CMP-21-authorized-alert-image",
+          "method": "GET",
+          "path": "/api/v1/admin/media/af1e0a17-e201-4343-9315-cbed3a928664/download-url",
+          "status": 200,
+          "id": "00ea2295-444d-4260-9777-c0bc9a68b623"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-22",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "客户窄屏按设备、类型查询已修复的实际媒体列表，返回四条自有样本且无法跳出固定租户。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "已修复媒体的客户真实筛选与范围",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "客户窄屏按设备、类型查询已修复的实际媒体列表，返回四条自有样本且无法跳出固定租户。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-22-owned-real-media",
+          "method": "GET",
+          "path": "/api/v1/admin/media",
+          "status": 200,
+          "id": "75f2e128-06bb-40c1-b960-638554330dde"
+        },
+        {
+          "step": "CMP-22-other-tenant-filter",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "media",
+          "status": 403,
+          "id": "34ff9688-4756-43b6-9e65-0c84cb618db1",
+          "code": "FORBIDDEN"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-23",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "保留当前候选九项通过的同 SHA 发布回执。本轮没有更换该媒体样本或复写通过证据。",
+      "attempts": [],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-24",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实 UTC 区间、周统计和估算说明已核对。实际导出保留查询区间与固定客户并创建作业。",
+      "attempts": [
+        {
+          "batch": "ESG 实际分页和导出",
+          "label": "概览真实日期、时区、粒度与导出",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "真实 UTC 区间、周统计和估算说明已核对。实际导出保留查询区间与固定客户并创建作业。"
+          ]
+        },
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "实际 ESG 汇总按日期、粒度和显示时区提交",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "客户 ESG 汇总展示估算说明，UTC 和日期实际传入请求且固定租户。"
+          ],
+          "remaining": "页面概览导出按钮在此用例未触发。"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-24-real-summary-in-utc",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/daily-summary",
+          "status": 200,
+          "id": "f9cc3d5e-ba6c-4fe0-835a-118f910c3d5d"
+        },
+        {
+          "step": "CMP-24-real-overview-export",
+          "method": "POST",
+          "path": "/api/v1/admin/esg/exports",
+          "status": 202,
+          "id": "34daf2b0-98fc-451a-849d-2358620a865b"
+        },
+        {
+          "step": "CMP-24-actual-summary",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/daily-summary",
+          "status": 200,
+          "id": "8b8f92f4-68f2-464a-94e5-192fe69c52e8"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-25",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "两条真实 MQTT 报告产生分页，日期错误重置后查询、导出和重选均验证固定租户与游标。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "真实 ESG 重置、导出及重新查询",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "locator.selectOption: Timeout 16000ms exceeded. Call log:   - waiting for getByTestId('esg-device-filter').locator('#scope-device')     - locator resolved to <select disabled id=\"scope-device\">…</select>   - attempting select option action     2 × waiting for element to be visible and enabled"
+        },
+        {
+          "batch": "P1 三项复查",
+          "label": "真实 ESG 重置、导出及重新查询",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "成功应用日期和设备、构造日期错误、重置并导出。真实请求只保留固定客户。重选设备之后从第一页查询。"
+          ],
+          "remaining": "租户实际 ESG 报告未形成可操作游标，应用后第二页再重置仍未执行。"
+        },
+        {
+          "batch": "ESG 实际分页和导出",
+          "label": "设备 ESG 真实组合游标、重置和导出",
+          "role": "CustomerAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "两条本轮专用真实 MQTT 报告。把测试页大小限制为 1 后实际读取第二页，再重置日期、范围、错误及游标。真实导出保持客户，重选从首个请求开始。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-25-apply-with-device",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/reports",
+          "status": 200,
+          "id": "96c2c3c7-8082-4a63-b607-d2fc85a61a61"
+        },
+        {
+          "step": "CMP-25-reset-reports",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/reports",
+          "status": 200,
+          "id": "86d2bb75-6834-40f3-a7a0-e6c401d903ce"
+        },
+        {
+          "step": "CMP-25-reset-export",
+          "method": "POST",
+          "path": "/api/v1/admin/esg/exports",
+          "status": 202,
+          "id": "bbbec390-9af3-45e7-9822-8c3e87006c62"
+        },
+        {
+          "step": "CMP-25-reapply-actual",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/reports",
+          "status": 200,
+          "id": "6e13ed33-965a-479d-a5a3-4f617ad66286"
+        },
+        {
+          "step": "CMP-25-own-report-samples",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "esg/reports",
+          "status": 200,
+          "id": "0eb4434a-901f-4df7-a516-a1ee64809450"
+        },
+        {
+          "step": "CMP-25-own-report-samples",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "esg/reports",
+          "status": 200,
+          "id": "e9eab636-a227-4592-948b-21db1871ab99"
+        },
+        {
+          "step": "CMP-25-application-read-second-page",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/reports",
+          "status": 200,
+          "id": "5c9bb3db-f190-4f01-8040-4132cfdb9620"
+        },
+        {
+          "step": "CMP-25-reset-first-page-without-old-cursor",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/reports",
+          "status": 200,
+          "id": "4e066753-4737-4115-8160-c3a1eccb1924"
+        },
+        {
+          "step": "CMP-25-reset-actual-export",
+          "method": "POST",
+          "path": "/api/v1/admin/esg/exports",
+          "status": 202,
+          "id": "b5ba7434-dfff-471e-81e8-2664a3ee03c6"
+        },
+        {
+          "step": "CMP-25-reapply-first-page",
+          "method": "GET",
+          "path": "/api/v1/admin/esg/reports",
+          "status": 200,
+          "id": "14228dba-be55-482c-8524-6bd612899b3b"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-26",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "375/768/1440 控件独立无交叠，合约筛选实际提交专用客户。",
+      "attempts": [
+        {
+          "batch": "P1 同候选锚点",
+          "label": "合约客户筛选动作双语且实际参数一致",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "375/768/1440 控件独立无交叠，合约筛选实际提交专用客户。"
+          ]
+        },
+        {
+          "batch": "P1 同候选锚点",
+          "label": "合约客户筛选动作双语且实际参数一致",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "375/768/1440 控件独立无交叠，合约筛选实际提交专用客户。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-26-filter-contract-actual",
+          "method": "GET",
+          "path": "/api/v1/admin/contracts",
+          "status": 200,
+          "id": "938169cd-27bf-4b0f-9b8d-57dd7c2c1d82"
+        },
+        {
+          "step": "CMP-26-filter-contract-actual",
+          "method": "GET",
+          "path": "/api/v1/admin/contracts",
+          "status": 200,
+          "id": "6343762e-ec16-4f19-b0b6-b14c427c0df3"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-27",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实关联撤销后仍能查到 ENDED 历史。原设备独立 License 继续有效，合约历史区域可见。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "真实合约关联历史解绑和独立 License 保持",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "The expression evaluated to a falsy value:   assert(after.some(x=>x.deviceId===devA.id&&x.unboundAt))"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "自有合同已解绑记录与授权独立",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "真实关联撤销后仍能查到 ENDED 历史。原设备独立 License 继续有效，合约历史区域可见。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-27-read-owned-associations",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/associations",
+          "status": 200,
+          "id": "6400ebe5-27f3-4799-97d4-51a1fc68efce"
+        },
+        {
+          "step": "CMP-27-independent-license-before",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "licenses/d2180c3a-97aa-44fe-b29c-65b4272719db",
+          "status": 200,
+          "id": "f9527575-d501-4196-8109-b303595a36f4"
+        },
+        {
+          "step": "CMP-27-unbind-only-owned-devices",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/devices/unbind",
+          "status": 200,
+          "id": "3f63fa41-9fcb-4ce3-8684-6b024f59630a"
+        },
+        {
+          "step": "CMP-27-read-unbound-history",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/associations",
+          "status": 200,
+          "id": "d1f3d8c5-3ec7-49f9-aa30-b54b8c3a6a3f"
+        },
+        {
+          "step": "CMP-27-ended-association-readback",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/associations",
+          "status": 200,
+          "id": "c1f679da-4d11-40e0-b1f0-de11b8cf1124"
+        },
+        {
+          "step": "CMP-27-actual-license-retained",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "licenses/d2180c3a-97aa-44fe-b29c-65b4272719db",
+          "status": 200,
+          "id": "db6790cd-7358-4494-90b8-7e3cb039d2e3"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-28",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实慢响应、错误与空候选都可退出，焦点回原按钮，关闭不写入。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "合约关联候选慢响应、请求失败和退出",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "expect(locator).toBeVisible() failed Locator: getByTestId('contract-bind-form').getByRole('alert') Expected: visible Timeout: 16000ms Error: element(s) not found Call log:"
+        },
+        {
+          "batch": "P1 三项复查",
+          "label": "合约关联候选慢响应、请求失败和退出",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "真实候选响应被延迟时可关闭，迟到响应不重开。中止候选加载后 Esc 退出并焦点回原按钮，重开读回真实候选。",
+            "关联提交的浏览器连接中止时仍可退出，读取合约版本保持一致。"
+          ],
+          "remaining": "本次真实合约存在可用候选，空候选退出等待现有受控关联素材。"
+        },
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "真实空候选关闭且零写",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "重叠合约上真实候选为空。可见关闭和 Esc 均退出并恢复焦点，零关联写入。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-28-ensure-owned-contract",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c",
+          "status": 200,
+          "id": "300e24ad-0ad3-46cc-bb49-d138097bb32c"
+        },
+        {
+          "step": "CMP-28-late-candidates",
+          "method": "GET",
+          "path": "/api/v1/admin/contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/available-devices",
+          "status": 200,
+          "id": "7df7c52d-4c00-44bd-bde1-867662ebefde"
+        },
+        {
+          "step": "CMP-28-ensure-owned-contract",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c",
+          "status": 200,
+          "id": "0b26db67-ce06-432a-b480-33a2b1c4c766"
+        },
+        {
+          "step": "CMP-28-late-candidates",
+          "method": "GET",
+          "path": "/api/v1/admin/contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/available-devices",
+          "status": 200,
+          "id": "8b75bd10-89ec-400e-a417-3ca8f0d6ab03"
+        },
+        {
+          "step": "CMP-28-current-candidates",
+          "method": "GET",
+          "path": "/api/v1/admin/contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/available-devices",
+          "status": 200,
+          "id": "4dfdfbbb-abae-459d-84a8-ea68ddcaacba"
+        },
+        {
+          "step": "CMP-28-contract-readback",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c",
+          "status": 200,
+          "id": "5875e650-9b6e-47e3-9f4a-f6926c4e2cef"
+        },
+        {
+          "step": "CMP-28-current-owned-contract",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c",
+          "status": 200,
+          "id": "d0b2397f-81a2-406f-a5f5-ed8a305a6c1b"
+        },
+        {
+          "step": "CMP-28-actual-eligible-device-set",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/available-devices",
+          "status": 200,
+          "id": "eb20b48e-94e8-4805-a2bd-84a9c2c8fb99"
+        },
+        {
+          "step": "CMP-28-check-owned-candidate",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/6fd0746f-4a27-48bc-bd15-99192fdbbdde",
+          "status": 200,
+          "id": "682a0856-de79-427d-a26a-14de2c303e55"
+        },
+        {
+          "step": "CMP-28-check-owned-candidate",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/ce37383a-f32a-4ce2-b30b-d95d10b9c338",
+          "status": 200,
+          "id": "e62ba1d7-3d1a-416f-9bc4-7a7aca834cb5"
+        },
+        {
+          "step": "CMP-28-link-owned-for-empty-test",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "contracts/84da9d47-6b33-4d47-a4ee-e129de39897c/devices/bind",
+          "status": 201,
+          "id": "57723a79-7887-490f-a87f-ef3ca8c6144f"
+        },
+        {
+          "step": "CMP-28-new-overlap-owned",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "contracts",
+          "status": 201,
+          "id": "1ae3d0f6-3a4a-4869-844d-f4406ecb4d83"
+        },
+        {
+          "step": "CMP-28-activate-own-overlap",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "contracts/148b2d3e-5e74-41c7-9b91-2d57e0e4960c/activate",
+          "status": 200,
+          "id": "f6ce2503-2887-4a87-9cec-4dc63f573132"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-29",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。",
+      "attempts": [
+        {
+          "batch": "P1 同候选锚点",
+          "label": "关闭取消零写及真实原因和版本保存",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-29-find-owned-empty-contract",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts",
+          "status": 200,
+          "id": "0b13bda1-85c7-4849-ac0b-949028c9bd7d"
+        },
+        {
+          "step": "CMP-29-owned-contract-versioned-write",
+          "method": "PATCH",
+          "path": "/api/v1/admin/contracts/148b2d3e-5e74-41c7-9b91-2d57e0e4960c",
+          "status": 200,
+          "id": "bd7d5dae-e49a-42f1-8c11-eced7dc40929",
+          "ifMatch": "2"
+        },
+        {
+          "step": "CMP-29-owned-contract-readback",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/148b2d3e-5e74-41c7-9b91-2d57e0e4960c",
+          "status": 200,
+          "id": "34babb85-8a23-468d-93c3-991a60a7df63"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-30",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。",
+      "attempts": [
+        {
+          "batch": "P1 同候选锚点",
+          "label": "关闭取消零写及真实原因和版本保存",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-30-find-owned-empty-contract",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts",
+          "status": 200,
+          "id": "f4cf761d-1ebc-496e-adb6-7b7542be6f56"
+        },
+        {
+          "step": "CMP-30-owned-contract-versioned-write",
+          "method": "POST",
+          "path": "/api/v1/admin/contracts/148b2d3e-5e74-41c7-9b91-2d57e0e4960c/renew",
+          "status": 200,
+          "id": "0e6c86b5-36e3-43e5-bb1b-97880590b754",
+          "ifMatch": "3"
+        },
+        {
+          "step": "CMP-30-owned-contract-readback",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "contracts/148b2d3e-5e74-41c7-9b91-2d57e0e4960c",
+          "status": 200,
+          "id": "536e9b2d-6543-45ad-a405-95c6ca0aa332"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-31",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "按现有状态机使用专用即将到期授权。审计员真实拒写，平台操作员实际续期并产生新版本。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "实际授权可写与审计只读",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "CMP-31-platform-renew-owned-license HTTP 409 DEVICE_STATE_NOT_ALLOWED"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "平台续期与审计员只读",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "按现有状态机使用专用即将到期授权。审计员真实拒写，平台操作员实际续期并产生新版本。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-31-owned-license-platform",
+          "role": "PlatformOperator",
+          "method": "GET",
+          "path": "licenses/d2180c3a-97aa-44fe-b29c-65b4272719db",
+          "status": 200,
+          "id": "66e16c7e-4faf-4c7f-94b0-ae3a82087878"
+        },
+        {
+          "step": "CMP-31-auditor-license-write-denied",
+          "role": "Auditor",
+          "method": "POST",
+          "path": "licenses/d2180c3a-97aa-44fe-b29c-65b4272719db/renew",
+          "status": 403,
+          "id": "38cbe1cb-5407-45a6-a336-bb711330e9d0",
+          "code": "FORBIDDEN"
+        },
+        {
+          "step": "CMP-31-platform-renew-owned-license",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "licenses/d2180c3a-97aa-44fe-b29c-65b4272719db/renew",
+          "status": 409,
+          "id": "471d2bd9-4144-40d4-8c75-8c8cb093d125",
+          "code": "DEVICE_STATE_NOT_ALLOWED"
+        },
+        {
+          "step": "CMP-31-verify-only-owned-license",
+          "role": "PlatformOperator",
+          "method": "GET",
+          "path": "licenses/921f34d3-858d-4ad9-950a-097c4e46ac7d",
+          "status": 200,
+          "id": "8f753fad-a4c3-4c14-ba0b-efa61162a152"
+        },
+        {
+          "step": "CMP-31-eligible-at-test-time",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "licenses/921f34d3-858d-4ad9-950a-097c4e46ac7d/evaluate",
+          "status": 200,
+          "id": "0fdfc621-112f-4fea-8030-07143643fd27"
+        },
+        {
+          "step": "CMP-31-expiring-readback",
+          "role": "PlatformOperator",
+          "method": "GET",
+          "path": "licenses/921f34d3-858d-4ad9-950a-097c4e46ac7d",
+          "status": 200,
+          "id": "b9d3e5be-979d-4832-bf70-e837e8fac9d8"
+        },
+        {
+          "step": "CMP-31-auditor-denied",
+          "role": "Auditor",
+          "method": "POST",
+          "path": "licenses/921f34d3-858d-4ad9-950a-097c4e46ac7d/renew",
+          "status": 403,
+          "id": "cde21ea4-eef8-43a4-ab1a-db57d1085a9b",
+          "code": "FORBIDDEN"
+        },
+        {
+          "step": "CMP-31-platform-real-renew",
+          "role": "PlatformOperator",
+          "method": "POST",
+          "path": "licenses/921f34d3-858d-4ad9-950a-097c4e46ac7d/renew",
+          "status": 200,
+          "id": "d3dbd441-1f60-4d35-a1a6-801035d78585"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-32",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "仅对额外专用模拟器的 License 模拟评估时间，状态过期及历史实际读回。详情展示独立区域，跨租户拒绝。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "独立 License 权限、历史和写入读回",
+          "role": "Auditor",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "The expression evaluated to a falsy value:   assert(view.deviceId===devA.id&&view.entitlements.includes('REMOTE_CONTROL'))"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "专用过期授权详情与权限历史",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "仅对额外专用模拟器的 License 模拟评估时间，状态过期及历史实际读回。详情展示独立区域，跨租户拒绝。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-32-auditor-own-license",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "licenses/d2180c3a-97aa-44fe-b29c-65b4272719db",
+          "status": 200,
+          "id": "d34fb462-a15e-41b6-a3d8-d6d916966e3e"
+        },
+        {
+          "step": "CMP-32-verify-disposable-license",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "licenses/1c10742a-fbdf-43ff-9440-85e3ce7fb20a",
+          "status": 200,
+          "id": "f18d46b2-db0e-4c98-9c3a-b06732401671"
+        },
+        {
+          "step": "CMP-32-explicit-expiry-clock-only-owned",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "licenses/1c10742a-fbdf-43ff-9440-85e3ce7fb20a/evaluate",
+          "status": 200,
+          "id": "19101888-57ca-4937-a59c-0aeee956994f"
+        },
+        {
+          "step": "CMP-32-actual-expired-readback",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "licenses/1c10742a-fbdf-43ff-9440-85e3ce7fb20a",
+          "status": 200,
+          "id": "b4eeb42a-5c70-4c12-8823-9acd8b41f45a"
+        },
+        {
+          "step": "CMP-32-expired-license-history",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "licenses/1c10742a-fbdf-43ff-9440-85e3ce7fb20a/history",
+          "status": 200,
+          "id": "07812808-5c25-42ff-946f-7c7787336aee"
+        },
+        {
+          "step": "CMP-32-cross-customer-denied",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "licenses/1c10742a-fbdf-43ff-9440-85e3ce7fb20a",
+          "status": 403,
+          "id": "3be1ec72-621d-4f13-a04c-6fb7e7b30fae",
+          "code": "FORBIDDEN"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-33",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "同值保存、实际请求体版本冲突、非法输入与关闭返回均通过。审计记录一次测试导致的同值版本递增。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "共享设置 stale If-Match 及取消退出",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "Expected values to be strictly equal: 200 !== 409"
+        },
+        {
+          "batch": "P1 三项复查",
+          "label": "共享设置 stale If-Match 及取消退出",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "第一轮测试使用原值提交，设置协议以请求体 version 为准。审计确认实际值保持一致，版本增加一次。",
+            "非法表单可取消。真实服务拒绝请求体中的不匹配版本，弹窗仍可见关闭并返回焦点，读回配置和版本一致。"
+          ],
+          "remaining": "共享全局设置的同值保存与冲突已验证。跨租户运行时数值变化仍需项目方批准的窗口。"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-33-read-settings",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/alarm.thresholds",
+          "status": 200,
+          "id": "ebb7abf6-be1c-4e89-a84a-d9a5d1eb29fc"
+        },
+        {
+          "step": "CMP-33-real-stale-if-match",
+          "method": "PUT",
+          "path": "/api/v1/admin/settings/alarm.thresholds",
+          "status": 200,
+          "id": "6034a100-f398-47aa-bb37-a27b53f70e6c",
+          "ifMatch": "900000002"
+        },
+        {
+          "step": "CMP-33-prior-same-value-audit",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs",
+          "status": 200,
+          "id": "418b52ff-f482-4491-a72b-f578e349a38d"
+        },
+        {
+          "step": "CMP-33-prior-same-value-audit-detail",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs/f2eb1201-78cd-4e54-8c56-25d5f36061dc",
+          "status": 200,
+          "id": "4b29c9d8-0534-43fd-86ea-e8d8e0eaa20d"
+        },
+        {
+          "step": "CMP-33-read-settings",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/alarm.thresholds",
+          "status": 200,
+          "id": "2bde4d0a-80fd-4d03-87a7-33db93362ccd"
+        },
+        {
+          "step": "CMP-33-real-stale-if-match",
+          "method": "PUT",
+          "path": "/api/v1/admin/settings/alarm.thresholds",
+          "status": 409,
+          "id": "d664a979-04cd-4c3a-9d4c-7ef50378ed9c",
+          "code": "VERSION_CONFLICT"
+        },
+        {
+          "step": "CMP-33-read-unchanged-shared-settings",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/alarm.thresholds",
+          "status": 200,
+          "id": "b7597c35-1db2-438c-a96f-de808a76f833"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-34",
+      "priority": "P2/P3",
+      "result": "NOT_RUN",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "PARTIAL_TARGET",
+      "observation": "四项真实设置的状态与消费方已核对，共享设置缺耗材专用阈值。 实际 Cognito TTL 到期前后均验证退役与重新认证拒绝。",
+      "remaining": "真实耗材生产者未接入本轮样本，实际设置阈值的运行时端到端仍待覆盖。",
+      "disposition": "OPEN",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "四项设置用途中英文与真实配置消费者",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "真实 API 四项设置及 UI 消费方、可编辑性一致。两个 STORED_ONLY 保持只存储说明。"
+          ],
+          "remaining": "FE-18 告警着色的数据值分界与命令 TTL 的真实消费场景尚未独立造数。"
+        },
+        {
+          "batch": "耗材与命令时间窗首轮",
+          "label": "FE-18 着色与真实 Cognito 确认 TTL",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "Cannot read properties of undefined (reading 'warning')"
+        },
+        {
+          "batch": "耗材与命令时间窗复查",
+          "label": "FE-18 着色与真实 Cognito 确认 TTL",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "expect(locator).toContainText(expected) failed Locator: getByTestId('consumable-threshold-source') Expected substring: \"默认\" Received string:    \"耗材展示阈值使用明确回退值 10%/30%（原因：MISSING）。\" Timeout: 18000ms Call log:"
+        },
+        {
+          "batch": "真实 TTL 与前端默认档",
+          "label": "FE-18 着色与真实 Cognito 确认 TTL",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "共享设置尚缺耗材专用阈值，候选前端实际进入默认分档路径。浏览器合成读数 9% 与 20% 分别显示低和中。",
+            "同一真实 Cognito 会话在实际时间窗内和到期后分别命中退役 409 与重新认证 403。服务端阻止了两次请求。"
+          ],
+          "remaining": "FE-18 数值为浏览器合成百分比，真实耗材读数没有已启用的生产者。"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-34-real-settings",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings",
+          "status": 200,
+          "id": "5f82966c-9f56-4cc8-98ce-f7e108cb6f74"
+        },
+        {
+          "step": "CMP-34-real-threshold-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/alarm.thresholds",
+          "status": 200,
+          "id": "3af5662f-8c6d-4876-bd10-7d5482ba5488"
+        },
+        {
+          "step": "CMP-34-real-auth-window-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/command.confirmation",
+          "status": 200,
+          "id": "024ae585-61f7-47ec-942f-0498fd74e747"
+        },
+        {
+          "step": "CMP-34-real-threshold-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/alarm.thresholds",
+          "status": 200,
+          "id": "3bf29acb-18b4-4782-aa3a-ec6af04226f4"
+        },
+        {
+          "step": "CMP-34-real-auth-window-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/command.confirmation",
+          "status": 200,
+          "id": "8c7fc304-7a4a-4e65-adcd-6a6a537fa1db"
+        },
+        {
+          "step": "CMP-34-retired-outer-guard",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0",
+          "status": 200,
+          "id": "d9cd5214-83aa-4a5f-9661-1ae27f1c1f1f"
+        },
+        {
+          "step": "CMP-34-fresh-auth-reaches-retirement-guard",
+          "role": "OwnedBusinessUser",
+          "method": "POST",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0/commands",
+          "status": 409,
+          "id": "24ea2429-27b3-4d80-9407-2df98a7f1ce3",
+          "code": "DEVICE_STATE_NOT_ALLOWED"
+        },
+        {
+          "step": "CMP-34-real-threshold-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/alarm.thresholds",
+          "status": 200,
+          "id": "a4a55e59-d8f5-45bc-9ec1-a18b3df8d3d9"
+        },
+        {
+          "step": "CMP-34-real-auth-window-configuration",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "settings/command.confirmation",
+          "status": 200,
+          "id": "fabfec0d-9b01-4ad0-a811-b60066e9c618"
+        },
+        {
+          "step": "CMP-34-retired-outer-guard",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0",
+          "status": 200,
+          "id": "2716c5cf-ff60-4f65-84da-7f2ca51b631a"
+        },
+        {
+          "step": "CMP-34-fresh-auth-reaches-retirement-guard",
+          "role": "OwnedBusinessUser",
+          "method": "POST",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0/commands",
+          "status": 409,
+          "id": "232ac48e-bfe5-4db1-a988-32c94d085724",
+          "code": "DEVICE_STATE_NOT_ALLOWED"
+        },
+        {
+          "step": "CMP-34-expired-real-auth-window",
+          "role": "OwnedBusinessUser",
+          "method": "POST",
+          "path": "devices/1a622434-5693-403c-8943-ec73249ea1b0/commands",
+          "status": 403,
+          "id": "60301d56-6af6-4864-b6cd-c5ce6f58fd54",
+          "code": "FORBIDDEN"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-35",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "窄屏专用长业务用户表格可到达操作列，键盘打开后能读取完整显示名、地址及客户范围。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "平台用户长显示名、完整值和窄屏操作列",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "窄屏专用长业务用户表格可到达操作列，键盘打开后能读取完整显示名、地址及客户范围。"
+          ]
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-36",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "专用业务用户的嵌套键盘、关闭、取消零写及真实权限写入和审计全部通过，已恢复为只读。",
+      "attempts": [
+        {
+          "batch": "专用业务用户角色",
+          "label": "专用业务用户嵌套确认、写入、角色审计与恢复",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "Tab 与 Shift+Tab 留在最上层，Esc 和确认取消只关闭确认框。表单取消与可见关闭恢复原触发焦点，无 PUT，重开读回原角色。",
+            "确认提交产生一次权限范围内的 PUT，角色读回为 CustomerAdmin，并按自有业务用户 ID 找到角色修改审计。",
+            "已将专用用户恢复为只读 CustomerViewer，保留供后续账号展示走查。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-36-user-read",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "users",
+          "status": 200,
+          "id": "41abb5e7-324f-4c21-a23c-ee7be4b9b5b8"
+        },
+        {
+          "step": "CMP-36-user-read",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "users",
+          "status": 200,
+          "id": "48c016a4-85bb-4a9f-8dae-fa926863cc19"
+        },
+        {
+          "step": "CMP-36-own-role-write",
+          "method": "PUT",
+          "path": "/api/v1/admin/users/2bece641-6874-43cd-adbf-d2959e7ad4b8/roles",
+          "status": 200,
+          "id": "83b1fb26-e611-42d7-a142-ecb315af1df2"
+        },
+        {
+          "step": "CMP-36-user-read",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "users",
+          "status": 200,
+          "id": "320bda07-c24f-4df3-bc7d-55b6e07b3978"
+        },
+        {
+          "step": "CMP-36-role-audit",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs",
+          "status": 200,
+          "id": "3bf3f3f3-bd14-43bc-949a-bdc07a49a22b"
+        },
+        {
+          "step": "CMP-36-restore-least-privilege",
+          "role": "PlatformSuperAdmin",
+          "method": "PUT",
+          "path": "users/2bece641-6874-43cd-adbf-d2959e7ad4b8/roles",
+          "status": 200,
+          "id": "22bbca0e-167d-4f5b-b71c-e5813390dd44"
+        },
+        {
+          "step": "CMP-36-user-read",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "users",
+          "status": 200,
+          "id": "227aaf3a-b150-4c08-8838-f3fd535404e2"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-37",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "实际矩阵查找读权限、按角色过滤且只读，五角色值符合共享 RBAC。",
+      "attempts": [
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "共享权限矩阵五角色实际只读",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际矩阵查找读权限、按角色过滤且只读，五角色值符合共享 RBAC。"
+          ]
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-38",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实设备首次 Sync 获得专用账号，第二次带已提供快照时间读回 ACKNOWLEDGED。可区分通知与快照确认；无可信应用回执，仍显示未报告。",
+      "attempts": [
+        {
+          "batch": "其余配置、合同与权限",
+          "label": "设备用户账号、分配和真实 Sync",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PARTIAL",
+          "checks": [
+            "账号、分配和实际应用确认区域从真实设备用户读取。专用设备真实执行 Sync，外租户拒绝。"
+          ],
+          "remaining": "未形成与该设备用户版本匹配的可信应用回执。"
+        },
+        {
+          "batch": "真实设备用户确认、设备或版本详情",
+          "label": "通知、真实 Sync 提供与确认读回",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "真实设备首次 Sync 获得专用账号，第二次带已提供快照时间读回 ACKNOWLEDGED。可区分通知与快照确认；无可信应用回执，仍显示未报告。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-38-own-device-user",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "device-users/be4cffe9-2527-4253-b910-901a833e36f8",
+          "status": 200,
+          "id": "3d2bfbe1-3abc-4e8e-b0da-873196fb1af9"
+        },
+        {
+          "step": "CMP-38-own-mtls-device-sync",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "84fda589-bd6c-46ff-bd16-0d3440b9695b"
+        },
+        {
+          "step": "CMP-38-other-tenant-denied",
+          "role": "CustomerViewer",
+          "method": "GET",
+          "path": "device-users/be4cffe9-2527-4253-b910-901a833e36f8",
+          "status": 404,
+          "id": "24b1b525-f4d1-40b8-9d7a-3094372ffb41",
+          "code": "NOT_FOUND"
+        },
+        {
+          "step": "CMP-38-owned-business-profile",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "device-users/be4cffe9-2527-4253-b910-901a833e36f8",
+          "status": 200,
+          "id": "1343d6a2-dccd-4575-ad2a-2df6107936c5"
+        },
+        {
+          "step": "CMP-38-first-mtls-snapshot",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "6ea1ddd7-07a6-4208-95c1-5ce20b6977c7"
+        },
+        {
+          "step": "CMP-38-mtls-acknowledge-snapshot",
+          "method": "POST",
+          "path": "/api/v1/device/sync",
+          "status": 200,
+          "id": "f830a26f-22a4-4803-bd6d-6ea262db3562"
+        },
+        {
+          "step": "CMP-38-device-user-actual-confirmation",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "device-users/be4cffe9-2527-4253-b910-901a833e36f8",
+          "status": 200,
+          "id": "96041305-28e0-4f14-a5b9-cee3f95b075c"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-39",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "页面请求中止时仍可取消，重开读回原值和版本。",
+      "attempts": [
+        {
+          "batch": "P1 首轮",
+          "label": "设备用户请求连接中止后退出",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "空原因禁用提交，连接失败后可退出。两次重开仍读回原值，取消与 Esc 返回焦点，实际服务读回版本一致。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-39-owned-user",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "device-users/be4cffe9-2527-4253-b910-901a833e36f8",
+          "status": 200,
+          "id": "5fd1309c-2919-4709-b288-64e377e3e28e"
+        },
+        {
+          "step": "CMP-39-readback-after-failure",
+          "role": "PlatformSuperAdmin",
+          "method": "GET",
+          "path": "device-users/be4cffe9-2527-4253-b910-901a833e36f8",
+          "status": 200,
+          "id": "9714b94c-6c95-4a4d-9316-eac729549cab"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-40",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "平台的客户、地区筛选命中真实长站点，独立新建入口可见，详情展示完整文本，客户越权读取被拒。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "平台按地区组合、长值及客户固定筛选",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "平台的客户、地区筛选命中真实长站点，独立新建入口可见，详情展示完整文本，客户越权读取被拒。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-40-list-owned-long-form",
+          "method": "GET",
+          "path": "/api/v1/admin/sites",
+          "status": 200,
+          "id": "f0dcd780-cbed-40ed-a13e-e5b83d0e403b"
+        },
+        {
+          "step": "CMP-40-cross-tenant",
+          "role": "CustomerAdmin",
+          "method": "GET",
+          "path": "sites/a5ed7c25-1b0b-42ff-aecb-78de0851056b",
+          "status": 403,
+          "id": "8e8fc762-1022-4ff0-a3ce-d9dfd7832604",
+          "code": "FORBIDDEN"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-41",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "筛选完成后再记录真实滚动，资料连接失败后重试并恢复原行与滚动。",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "站点详情失败重试、编辑与停用",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "FAIL",
+          "checks": [],
+          "failedAssertion": "Expected values to be strictly deep-equal: + actual - expected   {     x: 0, +   y: 196 -   y: 1330"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "真实站点读取错误、滚动恢复及受控编辑停用",
+          "role": "PlatformSuperAdmin",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PASS",
+          "checks": [
+            "筛选完成后再记录真实滚动，资料连接失败后重试并恢复原行与滚动。",
+            "只有本轮创建的空站点被编辑、停用。实际保存和停用携版本，停用必须有原因并读回。"
+          ]
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-41-wait-stable-filtered-list",
+          "method": "GET",
+          "path": "/api/v1/admin/sites",
+          "status": 200,
+          "id": "730dac4a-ed3a-4df5-9f35-9e015db020f0"
+        },
+        {
+          "step": "CMP-41-edit-owned-empty-site",
+          "method": "PATCH",
+          "path": "/api/v1/admin/sites/b7f1edf4-b3a7-4ad0-abda-f7edd921df0a",
+          "status": 200,
+          "id": "c46396a3-aea1-416d-9341-01b5fb9ca6e0",
+          "ifMatch": "1"
+        },
+        {
+          "step": "CMP-41-deactivate-owned-empty-site",
+          "method": "POST",
+          "path": "/api/v1/admin/sites/b7f1edf4-b3a7-4ad0-abda-f7edd921df0a/deactivate",
+          "status": 200,
+          "id": "6c9b91b7-33de-4cc6-834c-83562124c34b",
+          "ifMatch": "2"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-42",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。",
+      "attempts": [
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色真实设置、设备用户入口与访问边界",
+          "role": "PlatformSuperAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色真实设置、设备用户入口与访问边界",
+          "role": "PlatformOperator",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色真实设置、设备用户入口与访问边界",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色真实设置、设备用户入口与访问边界",
+          "role": "CustomerAdmin",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。"
+          ]
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "五角色真实设置、设备用户入口与访问边界",
+          "role": "CustomerViewer",
+          "lang": "en",
+          "viewportWidth": 1366,
+          "observedState": "PASS",
+          "checks": [
+            "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。"
+          ]
+        }
+      ],
+      "requests": []
+    },
+    {
+      "cmp": "CMP-43",
+      "priority": "P2/P3",
+      "result": "FAIL",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_FAIL",
+      "observation": "实际组合时间、动作、结果并测试长操作人字段及手动清空。",
+      "remaining": "审计筛选当前只有查询，缺可见的统一重置入口。",
+      "disposition": "BLOCKED",
+      "attempts": [
+        {
+          "batch": "其余账号、筛选和站点",
+          "label": "长对象过滤、结果和时间动作的真实组合",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "窄屏审计实际组合对象、动作、结果、时间筛选，命中受控事件。"
+          ],
+          "remaining": "超长操作人查询及重置待专项。"
+        },
+        {
+          "batch": "现行契约与稳定站点复查",
+          "label": "真实长过滤值发送与重置",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "真实发送长操作人条件。手动清空后再次提交，请求去掉筛选。"
+          ],
+          "remaining": "审计筛选栏只有查询入口。统一的可见重置操作仍需按走查口径确认。"
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "验收要求的独立重置入口",
+          "role": "Auditor",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "FAIL",
+          "checks": [
+            "在候选的 zh-CN 窄屏中，查询可见，筛选区域中可访问的重置按钮数量 0。"
+          ],
+          "failedAssertion": "FILTER_RESET_ACTION_MISSING"
+        },
+        {
+          "batch": "五角色、设置入口和筛选可访问性",
+          "label": "验收要求的独立重置入口",
+          "role": "Auditor",
+          "lang": "en",
+          "viewportWidth": 375,
+          "observedState": "FAIL",
+          "checks": [
+            "在候选的 en 窄屏中，查询可见，筛选区域中可访问的重置按钮数量 0。"
+          ],
+          "failedAssertion": "FILTER_RESET_ACTION_MISSING"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-43-owned-combined-query",
+          "method": "GET",
+          "path": "/api/v1/admin/audit-logs",
+          "status": 200,
+          "id": "d06dc016-5be6-4e06-bcaf-0f9355533d8b"
+        },
+        {
+          "step": "CMP-43-actual-long-filter",
+          "method": "GET",
+          "path": "/api/v1/admin/audit-logs",
+          "status": 200,
+          "id": "aeb40658-93f2-4d7a-9a24-76692300223d"
+        },
+        {
+          "step": "CMP-43-actual-reset",
+          "method": "GET",
+          "path": "/api/v1/admin/audit-logs",
+          "status": 200,
+          "id": "8def15af-deab-48ac-8735-86a2969abee0"
+        }
+      ]
+    },
+    {
+      "cmp": "CMP-44",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "coverage": "TARGET_PASS",
+      "observation": "真实审计响应及浏览器均遮蔽受控敏感值。真实长值、键盘和焦点通过，前后值独立双向滚动使用已脱敏的界面投影。",
+      "remaining": "嵌套敏感键使用本地回归验证，目标接口未单独注入可持久化嵌套键。",
+      "attempts": [
+        {
+          "batch": "P1 真实目标与退役",
+          "label": "真实长审计值滚动、键盘与无敏感字段",
+          "role": "Auditor",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "自有长站点记录的真实审计 JSON 能在窄屏容器横向滚动，Tab 受限，Esc 与可见关闭均恢复焦点。业务联系人不会出现在审计快照中。"
+          ],
+          "remaining": "发布前完整脱敏样本仍需拥有持久化嵌套敏感键及双纵向滚动数据，当前专用事件只能观察联系人未入快照。"
+        },
+        {
+          "batch": "真实脱敏与界面长内容投影",
+          "label": "真实合成站点值脱敏与长 JSON 双区键盘滚动",
+          "role": "Auditor",
+          "lang": "zh-CN",
+          "viewportWidth": 375,
+          "observedState": "PARTIAL",
+          "checks": [
+            "专用站点使用不具备认证能力的合成值，普通业务响应返回原值，真实审计详情只返回 [REDACTED]。现场弹窗只显示脱敏值，Escape 回到详情入口。",
+            "对同一活动前端仅替换测试详情响应，窄屏前后值两个独立区域均可键盘上下和横向滚动。"
+          ],
+          "remaining": "目标接口中嵌套敏感键专项仍缺可控的持久化输入。本机七项合成数据回归独立记录。",
+          "interpretation": "第一断言来自真实目标 API 和浏览器，第二断言对真实前端注入已脱敏的长 JSON。"
+        }
+      ],
+      "requests": [
+        {
+          "step": "CMP-44-create-owned-site",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "sites",
+          "status": 201,
+          "id": "0e9ed9e3-f0f8-4516-9224-d176f180df7a"
+        },
+        {
+          "step": "CMP-44-read-owned-audit",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs",
+          "status": 200,
+          "id": "afd2f365-eb5b-45a0-824c-db97915f0da4"
+        },
+        {
+          "step": "CMP-44-read-owned-audit-detail",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs/6911000f-5eeb-42d8-b4d5-2ec7138e339f",
+          "status": 200,
+          "id": "4fc19cca-772c-4f35-ae9a-c648680f419f"
+        },
+        {
+          "step": "CMP-44-create-own-redaction-sample",
+          "role": "PlatformSuperAdmin",
+          "method": "POST",
+          "path": "sites",
+          "status": 201,
+          "id": "f656d0a4-8627-4e35-824e-147e48a5e487"
+        },
+        {
+          "step": "CMP-44-find-own-redaction-audit",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs",
+          "status": 200,
+          "id": "d6c2c255-9d64-4f50-bb44-80c37e379b76"
+        },
+        {
+          "step": "CMP-44-read-real-sanitized-value",
+          "role": "Auditor",
+          "method": "GET",
+          "path": "audit-logs/4b7c0f1f-d854-4dc0-bcf7-aba8626cb6ee",
+          "status": 200,
+          "id": "4005d3e6-9f51-4573-980b-da627f793705"
+        }
+      ]
+    }
+  ]
+}

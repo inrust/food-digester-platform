@@ -1,0 +1,835 @@
+{
+  "task": "T12",
+  "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+  "environment": "shared-test",
+  "recordedAtUtc": "2026-11-19T10:37:14.587224+00:00",
+  "scopeStatus": "PASS",
+  "binding": {
+    "beforeUtc": "2026-11-19T10:32:27.712021+00:00",
+    "afterUtc": "2026-11-19T10:36:38.636030+00:00",
+    "frontendJob": "172",
+    "apiCodeSha256": "LKncHeZGcmWtOOxBJB/XN8vYixpsaU4YkNMHui4KL4M=",
+    "openApiSha256": "5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73",
+    "migrationRunnerBuildId": "fdp-test-migration-runner:073638c6-f1ef-4cb8-8f07-e41ed998a938",
+    "migrationCount": 45,
+    "unfinishedMigrationCount": 0,
+    "ci": "https://github.com/inrust/food-digester-platform/actions/runs/44496846767",
+    "deployment": "https://github.com/inrust/food-digester-platform/actions/runs/44496846721"
+  },
+  "scopeSignoff": {
+    "scopeStatus": "PASS",
+    "source": "用户在本次会话书面确认的 T12 范围",
+    "dateAsiaShanghai": "2026-11-19",
+    "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+    "environment": "shared-test",
+    "approval": "授权新建一个专用空租户并要求实测 CMP-02。CMP-34 接受合成分档，真实链路列为后续且保留 NOT_RUN。",
+    "formalSignatureRecord": "OPEN",
+    "formalSignatureNote": "签收材料记录本次会话的范围确认。项目方具名签字及归档由项目方登记。"
+  },
+  "summary": {
+    "agreedScope": {
+      "PASS": 44,
+      "FAIL": 0
+    },
+    "includesAcceptedBrowserFixtureItem": [
+      "CMP-34"
+    ],
+    "p1": {
+      "PASS": 15
+    },
+    "thisRunRechecked": [
+      "CMP-02"
+    ],
+    "releaseBlockersInAgreedScope": []
+  },
+  "followUps": [
+    {
+      "cmp": "CMP-34",
+      "item": "真实耗材采集、投影及实际自定义阈值全链路",
+      "result": "NOT_RUN",
+      "nextAcceptance": "接入可信耗材采集后，在获准的测试设置下读回真实剩余量与自定义阈值，再验证 FE-18 分档与设置恢复。",
+      "reason": "此次书面确认接受候选浏览器的中英文合成分档。"
+    },
+    {
+      "cmp": "CMP-23",
+      "item": "目标数据库查询计划",
+      "result": "NOT_RUN",
+      "previousReceipt": "target-reset-follow-up-d1afec5e.json"
+    },
+    {
+      "item": "目标回退演练",
+      "result": "NOT_RUN",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json"
+    },
+    {
+      "item": "D5 设备实际应用",
+      "result": "UNKNOWN",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json"
+    }
+  ],
+  "checks": {
+    "fullVerifyThisRun": "NOT_RUN",
+    "fullVerifySameShaHistorical": "PASS",
+    "fullVerifyReceipt": "target-reset-follow-up-d1afec5e.json"
+  },
+  "target": {
+    "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+    "environment": "shared-test",
+    "cmp": "CMP-02",
+    "startedAtUtc": "2026-11-19T10:34:54.614Z",
+    "result": "PASS",
+    "requests": [
+      {
+        "step": "create-dedicated-empty-tenant",
+        "method": "POST",
+        "endpoint": "customers",
+        "status": 201,
+        "requestId": "96fe609a-71b4-4b3a-b695-aca2bbcf9d28",
+        "queryKeys": []
+      },
+      {
+        "step": "read-back-owned-empty-tenant",
+        "method": "GET",
+        "endpoint": "customers/{fixtureId}",
+        "status": 200,
+        "requestId": "39d5179e-e544-4947-8f8b-48fdb220dc1a",
+        "queryKeys": []
+      },
+      {
+        "step": "platform-verify-empty-tenant",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "366fb3e1-d23a-41a8-be73-337ebaae53a1",
+        "queryKeys": [
+          "customerId",
+          "limit"
+        ]
+      },
+      {
+        "step": "platform-verify-existing-a-nonempty",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "9e0be1b3-8c6e-427c-aade-d6c3172fffd9",
+        "queryKeys": [
+          "customerId",
+          "limit"
+        ]
+      },
+      {
+        "step": "platform-verify-existing-b-nonempty",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "783da242-4807-4db2-8532-8b2083feb70e",
+        "queryKeys": [
+          "customerId",
+          "limit"
+        ]
+      },
+      {
+        "step": "create-only-suppressed-viewer",
+        "service": "Cognito",
+        "status": 200,
+        "requestId": "108c6c8a-6839-4f53-8939-7f727d493a1b"
+      },
+      {
+        "step": "read-new-viewer-tenant",
+        "service": "Cognito",
+        "status": 200,
+        "requestId": "f21c28b8-bd88-4cc3-84c9-45eafe14300c"
+      },
+      {
+        "step": "grant-read-only-customer-viewer",
+        "service": "Cognito",
+        "status": 200,
+        "requestId": "668534c5-cde6-42d1-90a0-d6ae5ba3e1ba"
+      },
+      {
+        "step": "activate-only-dedicated-viewer",
+        "service": "Cognito",
+        "status": 200,
+        "requestId": "a4f8d79d-fb0a-4a0e-aff2-1113bc1cba8f"
+      },
+      {
+        "step": "real-customer-zero-overview",
+        "method": "GET",
+        "endpoint": "dashboard/overview",
+        "status": 200,
+        "requestId": "2a21eff3-f3bb-469d-9a30-73d079f0be34",
+        "queryKeys": []
+      },
+      {
+        "step": "real-list-infers-session-tenant",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "a0212bf5-677f-411e-b3ff-dc69cf366f66",
+        "queryKeys": []
+      },
+      {
+        "step": "real-list-accepts-own-tenant",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "d636a96c-6d2f-49f9-8f79-2cf73cdc02cd",
+        "queryKeys": [
+          "customerId"
+        ]
+      },
+      {
+        "step": "reject-unrelated-tenant-A",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 403,
+        "requestId": "48f1c0d1-fb36-43da-97d1-ccd5916440ac",
+        "queryKeys": [
+          "customerId"
+        ],
+        "errorCode": "FORBIDDEN"
+      },
+      {
+        "step": "reject-unrelated-tenant-B",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 403,
+        "requestId": "b0a08338-ca6c-4cbb-bd59-ee6e7b0ac1f0",
+        "queryKeys": [
+          "customerId"
+        ],
+        "errorCode": "FORBIDDEN"
+      },
+      {
+        "step": "reject-controlled-foreign-device-detail",
+        "method": "GET",
+        "endpoint": "devices/{fixtureId}",
+        "status": 403,
+        "requestId": "464ebe12-298f-4be6-a5ac-87c8b3674a5c",
+        "queryKeys": [],
+        "errorCode": "FORBIDDEN"
+      },
+      {
+        "step": "browser-overview-zh-CN",
+        "method": "GET",
+        "endpoint": "dashboard/overview",
+        "status": 200,
+        "requestId": "47294eb4-aac2-493c-bafc-0ef1f409cf39",
+        "queryKeys": []
+      },
+      {
+        "step": "browser-list-link-carries-own-tenant-zh-CN",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "b34edeab-b242-4636-9bcd-46eba77be301",
+        "queryKeys": [
+          "customerId",
+          "limit"
+        ]
+      },
+      {
+        "step": "browser-owned-search-for-known-foreign-serial-zh-CN",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "1739403e-a5af-4727-8ba8-8cc5b5c1a128",
+        "queryKeys": [
+          "keyword",
+          "customerId",
+          "limit"
+        ]
+      },
+      {
+        "step": "browser-overview-en",
+        "method": "GET",
+        "endpoint": "dashboard/overview",
+        "status": 200,
+        "requestId": "ab67364e-6747-4603-a4c3-e2b316712836",
+        "queryKeys": []
+      },
+      {
+        "step": "browser-list-link-carries-own-tenant-en",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "5351dddc-e0cf-4274-aec9-afd7faf3b557",
+        "queryKeys": [
+          "customerId",
+          "limit"
+        ]
+      },
+      {
+        "step": "browser-owned-search-for-known-foreign-serial-en",
+        "method": "GET",
+        "endpoint": "devices",
+        "status": 200,
+        "requestId": "fcb55540-c16a-48c3-81de-3d886db1ae84",
+        "queryKeys": [
+          "keyword",
+          "customerId",
+          "limit"
+        ]
+      }
+    ],
+    "cases": [
+      {
+        "case": "新租户与真实 CustomerViewer 会话",
+        "result": "PASS",
+        "role": "CustomerViewer",
+        "notification": "SUPPRESS"
+      },
+      {
+        "case": "真实零台接口、显式和隐式租户范围、两组异租户查询及异租户设备直达",
+        "result": "PASS",
+        "realTotal": 0,
+        "realCards": 0
+      },
+      {
+        "case": "真实零台概览，键盘进入空列表，搜索异租户已知模拟设备仍为空",
+        "lang": "zh-CN",
+        "width": 375,
+        "transport": "REAL_API",
+        "result": "PASS"
+      },
+      {
+        "case": "真实零台概览，键盘进入空列表，搜索异租户已知模拟设备仍为空",
+        "lang": "en",
+        "width": 375,
+        "transport": "REAL_API",
+        "result": "PASS"
+      }
+    ],
+    "fixture": {
+      "alias": "C",
+      "role": "CustomerViewer",
+      "tenantsCreated": 1,
+      "sitesCreated": 0,
+      "deviceWrites": 0,
+      "notification": "SUPPRESS",
+      "previousOwnedTenants": [
+        "A",
+        "B"
+      ]
+    },
+    "completedAtUtc": "2026-11-19T10:35:54.620Z"
+  },
+  "historicalEvidence": {
+    "target-sample-follow-up-d1afec5e.json": {
+      "sha256": "928273decd916d0c91f9a4306e3542123fa0cc63da1714714c20b03cd705da03"
+    },
+    "target-reset-follow-up-d1afec5e.json": {
+      "sha256": "c98acb83b77d8a2745c33660d21853378c123f05c6fc5191e2874130a89db4cd"
+    },
+    "target-completion-07a385f4.json": {
+      "sha256": "75f4f663225cbf017394b297e790fb4355db6076cf44d46b98d416aef9be848d"
+    },
+    "target-cmp23-follow-up-07a385f4.json": {
+      "sha256": "14937b168bf6bbe9b41d74d0cf53ad34381c18c0d10e08b3ea2424ecfe48b5d1"
+    }
+  },
+  "acceptanceIndex": [
+    {
+      "cmp": "CMP-01",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "专用客户业务 displayName、业务 userId、Cognito 登录标识和键盘入口均读回。窄屏截断并提供完整文本。",
+      "baselineEvidence": "target-completion-07a385f4.json#L235",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1243",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L912"
+    },
+    {
+      "cmp": "CMP-02",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "专用空租户 C 以真实 CustomerViewer 会话实测。概览和设备列表均为零，双语窄屏可键盘进入列表，搜索另一组的专用设备仍为空，显式异租户查询和异租户设备直达返回 403。前轮大于 10 台、设备 ID 顺序及两组有设备的数据继续保留。",
+      "baselineEvidence": "target-completion-07a385f4.json#L266",
+      "disposition": "RESOLVED",
+      "coverage": "TARGET_PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1252",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L922"
+    },
+    {
+      "cmp": "CMP-03",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际顶部栏没有通知铃入口。",
+      "baselineEvidence": "target-completion-07a385f4.json#L315",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1263",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L934"
+    },
+    {
+      "cmp": "CMP-04",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。",
+      "baselineEvidence": "target-completion-07a385f4.json#L381",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1272",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L944"
+    },
+    {
+      "cmp": "CMP-05",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "客户访问失败重试、租户路径和无地区标签的平台直接查询均通过。",
+      "baselineEvidence": "target-completion-07a385f4.json#L447",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1281",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L954"
+    },
+    {
+      "cmp": "CMP-06",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实迟到和重试不会恢复旧目标，真实命令只下发到已应用纯模拟设备。",
+      "baselineEvidence": "target-completion-07a385f4.json#L502",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1290",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L964"
+    },
+    {
+      "cmp": "CMP-07",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "中英文分别实测离线有授权、在线运行有授权、在线运行无 REMOTE_CONTROL。两类禁用理由均与按钮关联。高风险加热需输入准确确认文本，Escape 退出，实际命令 POST 为 0。",
+      "baselineEvidence": "target-completion-07a385f4.json#L566",
+      "disposition": "RESOLVED",
+      "coverage": "TARGET_PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1299",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L974"
+    },
+    {
+      "cmp": "CMP-08",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "375/768/1440 显示无重叠，长命令标签实际提交到查询。",
+      "baselineEvidence": "target-completion-07a385f4.json#L591",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1310",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L985"
+    },
+    {
+      "cmp": "CMP-09",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "客户组筛选、真正第二页、单一重置及固定租户均通过。",
+      "baselineEvidence": "target-completion-07a385f4.json#L639",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1319",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L995"
+    },
+    {
+      "cmp": "CMP-10",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "专用模拟设备的真实详情在异步签发前返回 certificate=null，分配历史为空，两个页面空态均可见。审计员从设备群进入同一设备，编辑和轮换禁用。客户直达被拒。",
+      "baselineEvidence": "target-completion-07a385f4.json#L730",
+      "disposition": "RESOLVED",
+      "coverage": "TARGET_PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1328",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1005"
+    },
+    {
+      "cmp": "CMP-11",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "审批详情连接失败可重试，嵌套确认独立关闭，带版本批准并按设备序列号导航。",
+      "baselineEvidence": "target-completion-07a385f4.json#L807",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1339",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1016"
+    },
+    {
+      "cmp": "CMP-12",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "中止的首次拒绝保留详情和重试入口。实际重试带原因与当前版本，关闭后移出待审批，在已拒绝标签读回。",
+      "baselineEvidence": "target-completion-07a385f4.json#L853",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1348",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1026"
+    },
+    {
+      "cmp": "CMP-13",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "新建配置位于工具栏第一个操作，Escape 恢复焦点。",
+      "baselineEvidence": "target-completion-07a385f4.json#L898",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1357",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1036"
+    },
+    {
+      "cmp": "CMP-14",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实多版历史可独立展开。首次详情连接失败后可退出重开，专用空方案直接展示空历史。",
+      "baselineEvidence": "target-completion-07a385f4.json#L920",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1366",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1046"
+    },
+    {
+      "cmp": "CMP-15",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "八个真实未发布版本形成滚动容器，派生站点展示与 API 一致。审计员能访问最早版本且无发布权限。",
+      "baselineEvidence": "target-completion-07a385f4.json#L959",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1375",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1056"
+    },
+    {
+      "cmp": "CMP-16",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "原生 datetime-local 输入毫秒时展示错误且提交禁用，没有请求。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1082",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1384",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1066"
+    },
+    {
+      "cmp": "CMP-17",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "两真实相邻页各一台，设备定向和型号定向各自胜出。与对应版冻结参数逐项比对，两次真实 mTLS Sync 一致。逐版本通知包含实际目标，无匹配应用回执继续显示未知。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1147",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1393",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1076"
+    },
+    {
+      "cmp": "CMP-18",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "两种列表按真实请求保留固定租户，耗材状态筛选重置清除占比，申请查询进入指定自有设备。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1372",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1402",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1086"
+    },
+    {
+      "cmp": "CMP-19",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "受控设备提交前真实退役，服务端拒绝与字段提示一致。不存在、未分配、越权、合法及幂等也通过。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1416",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1411",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1096"
+    },
+    {
+      "cmp": "CMP-20",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "告警、事件和防拆分别在中英文窄屏验证真实第二页。独立重置清除草稿、已应用条件、游标和 URL 筛选，保留当前标签及固定客户范围。默认查询在第二页原地重置也回到第一项。两租户的可见范围已逐接口读回。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1514",
+      "disposition": "RESOLVED",
+      "coverage": "SAME_SHA_TARGET",
+      "caseCount": 7,
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1420",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1106"
+    },
+    {
+      "cmp": "CMP-21",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际告警确认与清除已读回。另一个专用告警从详情读回已关联图片，授权浏览器加载真实像素，外租户详情和签发均为 404。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1645",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1431",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1118"
+    },
+    {
+      "cmp": "CMP-22",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "客户窄屏按设备、类型查询已修复的实际媒体列表，返回四条自有样本且无法跳出固定租户。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1998",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1440",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1128"
+    },
+    {
+      "cmp": "CMP-23",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "保留当前候选九项通过的同 SHA 发布回执。本轮没有更换该媒体样本或复写通过证据。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2037",
+      "coverage": "BASELINE_CARRIED",
+      "supplementalScope": "read_only_sort_pagination_smoke",
+      "supplementalResult": "PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1449",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1138"
+    },
+    {
+      "cmp": "CMP-24",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实 UTC 区间、周统计和估算说明已核对。实际导出保留查询区间与固定客户并创建作业。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2047",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1460",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1150"
+    },
+    {
+      "cmp": "CMP-25",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "两条真实 MQTT 报告产生分页，日期错误重置后查询、导出和重选均验证固定租户与游标。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2103",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1469",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1160"
+    },
+    {
+      "cmp": "CMP-26",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "375/768/1440 控件独立无交叠，合约筛选实际提交专用客户。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2220",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1478",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1170"
+    },
+    {
+      "cmp": "CMP-27",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实关联撤销后仍能查到 ENDED 历史。原设备独立 License 继续有效，合约历史区域可见。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2268",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1487",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1180"
+    },
+    {
+      "cmp": "CMP-28",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实慢响应、错误与空候选都可退出，焦点回原按钮，关闭不写入。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2349",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1496",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1190"
+    },
+    {
+      "cmp": "CMP-29",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2496",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1505",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1200"
+    },
+    {
+      "cmp": "CMP-30",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2543",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1514",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1210"
+    },
+    {
+      "cmp": "CMP-31",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "按现有状态机使用专用即将到期授权。审计员真实拒写，平台操作员实际续期并产生新版本。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2590",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1523",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1220"
+    },
+    {
+      "cmp": "CMP-32",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "仅对额外专用模拟器的 License 模拟评估时间，状态过期及历史实际读回。详情展示独立区域，跨租户拒绝。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2690",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1532",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1230"
+    },
+    {
+      "cmp": "CMP-33",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "同值保存、实际请求体版本冲突、非法输入与关闭返回均通过。审计记录一次测试导致的同值版本递增。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2772",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1541",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1240"
+    },
+    {
+      "cmp": "CMP-34",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "按本次用户确认签收候选浏览器的合成分档。真实设置与 unknown（未上报）展示沿用已通过回执。真实耗材采集、投影及实际自定义阈值的全链路保留 NOT_RUN，并列为后续。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2863",
+      "disposition": "ACCEPTED_FOR_T12_SCOPE",
+      "coverage": "ACCEPTED_BROWSER_FIXTURE_SCOPE",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1550",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1250",
+      "followUp": {
+        "cmp": "CMP-34",
+        "item": "真实耗材采集、投影及实际自定义阈值全链路",
+        "result": "NOT_RUN",
+        "nextAcceptance": "接入可信耗材采集后，在获准的测试设置下读回真实剩余量与自定义阈值，再验证 FE-18 分档与设置恢复。",
+        "reason": "此次书面确认接受候选浏览器的中英文合成分档。"
+      }
+    },
+    {
+      "cmp": "CMP-35",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "窄屏专用长业务用户表格可到达操作列，键盘打开后能读取完整显示名、地址及客户范围。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3021",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1561",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1262"
+    },
+    {
+      "cmp": "CMP-36",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "专用业务用户的嵌套键盘、关闭、取消零写及真实权限写入和审计全部通过，已恢复为只读。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3043",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1570",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1272"
+    },
+    {
+      "cmp": "CMP-37",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际矩阵查找读权限、按角色过滤且只读，五角色值符合共享 RBAC。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3123",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1579",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1282"
+    },
+    {
+      "cmp": "CMP-38",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实设备首次 Sync 获得专用账号，第二次带已提供快照时间读回 ACKNOWLEDGED。可区分通知与快照确认；无可信应用回执，仍显示未报告。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3145",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1588",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1292"
+    },
+    {
+      "cmp": "CMP-39",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "页面请求中止时仍可取消，重开读回原值和版本。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3234",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1597",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1302"
+    },
+    {
+      "cmp": "CMP-40",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "平台的客户、地区筛选命中真实长站点，独立新建入口可见，详情展示完整文本，客户越权读取被拒。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3273",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1606",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1312"
+    },
+    {
+      "cmp": "CMP-41",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "筛选完成后再记录真实滚动，资料连接失败后重试并恢复原行与滚动。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3312",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1615",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1322"
+    },
+    {
+      "cmp": "CMP-42",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3369",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1624",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1332"
+    },
+    {
+      "cmp": "CMP-43",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "审计员在中英文窄屏从真实第二页重置。可编辑客户、筛选字段、日期错误、累积结果和游标均清理，页面重新获取第一页。两个客户会话的 API 返回 403，客户管理员直达也被路由权限拒绝。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3435",
+      "disposition": "RESOLVED",
+      "coverage": "SAME_SHA_TARGET",
+      "caseCount": 3,
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1633",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1342"
+    },
+    {
+      "cmp": "CMP-44",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实审计响应及浏览器均遮蔽受控敏感值。真实长值、键盘和焦点通过，前后值独立双向滚动使用已脱敏的界面投影。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3518",
+      "remaining": "嵌套敏感键使用本地回归验证，目标接口未单独注入可持久化嵌套键。",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1644",
+      "previousReceipt": "target-sample-follow-up-d1afec5e.json#L1354"
+    }
+  ]
+}
