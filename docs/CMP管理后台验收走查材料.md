@@ -4,12 +4,12 @@
 
 | 项目 | 当前结论 |
 | --- | --- |
-| 验收候选 | [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)。本轮实测前后均核对 Amplify 171、管理 API、OpenAPI 及固定 Migration Runner。同批发版与 CI 使用该 SHA。 [同 SHA 回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json) |
-| 本地回归 | `07a385f4` 的既有完整 `pnpm verify` 回执与本轮 7 项审计 Vitest 结果分别留存。首轮候选的类型检查、Vitest 742 项、Playwright Chromium 73 项、契约 321 项和 QA08 原型回归 24 项见历史回执。 [完整验证](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) · [本轮检查](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json) |
+| 验收候选 | [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8)。前端构建 172、管理 API、OpenAPI、固定 Migration Runner 和托管验证均绑定该 SHA。 [同 SHA 回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
+| 本地回归 | [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8) 完整 `pnpm verify` 退出 0，已登记四项双语重置回归。管理后台类型检查、定向 Vitest 24 项及定向 Playwright 7 项通过。 [本轮检查](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
 | 完整验证追验 | 候选 `353d2deb` 的完整 `pnpm verify` 在 `test:scripts` 失败。仅修改验收脚本的修复候选 [`fc1793dc`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5) 完整 `pnpm verify` 通过。 [追验回执](audit/evidence/cmp-t12-353d2deb/target-preflight.json) |
 | 目标环境 | 原候选 `fc1793dc` 的共享测试环境四项版本证据已对齐。原候选 44 项验收索引为 10 项 PASS、1 项 FAIL、33 项 NOT_RUN，其中 31 项有部分实测记录。P1 首批为 5 项 PASS、0 项 FAIL、10 项 NOT_RUN，其中 9 项有部分实测记录。 [目标实测回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
 | CMP-23 跟进 | [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76) 已独立完成全量验证、发布和同 SHA 绑定。CMP-23 `PASS`，发布阻塞 `RESOLVED`。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) |
-| 发布结论 | `BLOCKED`。**CMP-20** 告警筛选和 **CMP-43** 审计筛选均缺独立重置入口。44 项为 38 项 PASS、2 项 FAIL、4 项 NOT_RUN，通过项均有 `07a385f4` 同 SHA 证据。P1 的 15 项均通过。 [本轮复验](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json) |
+| 发布结论 | `OPEN`。修复的两个发布阻塞均已解除。其余样本及项目方签收为 OPEN。累计 40 项 PASS、0 项 FAIL、4 项 NOT_RUN。15 项 P1 保留 `07a385f4` 的验收证明，当前候选只对变更路径补验。 [本轮复验](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
 
 [开发计划](CMP管理后台前端改进开发计划.md) · [执行顺序](CMP管理后台前端改进执行顺序与提示词.md) · [候选版本和检查回执](audit/evidence/cmp-t12-353d2deb/local-receipt.json)
 
@@ -78,7 +78,7 @@
 | CMP-17 | 查同型号多台设备、设备定向覆盖、未来版本和无配置。翻页并对照 Sync 解析。分别查两版投递，缺可信应用回执的设备显示「未知」。 | `PASS_LOCAL` [分页 UI 与投递](../apps/admin-web/e2e/cmp-configuration-effective.spec.ts#L31) · [解析与权限](../apps/cloud-api/test/admin-configuration.test.ts#L465) | `PASS` · 两真实相邻页各一台，设备定向和型号定向各自胜出。与对应版冻结参数逐项比对，两次真实 mTLS Sync 一致。逐版本通知包含实际目标，无匹配应用回执继续显示未知。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1147) |
 | CMP-18 | 在耗材状态和申请区填设备、站点或余量，检查标签、动作和实际查询参数，窄屏双语可读。 | `PASS_LOCAL` [双语和查询](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L55) | `PASS` · 两种列表按真实请求保留固定租户，耗材状态筛选重置清除占比，申请查询进入指定自有设备。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1372) |
 | CMP-19 | 新建耗材申请从有权设备中选择。选中后模拟失效，应在设备字段旁报错。分别验不存在、未分配、已退役、越权、合法和重复申请。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-consumable-esg.spec.ts#L5) · [服务端拒绝和幂等](../apps/cloud-api/test/admin-consumable-request.test.ts#L206) | `PASS` · 受控设备提交前真实退役，服务端拒绝与字段提示一致。不存在、未分配、越权、合法及幂等也通过。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1416) |
-| CMP-20 | 逐个切换告警、事件和防拆，确认可见条件与实际 endpoint 一致，长筛选值下仍能查询与重置。 | `PASS_LOCAL` [三标签查询](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L79) | `FAIL` · `BLOCKED` · 告警、事件和防拆服务端均强制当前租户。告警实际查询与手动清空筛选已查。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1514) |
+| CMP-20 | 逐个切换告警、事件和防拆，确认可见条件与实际 endpoint 一致，长筛选值下仍能查询与重置。 | `PASS_LOCAL` [三标签查询](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L79) | `PASS` · 告警、事件和防拆分别在中英文窄屏验证真实第二页。独立重置清除草稿、已应用条件、游标和 URL 筛选，保留当前标签及固定客户范围。默认查询在第二页原地重置也回到第一项。两租户的可见范围已逐接口读回。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json#L1420) |
 | CMP-21 | 打开已清除及待处理告警，核对状态、发生/清除时间和原因。检查证据图片入口与确认/清除权限。 | `PASS_LOCAL` [详情布局与只读门控](../apps/admin-web/e2e/cmp-detail-layout.spec.ts#L210) · [证据图片](../apps/admin-web/e2e/evidence-image.spec.ts) | `PASS` · 实际告警确认与清除已读回。另一个专用告警从详情读回已关联图片，授权浏览器加载真实像素，外租户详情和签发均为 404。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1645) |
 | CMP-22 | 用平台与客户角色打开媒体，验证设备、客户、类型、状态和日期控件权限及窄屏可读性。按键执行查询并核对条件。 | `PASS_LOCAL` [媒体筛选](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L105) · [媒体组件和传输](../apps/admin-web/test/media.test.tsx) | `PASS` · 客户窄屏按设备、类型查询已修复的实际媒体列表，返回四条自有样本且无法跳出固定租户。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1998) |
 | CMP-23 | 用多个同采集时间文件检查正倒序相邻两页，无重复遗漏。切换排序或筛选回首页，错误游标被拒绝，旧客户端和下载继续可用。 | `PASS_LOCAL` [换向和迟到响应](../apps/admin-web/e2e/cmp-media-capture-sort.spec.ts#L25) · [双向游标、旧客户端与租户](../apps/cloud-api/test/media.test.ts#L591) | `PASS` · 修复候选 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)。共享测试已按三种模式和两个租户验证分页，浏览器双语验证换向和筛选归第一页。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) · [原候选 500 历史](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2051) |
@@ -101,7 +101,7 @@
 | CMP-40 | 用平台和客户角色查看站点筛选，检查客户、区域、子区域、状态和独立新建操作。核对既有查询行为与固定客户范围。 | `PASS_LOCAL` [站点筛选布局和请求](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L121) · [站点服务范围](../apps/cloud-api/test/admin-site.test.ts) | `PASS` · 平台的客户、地区筛选命中真实长站点，独立新建入口可见，详情展示完整文本，客户越权读取被拒。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3273) |
 | CMP-41 | 在列表滚动后打开某站点详情。失败可重试，Esc 关闭恢复同一行焦点与滚动。按角色验编辑、停用及其版本。 | `PASS_LOCAL` [小视口、焦点与版本](../apps/admin-web/e2e/cmp-detail-layout.spec.ts#L126) | `PASS` · 筛选完成后再记录真实滚动，资料连接失败后重试并恢复原行与滚动。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3312) |
 | CMP-42 | 以五种角色核对用户管理、独立设备用户入口和直达路径。打开用户管理时检查后台请求，设备用户列表只在进入主页面后加载。 | `PASS_LOCAL` [角色矩阵及请求计数](../apps/admin-web/e2e/qa05-workflows.spec.ts#L33) | `PASS` · 实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3369) |
-| CMP-43 | 审计日志用长操作人或对象 ID 叠加动作、结果和时间。可操作查询与重置，参数按可见权限和显示时区生效。 | `PASS_LOCAL` [双语筛选](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L124) · [筛选与权限](../apps/admin-web/test/audit-logs.test.tsx#L82) | `FAIL` · `BLOCKED` · 实际组合时间、动作、结果并测试长操作人字段及手动清空。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3435) |
+| CMP-43 | 审计日志用长操作人或对象 ID 叠加动作、结果和时间。可操作查询与重置，参数按可见权限和显示时区生效。 | `PASS_LOCAL` [双语筛选](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L124) · [筛选与权限](../apps/admin-web/test/audit-logs.test.tsx#L82) | `PASS` · 审计员在中英文窄屏从真实第二页重置。可编辑客户、筛选字段、日期错误、累积结果和游标均清理，页面重新获取第一页。两个客户会话的 API 返回 403，客户管理员直达也被路由权限拒绝。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json#L1633) |
 | CMP-44 | 查看含长 JSON 的审计详情。前后值可独立滚动，敏感字段脱敏。关闭按钮及 Esc 可退出，Tab 留在当前对话框并恢复焦点。 | `PASS_LOCAL` [浏览器焦点与长 JSON](../apps/admin-web/e2e/cmp-business-detail-layout.spec.ts#L138) · [服务端脱敏](../apps/cloud-api/test/admin-audit.test.ts#L286) | `PASS` · 真实审计响应及浏览器均遮蔽受控敏感值。真实长值、键盘和焦点通过，前后值独立双向滚动使用已脱敏的界面投影。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3518) |
 
 ## 3. 共享测试环境已发布与验收结果
@@ -130,20 +130,24 @@
 
 累计 38 项 PASS、2 项 FAIL、4 项 NOT_RUN，通过项均有 `07a385f4` 同 SHA 证据。P1 累计 15 项 PASS、0 项 FAIL、0 项 NOT_RUN。CMP-33 首轮使用错误的 `If-Match` 头，实际同值保存使全局配置版本增加一次，审计确认阈值未变。复验改用契约的请求体 `version`，真实返回 409，关闭与读回均正常。CMP-21 已从告警详情验证图片和跨租户拒绝。CMP-44 的目标接口脱敏、真实长值和候选前端双区滚动均已验证，嵌套敏感键由本地回归覆盖。旧回执的 CMP-07 和 CMP-09 编号按开发计划校正至本轮目标索引，原始记录保留。 [本轮逐项回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json)
 
+### `d1afec5e` 筛选重置复验
+
+中英文 375 像素下复验告警三标签及审计日志。采用两组受控租户和真实 API 游标。对与本次改动相邻的 CMP-23 另跑媒体旧客户端、同采集时间双向分页和租户边界冒烟，原 `07a385f4` 的完整通过回执继续保留。未重跑的验收项在索引注明原证据 SHA。 [本轮逐项回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) · [CMP-23 完整历史回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json)
+
 ## 4. 发布待办与回退版本
 
 | 状态 | 待办与放行条件 |
 | --- | --- |
 | `RESOLVED` · CMP-23 | 原候选九个有效请求的 HTTP 500 历史保留。修复候选目标复验为 `PASS`。目标数据库查询计划为 `NOT_RUN`。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) |
-| `BLOCKED` · CMP-20 | 告警查询和手动清空有效，中英文窄屏均缺独立的重置。补齐入口后复验三标签查询参数及固定租户。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1514) |
-| `BLOCKED` · CMP-43 | 审计查询和手动清空有效，中英文窄屏均缺独立的重置。补齐入口后复验长 ID、组合时间与分页。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3435) |
+| `RESOLVED` · CMP-20 | 告警、事件和防拆分别在中英文窄屏验证真实第二页。独立重置清除草稿、已应用条件、游标和 URL 筛选，保留当前标签及固定客户范围。默认查询在第二页原地重置也回到第一项。两租户的可见范围已逐接口读回。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json#L1420) |
+| `RESOLVED` · CMP-43 | 审计员在中英文窄屏从真实第二页重置。可编辑客户、筛选字段、日期错误、累积结果和游标均清理，页面重新获取第一页。两个客户会话的 API 返回 403，客户管理员直达也被路由权限拒绝。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json#L1633) |
 | `RESOLVED` · CMP-21、CMP-44 | 告警图片从详情读回并验证签发及隔离。审计脱敏由真实 API 和浏览器确认，前后值滚动用界面投影覆盖，嵌套键由本地回归覆盖。 [告警回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1645) · [审计回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3518) |
 | `RESOLVED` · CMP-36 | 专用业务用户角色嵌套确认、实际写入和审计读回通过，角色已恢复为只读。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3043) |
 | `OPEN` · 剩余样本 | CMP-02 的 0 台与超过 10 台，CMP-07 的设备状态和授权组合，CMP-10 的无证书及无分配历史，CMP-34 的真实耗材阈值输入仍待覆盖。 [逐项缺口](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json) |
 | `OPEN` · D5 可信回执 | 两台专用同型号模拟设备与真实 mTLS Sync 均验证了云端生效版本。缺少匹配的可信应用回执时，设备实际应用版本按契约显示未知。当前样本的设备侧实际应用仍为未知。 |
 | `OPEN` · 项目方签收 | 走查材料与脱敏证据已登记。签收、剩余目标验收和回退执行保留各自的结果。 |
 
-共享测试当前候选为 `07a385f4`。最近一次已知成功部署的整体回退版本为 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1)，对应历史 Amplify 活动任务 169 与 [测试 API 部署作业](https://github.com/inrust/food-digester-platform/actions/runs/43667829780)。如需回退，前端和 API 应成对切换，已增加的普通索引可保留。本轮回退执行 `NOT_RUN`。
+共享测试当前候选为 [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8)。本修复的直接回退版本是 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)，其前端和管理 API 应成对回退，届时将恢复两处重置缺口。整体项目回退仍可参考 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1) 的历史配套产物。已增加的普通索引可保留，本轮回退演练为 `NOT_RUN`。
 
 | 失败范围 | 可回退的源码版本 | 回退注意点 |
 | --- | --- | --- |
