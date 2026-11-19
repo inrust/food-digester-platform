@@ -606,6 +606,9 @@ test('FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒�
   await expect(page.getByTestId('audit-detail-request-id')).toHaveText('req-fe15');
   await expect(page.getByTestId('audit-detail-before')).toContainText('[REDACTED]');
   await expect(page.locator('body')).not.toContainText('must-redact');
+  await page.getByTestId('audit-detail-modal').getByRole('button', { name: '关闭' }).click();
+  await expect(page.getByTestId('audit-detail-modal')).toHaveCount(0);
+  await expect(page.getByTestId('audit-detail-audit-fe15')).toBeFocused();
 });
 
 test('FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭', async ({ qa05 }) => {
@@ -802,7 +805,7 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
 
 test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源', async ({ page }) => {
   await seedSession(page, 'PlatformSuperAdmin');
-  const calls = { invite: 0, roles: 0, scope: 0, reset: 0, refresh: 0 };
+  const calls = { invite: 0, roles: 0, scope: 0, reset: 0, settings: 0, refresh: 0 };
   const user = {
     userId: 'usr-fe16',
     email: 'viewer@example.test',
@@ -879,6 +882,7 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
   });
   await page.route('**/api/v1/admin/settings**', (route) => {
     if (route.request().method() === 'PUT') {
+      calls.settings += 1;
       return json(
         route,
         { error: { code: 'VERSION_CONFLICT', message: 'version mismatch', requestId: 'req-fe16-409' } },
@@ -901,6 +905,29 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
   await page.getByTestId('assign-role-CustomerViewer').uncheck();
   await page.getByTestId('assign-role-CustomerAdmin').check();
   await page.getByTestId('assign-submit').click();
+  const confirm = page.getByTestId('confirm-dialog');
+  const cancelConfirmation = confirm.getByRole('button', { name: '取消' });
+  await expect(cancelConfirmation).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(confirm.getByRole('button').last()).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(cancelConfirmation).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByTestId('user-roles-form')).toBeVisible();
+  await expect(page.getByTestId('assign-submit')).toBeFocused();
+  await page.getByTestId('assign-submit').click();
+  await cancelConfirmation.click();
+  await expect(page.getByTestId('assign-submit')).toBeFocused();
+  expect(calls.roles).toBe(0);
+  await page.getByTestId('user-roles-form').getByRole('button', { name: '关闭' }).click();
+  await expect(page.getByTestId('user-roles-usr-fe16')).toBeFocused();
+  await page.getByTestId('user-roles-usr-fe16').click();
+  await expect(page.getByTestId('assign-role-CustomerViewer')).toBeChecked();
+  await expect(page.getByTestId('assign-role-CustomerAdmin')).not.toBeChecked();
+  await page.getByTestId('assign-role-CustomerViewer').uncheck();
+  await page.getByTestId('assign-role-CustomerAdmin').check();
+  await page.getByTestId('assign-submit').click();
   await page.getByTestId('confirm-dialog').getByRole('button').last().click();
   await expect.poll(() => calls.roles).toBe(1);
   await expect(page.getByTestId('user-roles-form')).toHaveCount(0);
@@ -916,7 +943,16 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
   await expect.poll(() => calls.reset).toBe(1);
 
   await page.getByTestId('tab-business-settings').click();
-  await page.getByTestId('setting-edit-alarm.thresholds').click();
+  const editSetting = page.getByTestId('setting-edit-alarm.thresholds');
+  await editSetting.click();
+  const settingForm = page.getByTestId('setting-edit-form');
+  await settingForm.getByTestId('setting-value-input').fill('invalid JSON');
+  await expect(settingForm.getByTestId('setting-submit')).toBeDisabled();
+  await settingForm.getByRole('button', { name: '取消' }).click();
+  await expect(editSetting).toBeFocused();
+  expect(calls.settings).toBe(0);
+  await editSetting.click();
+  await expect(settingForm.getByTestId('setting-value-input')).toHaveValue(JSON.stringify(setting.value, null, 2));
   await page.getByTestId('setting-submit').click();
   await expect(page.getByTestId('error-version-conflict')).toContainText('数据已被他人修改');
   const beforeRefresh = calls.refresh;
@@ -927,7 +963,7 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
 test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界', async ({ page }) => {
   await seedSession(page, 'PlatformSuperAdmin');
   await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
-  const calls = { bind: 0, unbind: 0, renew: 0, terminate: 0 };
+  const calls = { edit: 0, bind: 0, unbind: 0, renew: 0, terminate: 0 };
   const contract = {
     contractId: 'con-fe17',
     contractNumber: 'HT-FE17',
@@ -1036,6 +1072,7 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
       calls.terminate += 1;
       return json(route, { data: { ...contract, status: 'TERMINATED', derivedStatus: 'TERMINATED', version: 4 } });
     }
+    if (request.method() === 'PATCH') calls.edit += 1;
     return json(route, { data: contract });
   });
 
@@ -1046,6 +1083,19 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
   await expect(page).toHaveURL(/\/licenses\?licenseId=lic-fe17$/);
   await expect(page.getByTestId('license-id')).toContainText('lic-fe17');
   await page.goto('/contracts/detail?contractId=con-fe17');
+  const editContract = page.getByTestId('contract-edit-open');
+  await editContract.click();
+  await page.getByTestId('contract-edit-name').fill('Unsaved');
+  await page.getByTestId('contract-edit-form').getByRole('button', { name: '关闭' }).click();
+  await expect(editContract).toBeFocused();
+  await editContract.click();
+  await expect(page.getByTestId('contract-edit-name')).toHaveValue(contract.name);
+  await page.getByTestId('contract-edit-form').getByRole('button', { name: '取消' }).click();
+  expect(calls.edit).toBe(0);
+  await page.getByTestId('contract-bind-open').click();
+  await page.getByTestId('contract-bind-form').getByRole('button', { name: '关闭' }).click();
+  await expect(page.getByTestId('contract-bind-open')).toBeFocused();
+  expect(calls.bind).toBe(0);
   await page.getByTestId('contract-bind-open').click();
   await page.getByTestId('contract-bind-check-dev-available').check();
   await page.getByTestId('contract-bind-reason').fill('扩容');
@@ -1060,6 +1110,13 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
   await expect(page.getByTestId('action-notice')).toContainText('不撤销 License');
 
   await page.getByTestId('contract-renew-open').click();
+  await page.getByTestId('contract-renew-end').fill('2025-01-01T00:00:00Z');
+  await expect(page.getByTestId('contract-renew-submit')).toBeDisabled();
+  await page.getByTestId('contract-renew-form').getByRole('button', { name: '取消' }).click();
+  await expect(page.getByTestId('contract-renew-open')).toBeFocused();
+  expect(calls.renew).toBe(0);
+  await page.getByTestId('contract-renew-open').click();
+  await expect(page.getByTestId('contract-renew-end')).toHaveValue('');
   await page.getByTestId('contract-renew-end').fill('2028-01-01T00:00:00Z');
   await page.getByTestId('contract-renew-reason').fill('续约');
   await page.getByTestId('contract-renew-submit').click();

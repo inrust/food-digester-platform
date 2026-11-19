@@ -163,8 +163,6 @@ export function SettingsPage({
     } catch (err) {
       setActionError(err);
       setConfirm(null);
-      // 错误提示在 Modal 之外渲染：失败时关闭设置编辑框，避免 inert 背景导致错误不可见/不可交互
-      setSettingEdit(null);
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -254,7 +252,9 @@ export function SettingsPage({
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && assignTarget === null && settingEdit === null ? (
+        <ErrorNotice error={actionError} onRefresh={onRefresh} />
+      ) : null}
 
       {tab === 'platform-users' ? (
         <section data-testid="platform-users-tab" aria-label={translate('page.5da6c051fbdc')}>
@@ -373,7 +373,10 @@ export function SettingsPage({
                       type="button"
                       data-testid={`user-roles-${u.userId}`}
                       disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                      onClick={() => setAssignTarget({ user: u, roles: u.roles })}
+                      onClick={() => {
+                        setActionError(null);
+                        setAssignTarget({ user: u, roles: u.roles });
+                      }}
                     >
                       {translate('page.6b26695e4dce')}
                     </Button>
@@ -492,7 +495,10 @@ export function SettingsPage({
                       data-testid={`setting-edit-${setting.key}`}
                       disabled={!writeSettings || busy}
                       {...(!writeSettings ? { title: translate('page.5a65ed446ce5') } : {})}
-                      onClick={() => setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) })}
+                      onClick={() => {
+                        setActionError(null);
+                        setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) });
+                      }}
                     >
                       {translate('page.a7f814c0a40d')}
                     </Button>
@@ -599,6 +605,7 @@ export function SettingsPage({
       >
         {assignTarget !== null ? (
           <div>
+            {actionError !== null ? <ErrorNotice error={actionError} /> : null}
             <p className="field-hint">{translate('page.3ae0cae155b4')}</p>
             <div
               role="group"
@@ -631,6 +638,9 @@ export function SettingsPage({
               </p>
             ) : null}
             <div className="dialog-actions">
+              <Button type="button" onClick={() => setAssignTarget(null)}>
+                {translate('common.cancel')}
+              </Button>
               <Button
                 type="button"
                 className="primary-button"
@@ -638,7 +648,6 @@ export function SettingsPage({
                 disabled={busy || validateRoleAssign(assignTarget.roles) !== null}
                 onClick={() => {
                   const target = assignTarget;
-                  setAssignTarget(null);
                   setConfirm({ kind: 'assignRoles', user: target.user, roles: target.roles });
                 }}
               >
@@ -693,6 +702,16 @@ export function SettingsPage({
       >
         {settingEdit !== null ? (
           <div>
+            {actionError !== null ? (
+              <ErrorNotice
+                error={actionError}
+                onRefresh={() => {
+                  setSettingEdit(null);
+                  setActionError(null);
+                  onRefresh();
+                }}
+              />
+            ) : null}
             <p className="field-hint">
               {translate('page.0239b8ffa350')}
               {settingEdit.setting.version}
@@ -715,6 +734,9 @@ export function SettingsPage({
               </p>
             ) : null}
             <div className="dialog-actions">
+              <Button type="button" onClick={() => setSettingEdit(null)}>
+                {translate('common.cancel')}
+              </Button>
               <Button
                 type="button"
                 className="primary-button"

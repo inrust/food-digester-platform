@@ -1,5 +1,5 @@
 import { translate } from '../i18n/i18n.js';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { hasPermission } from '@fdp/auth/browser';
 import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
@@ -678,6 +678,7 @@ export function AuditLogsController({ api, session }: { readonly api: ApiClient;
   const [filter, setFilter] = useState<AuditLogListFilter>({});
   const [logs, setLogs] = useState<AuditLogListState>({ rows: null, loading: true });
   const [detail, setDetail] = useState<AuditDetailState>({ kind: 'none' });
+  const detailRequest = useRef(0);
   const load = useCallback(
     async (next = filter) => {
       setLogs({ rows: null, loading: true });
@@ -709,13 +710,21 @@ export function AuditLogsController({ api, session }: { readonly api: ApiClient;
       }
       detail={detail}
       onSelectLog={(id) => {
+        const request = ++detailRequest.current;
         setDetail({ kind: 'loading' });
         void getAuditLogDetail(api, id).then(
-          (nextDetail) => setDetail({ kind: 'ready', detail: nextDetail }),
-          (error: unknown) => setDetail({ kind: 'error', error }),
+          (nextDetail) => {
+            if (request === detailRequest.current) setDetail({ kind: 'ready', detail: nextDetail });
+          },
+          (error: unknown) => {
+            if (request === detailRequest.current) setDetail({ kind: 'error', error });
+          },
         );
       }}
-      onCloseDetail={() => setDetail({ kind: 'none' })}
+      onCloseDetail={() => {
+        detailRequest.current += 1;
+        setDetail({ kind: 'none' });
+      }}
       onRefresh={() => void load()}
     />
   );

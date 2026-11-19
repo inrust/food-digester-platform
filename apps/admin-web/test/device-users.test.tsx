@@ -294,7 +294,19 @@ test('修改资料：原因必填；空显示名提交 null；详情含同步版
   assert.match(syncState, /设备后续同步已确认 v3/);
   assert.match(syncState, /协议未上报/);
 
-  await user.click(screen.getByTestId('device-user-edit'));
+  const trigger = screen.getByTestId('device-user-edit');
+  await user.click(trigger);
+  const name = screen.getByTestId('edit-display-name') as HTMLInputElement;
+  const saved = name.value;
+  await user.clear(name);
+  await user.type(name, 'unsaved');
+  await user.click(within(screen.getByTestId('device-user-edit-dialog')).getByRole('button', { name: '关闭' }));
+  assert.equal(document.activeElement, trigger);
+  await user.click(trigger);
+  assert.equal((screen.getByTestId('edit-display-name') as HTMLInputElement).value, saved);
+  await user.click(within(screen.getByTestId('device-user-edit-dialog')).getByRole('button', { name: '取消' }));
+  assert.deepEqual(calls.updated, []);
+  await user.click(trigger);
   const form = screen.getByTestId('device-user-edit-form');
   assert.ok(disabled('edit-submit'), '原因必填');
   await user.clear(within(form).getByTestId('edit-display-name'));
@@ -302,6 +314,25 @@ test('修改资料：原因必填；空显示名提交 null；详情含同步版
   await user.click(within(form).getByTestId('edit-submit'));
   await screen.findByText('资料已更新');
   assert.deepEqual(calls.updated, [{ deviceUserId: 'du-001', displayName: null, reason: '规范化命名' }]);
+});
+
+test('CMP-39 修改资料请求失败时在弹窗内提示并可取消', async () => {
+  const user = userEvent.setup();
+  renderPage({
+    detail: { kind: 'ready', detail: DETAIL },
+    onUpdate: async () => {
+      throw new Error('write failed');
+    },
+  });
+  const trigger = screen.getByTestId('device-user-edit');
+  await user.click(trigger);
+  const dialog = within(screen.getByTestId('device-user-edit-dialog'));
+  await user.type(dialog.getByTestId('edit-reason'), '修改资料');
+  await user.click(dialog.getByTestId('edit-submit'));
+  assert.ok(await dialog.findByRole('alert'));
+  await user.click(dialog.getByRole('button', { name: '取消' }));
+  assert.equal(screen.queryByTestId('device-user-edit-dialog'), null);
+  assert.equal(document.activeElement, trigger);
 });
 
 test.each(['Auditor', 'CustomerViewer'] as const)('%s 只读：可查详情，无创建/编辑/重置/停用/分配/撤销入口', (role) => {

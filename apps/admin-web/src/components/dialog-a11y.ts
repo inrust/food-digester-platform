@@ -1,16 +1,47 @@
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
-const FOCUSABLE = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',');
+const FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex]';
 
-/** Shared modal behavior: safe initial focus, focus trap, Escape, focus restore and inert background. */
+interface DialogLayer {
+  readonly overlay: HTMLElement;
+  readonly dialog: HTMLElement;
+  previousFocus: Element | null;
+}
+
+const layers: DialogLayer[] = [];
+const background = new Map<HTMLElement, { inert: boolean; ariaHidden: string | null }>();
+
+function tabbableElements(dialog: HTMLElement): HTMLElement[] {
+  return [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (node) =>
+      node.tabIndex >= 0 &&
+      !node.matches(':disabled, input[type="hidden"]') &&
+      node.closest('[hidden], [inert], [aria-hidden="true"]') === null,
+  );
+}
+
+function syncBackground(focus: (top: DialogLayer | undefined) => void) {
+  const top = layers.at(-1);
+  for (const [node, snapshot] of background) {
+    if (top !== undefined && node !== top.overlay && node.isConnected) continue;
+    node.inert = snapshot.inert;
+    node.ariaHidden = snapshot.ariaHidden;
+    background.delete(node);
+  }
+
+  // React may still have focus in the previous layer, so move it before hiding that layer.
+  focus(top);
+  if (top === undefined) return;
+  for (const node of document.body.children) {
+    if (!(node instanceof HTMLElement) || node === top.overlay || background.has(node)) continue;
+    background.set(node, { inert: node.inert, ariaHidden: node.getAttribute('aria-hidden') });
+    node.inert = true;
+    node.ariaHidden = 'true';
+  }
+}
+
+/** Shared modal behavior. Only the topmost portal owns keyboard input and focus. */
 export function useDialogA11y(
   open: boolean,
   dialogRef: RefObject<HTMLElement | null>,
@@ -21,58 +52,54 @@ export function useDialogA11y(
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   useEffect(() => {
-    if (!open) return;
-    const previousFocus = document.activeElement;
+    const dialog = dialogRef.current;
     const overlay = overlayRef.current;
-    const background = [...document.body.children].filter((node) => node !== overlay);
-    const snapshots = background.map((node) => ({
-      node: node as HTMLElement,
-      inert: (node as HTMLElement).inert,
-      ariaHidden: node.getAttribute('aria-hidden'),
-    }));
-    for (const node of background) {
-      (node as HTMLElement).inert = true;
-      node.ariaHidden = 'true';
-    }
-
-    const focusable = () => [...(dialogRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
-    const initial = initialFocusRef?.current ?? focusable()[0] ?? dialogRef.current;
-    initial?.focus();
+    if (!open || dialog === null || overlay === null) return;
+    const layer = { dialog, overlay, previousFocus: document.activeElement };
+    layers.push(layer);
+    syncBackground(() => {
+      (initialFocusRef?.current ?? tabbableElements(dialog)[0] ?? dialog).focus({ preventScroll: true });
+    });
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (layers.at(-1) !== layer || event.defaultPrevented) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         onCloseRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
-      const nodes = focusable();
-      if (nodes.length === 0) {
-        event.preventDefault();
-        dialogRef.current?.focus();
-        return;
-      }
+      const nodes = tabbableElements(dialog);
       const first = nodes[0];
       const last = nodes.at(-1);
-      if (
-        event.shiftKey &&
-        (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))
-      ) {
+      const active = document.activeElement;
+      if (!nodes.includes(active as HTMLElement) || active === (event.shiftKey ? first : last)) {
         event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
+        ((event.shiftKey ? last : first) ?? dialog).focus();
       }
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      for (const snapshot of snapshots) {
-        snapshot.node.inert = snapshot.inert;
-        snapshot.node.ariaHidden = snapshot.ariaHidden;
+      const wasTop = layers.at(-1) === layer;
+      layers.splice(layers.indexOf(layer), 1);
+      for (const remaining of layers) {
+        if (overlay.contains(remaining.previousFocus)) remaining.previousFocus = layer.previousFocus;
       }
-      if (previousFocus instanceof HTMLElement) previousFocus.focus();
+      syncBackground((top) => {
+        if (!wasTop) return;
+        const previous = layer.previousFocus;
+        if (
+          previous instanceof HTMLElement &&
+          previous.isConnected &&
+          (top === undefined || top.overlay.contains(previous))
+        ) {
+          previous.focus({ preventScroll: true });
+        }
+        if (top !== undefined && !top.dialog.contains(document.activeElement)) {
+          (tabbableElements(top.dialog)[0] ?? top.dialog).focus({ preventScroll: true });
+        }
+      });
     };
   }, [dialogRef, initialFocusRef, open, overlayRef]);
 }

@@ -159,12 +159,13 @@ export function DeviceUsersPage({
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
-    setModal(null);
+    if (modal !== 'edit') setModal(null);
     setDisableOpen(false);
     setActionError(null);
     setNotice(null);
     try {
       await execute();
+      if (modal === 'edit') setModal(null);
       setNotice(successText);
       onRefresh();
     } catch (err) {
@@ -328,7 +329,7 @@ export function DeviceUsersPage({
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && modal !== 'edit' ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       {list.error !== undefined ? <ErrorNotice error={list.error} onRefresh={onRefresh} /> : null}
       {list.rows === null ? (
@@ -419,7 +420,15 @@ export function DeviceUsersPage({
             </Button>
             {canWrite ? (
               <>
-                <Button type="button" data-testid="device-user-edit" disabled={busy} onClick={() => setModal('edit')}>
+                <Button
+                  type="button"
+                  data-testid="device-user-edit"
+                  disabled={busy}
+                  onClick={() => {
+                    setActionError(null);
+                    setModal('edit');
+                  }}
+                >
                   {translate('page.644d5f06bdba')}
                 </Button>
                 <Button
@@ -589,9 +598,20 @@ export function DeviceUsersPage({
             testid="device-user-edit-dialog"
             onClose={() => setModal(null)}
           >
+            {actionError !== null ? (
+              <ErrorNotice
+                error={actionError}
+                onRefresh={() => {
+                  setModal(null);
+                  setActionError(null);
+                  onRefresh();
+                }}
+              />
+            ) : null}
             <EditDisplayNameForm
               currentDisplayName={detailView.displayName}
               busy={busy}
+              onCancel={() => setModal(null)}
               onSubmit={(displayName, reason) =>
                 void runAction(
                   () => onUpdate(detailView.deviceUserId, { displayName, reason }),
@@ -797,10 +817,12 @@ function CreateDeviceUserForm({
 function EditDisplayNameForm({
   currentDisplayName,
   busy,
+  onCancel,
   onSubmit,
 }: {
   readonly currentDisplayName: string | null;
   readonly busy: boolean;
+  readonly onCancel: () => void;
   readonly onSubmit: (displayName: string | null, reason: string) => void;
 }) {
   const [displayName, setDisplayName] = useState(currentDisplayName ?? '');
@@ -828,6 +850,9 @@ function EditDisplayNameForm({
         />
       </div>
       <div className="dialog-actions">
+        <Button type="button" onClick={onCancel}>
+          {translate('common.cancel')}
+        </Button>
         <Button
           type="button"
           className="primary-button"

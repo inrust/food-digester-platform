@@ -165,9 +165,10 @@ test('只读性：页面无编辑/删除/修改入口；API 装配仅 GET', asyn
       `不应存在 ${String(name)} 按钮`,
     );
   }
-  // 详情 Modal 同样无写入口
+  // 关闭是详情唯一的操作。
   const modal = screen.getByTestId('audit-detail-modal');
-  assert.equal(modal.querySelectorAll('button').length, 0);
+  assert.equal(modal.querySelectorAll('button').length, 1);
+  assert.ok(screen.getByRole('button', { name: '关闭' }));
 
   const { api, calls } = stubApi();
   await listAuditLogs(api, { actorId: 'a1', result: 'SUCCESS' });

@@ -259,18 +259,17 @@ export function AuditLogsPage({
         />
       </section>
 
-      {detail.kind === 'loading' ? (
-        <div role="status" data-testid="audit-detail-loading">
-          {translate('page.300ee3dee4dc')}
-        </div>
-      ) : null}
-
       <Modal
-        open={detail.kind === 'ready' || detail.kind === 'error'}
+        open={detail.kind !== 'none'}
         title={translate('page.18c5e1d426e6')}
         testid="audit-detail-modal"
         onClose={onCloseDetail}
       >
+        {detail.kind === 'loading' ? (
+          <div role="status" data-testid="audit-detail-loading">
+            {translate('page.300ee3dee4dc')}
+          </div>
+        ) : null}
         {detail.kind === 'error' ? <ErrorNotice error={detail.error} /> : null}
         {readyDetail !== null ? (
           <div data-testid="audit-detail">

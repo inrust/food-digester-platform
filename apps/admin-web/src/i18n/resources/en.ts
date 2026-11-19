@@ -124,6 +124,7 @@ export const EN: Readonly<Record<string, string>> = {
   'common.stale': 'Data may be stale',
   'common.dataTime': 'Data as of: ',
   'common.cancel': 'Cancel',
+  'common.close': 'Close',
   'common.confirm': 'Confirm',
   'common.reason': 'Reason',
   'common.reasonHint': 'Required; recorded in the audit log',

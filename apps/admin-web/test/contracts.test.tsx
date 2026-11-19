@@ -9,7 +9,7 @@
  * - API 装配：If-Match 乐观锁与请求体快照。
  */
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError } from '../src/api/errors.js';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
@@ -477,6 +477,31 @@ test('详情：绑定 eligible 设备（重叠租期 409 呈现）；解绑不�
   await user.click(screen.getByTestId('contract-bind-submit'));
   const error = await screen.findByTestId('error-generic');
   assert.ok(error.textContent?.includes('重叠租期'));
+  await user.click(within(screen.getByTestId('contract-bind-form')).getByRole('button', { name: '关闭' }));
+  assert.equal(screen.queryByTestId('contract-bind-form'), null);
+  assert.equal(document.activeElement, screen.getByTestId('contract-bind-open'));
+});
+
+test('CMP-28 关联设备在加载及空候选时可退出，迟到结果不会填入新弹窗', async () => {
+  const user = userEvent.setup();
+  let resolveFirst!: (devices: readonly AvailableDeviceView[]) => void;
+  const first = new Promise<readonly AvailableDeviceView[]>((resolve) => {
+    resolveFirst = resolve;
+  });
+  let queries = 0;
+  const { calls } = renderDetail({ onListAvailable: async () => (++queries === 1 ? first : []) });
+  const trigger = screen.getByTestId('contract-bind-open');
+  await user.click(trigger);
+  assert.ok(screen.getByTestId('contract-bind-loading'));
+  await user.click(within(screen.getByTestId('contract-bind-form')).getByRole('button', { name: '关闭' }));
+  assert.equal(document.activeElement, trigger);
+  await user.click(trigger);
+  await screen.findByTestId('contract-bind-empty');
+  await act(async () => resolveFirst([makeAvailable()]));
+  assert.ok(screen.getByTestId('contract-bind-empty'));
+  await user.click(within(screen.getByTestId('contract-bind-form')).getByRole('button', { name: '取消' }));
+  assert.equal(screen.queryByTestId('contract-bind-form'), null);
+  assert.deepEqual(calls.bound, []);
 });
 
 // ---------- API 装配 ----------

@@ -4,9 +4,10 @@ import { Modal as AntModal } from 'antd';
  * Esc 关闭；打开时焦点进入对话框，关闭后焦点回收至原聚焦元素。
  */
 import { createPortal } from 'react-dom';
-import { useId, useRef } from 'react';
+import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useDialogA11y } from './dialog-a11y.js';
+import { useI18n } from '../i18n/i18n.js';
 
 export interface ModalProps {
   readonly open: boolean;
@@ -17,12 +18,10 @@ export interface ModalProps {
 }
 
 export function Modal({ open, title, onClose, children, testid }: ModalProps) {
-  const titleId = useId();
+  const { t } = useI18n();
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  useDialogA11y(open, dialogRef, overlayRef, () => onCloseRef.current());
+  useDialogA11y(open, dialogRef, overlayRef, onClose);
 
   if (!open) return null;
 
@@ -34,13 +33,14 @@ export function Modal({ open, title, onClose, children, testid }: ModalProps) {
         getContainer={false}
         width={560}
         footer={null}
-        closable={false}
+        closable={{ 'aria-label': t('common.close') }}
+        onCancel={onClose}
         keyboard={false}
         mask={{ closable: false }}
         focusable={{ trap: false, focusTriggerAfterClose: false }}
         transitionName=""
         maskTransitionName=""
-        title={<h3 id={titleId}>{title}</h3>}
+        title={<h3>{title}</h3>}
         className="fdp-modal"
         modalRender={(node) => (
           <div data-testid={testid ?? 'modal'} ref={dialogRef} tabIndex={-1}>

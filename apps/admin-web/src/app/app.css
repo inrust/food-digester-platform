@@ -319,10 +319,17 @@ td {
   background: #fff;
 }
 
+.library-dialog-overlay,
+.dialog-overlay {
+  isolation: isolate;
+  z-index: 1000;
+}
+.library-dialog-overlay {
+  position: relative;
+}
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -963,6 +970,8 @@ button[aria-pressed='true'],
 .fdp-modal h3 {
   margin: 0;
   padding-bottom: 16px;
+  padding-inline-end: 32px;
+  overflow-wrap: anywhere;
   border-bottom: 1px solid #e3e9ef;
 }
 .fdp-modal .ant-modal-body {

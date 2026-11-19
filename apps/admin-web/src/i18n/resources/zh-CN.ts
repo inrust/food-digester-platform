@@ -117,6 +117,7 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'common.stale': '数据可能已过期',
   'common.dataTime': '数据时间：',
   'common.cancel': '取消',
+  'common.close': '关闭',
   'common.confirm': '确认',
   'common.reason': '操作原因',
   'common.reasonHint': '必填，将写入审计记录',

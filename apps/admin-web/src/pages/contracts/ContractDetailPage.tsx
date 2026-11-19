@@ -98,6 +98,7 @@ export function ContractDetailPage({
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
   const [bindOpen, setBindOpen] = useState(false);
   const [available, setAvailable] = useState<readonly AvailableDeviceView[] | null>(null);
+  const availableRequest = useRef(0);
   const [bindSelected, setBindSelected] = useState<readonly string[]>([]);
   const [bindReason, setBindReason] = useState('');
   const [unbindSelected, setUnbindSelected] = useState<readonly string[]>([]);
@@ -144,14 +145,25 @@ export function ContractDetailPage({
   const editFieldErrors =
     editDraft !== null ? validateContractForm({ ...editDraft, customerId: contract.customerId }) : null;
   const renewError = renewEndAt !== null ? validateRenew(renewEndAt, contract.endAt) : null;
+  const closeBind = () => {
+    availableRequest.current += 1;
+    setBindOpen(false);
+  };
   const openBind = () => {
+    const request = ++availableRequest.current;
     setBindOpen(true);
+    setActionError(null);
     setAvailable(null);
     setBindSelected([]);
     setBindReason('');
-    void onListAvailable()
-      .then(setAvailable)
-      .catch((err: unknown) => setActionError(err));
+    void onListAvailable().then(
+      (devices) => {
+        if (request === availableRequest.current) setAvailable(devices);
+      },
+      (err: unknown) => {
+        if (request === availableRequest.current) setActionError(err);
+      },
+    );
   };
   const submitEdit = () =>
     runAction(async () => {
@@ -194,7 +206,7 @@ export function ContractDetailPage({
     runAction(async () => {
       if (bindSelected.length === 0) return '';
       const bound = await onBind(bindSelected, bindReason.trim());
-      setBindOpen(false);
+      closeBind();
       return translate('page.1efeec44018f') + ' ' + bound.length + (' ' + translate('page.ff58c8e551d7'));
     });
   return (
@@ -214,7 +226,9 @@ export function ContractDetailPage({
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && editDraft === null && renewEndAt === null && !bindOpen ? (
+        <ErrorNotice error={actionError} onRefresh={onRefresh} />
+      ) : null}
 
       <section data-testid="contract-summary" aria-label={translate('page.82fe9340d299')}>
         <dl>
@@ -248,6 +262,7 @@ export function ContractDetailPage({
             disabled={busy || gate('edit') !== null}
             {...(gate('edit') !== null ? { title: gate('edit') ?? '' } : {})}
             onClick={() => {
+              setActionError(null);
               setEditDraft({
                 contractNumber: contract.contractNumber,
                 name: contract.name,
@@ -276,6 +291,7 @@ export function ContractDetailPage({
             disabled={busy || gate('renew') !== null}
             {...(gate('renew') !== null ? { title: gate('renew') ?? '' } : {})}
             onClick={() => {
+              setActionError(null);
               setRenewEndAt('');
               setRenewReason('');
             }}
@@ -446,6 +462,7 @@ export function ContractDetailPage({
       >
         {editDraft !== null ? (
           <div>
+            {actionError !== null ? <ErrorNotice error={actionError} /> : null}
             <p className="field-hint">
               If-Match：v{contract.version}
               {translate('page.700f6ff8900c')}
@@ -504,6 +521,9 @@ export function ContractDetailPage({
               />
             </div>
             <div className="dialog-actions">
+              <Button type="button" onClick={() => setEditDraft(null)}>
+                {translate('common.cancel')}
+              </Button>
               <Button
                 type="button"
                 className="primary-button"
@@ -526,6 +546,7 @@ export function ContractDetailPage({
       >
         {renewEndAt !== null ? (
           <div>
+            {actionError !== null ? <ErrorNotice error={actionError} /> : null}
             <p className="field-hint">
               If-Match：v{contract.version}
               {translate('page.8ca11a88bfcc')}
@@ -556,6 +577,9 @@ export function ContractDetailPage({
               />
             </div>
             <div className="dialog-actions">
+              <Button type="button" onClick={() => setRenewEndAt(null)}>
+                {translate('common.cancel')}
+              </Button>
               <Button
                 type="button"
                 className="primary-button"
@@ -570,17 +594,15 @@ export function ContractDetailPage({
         ) : null}
       </Modal>
 
-      <Modal
-        open={bindOpen}
-        title={translate('page.d3ca3e6b7106')}
-        testid="contract-bind-form"
-        onClose={() => setBindOpen(false)}
-      >
+      <Modal open={bindOpen} title={translate('page.d3ca3e6b7106')} testid="contract-bind-form" onClose={closeBind}>
+        {actionError !== null ? <ErrorNotice error={actionError} /> : null}
         <p className="field-hint">{translate('page.816ff488d0a0')}</p>
         {available === null ? (
-          <div role="status" data-testid="contract-bind-loading">
-            {translate('page.d360706fdd30')}
-          </div>
+          actionError === null ? (
+            <div role="status" data-testid="contract-bind-loading">
+              {translate('page.d360706fdd30')}
+            </div>
+          ) : null
         ) : available.length === 0 ? (
           <p className="empty-state" data-testid="contract-bind-empty">
             {translate('page.941fc73da805')}
@@ -617,6 +639,9 @@ export function ContractDetailPage({
           />
         </div>
         <div className="dialog-actions">
+          <Button type="button" onClick={closeBind}>
+            {translate('common.cancel')}
+          </Button>
           <Button
             type="button"
             className="primary-button"

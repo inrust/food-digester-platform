@@ -70,7 +70,7 @@ for (const viewport of [
     await page.goto('/settings');
     await page.getByTestId('user-invite-open').click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByTestId('invite-email')).toBeFocused();
+    await expect(page.getByRole('dialog').getByRole('button', { name: '关闭' })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
     await expect(page.getByTestId('invite-role-CustomerViewer')).toBeFocused();
     await page.keyboard.press('Escape');
