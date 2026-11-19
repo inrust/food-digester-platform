@@ -476,29 +476,39 @@ export function ConfigurationsController({
     rows: null,
   });
   const [detail, setDetail] = useState<ConfigurationDetailState>({ kind: 'none' });
-  const selected = useRef<string | null>(null);
-  const loadList = useCallback(async () => {
-    setList({ rows: null });
-    try {
-      setList({
-        rows: await fetchConfigurations(api, {
+  const selected = useRef<{ id: string } | null>(null);
+  const latestList = useRef(0);
+  const latestSync = useRef(0);
+  const loadList = useCallback(
+    async (preserveRows = false) => {
+      const request = ++latestList.current;
+      setList((current) => ({ rows: preserveRows ? current.rows : null }));
+      try {
+        const rows = await fetchConfigurations(api, {
           ...(filter.targetModel ? { targetModel: filter.targetModel } : {}),
           ...(filter.targetDeviceId ? { targetDeviceId: filter.targetDeviceId } : {}),
-        }),
-      });
-    } catch (error) {
-      setList({ rows: [], error });
-    }
-  }, [api, filter]);
+        });
+        if (request === latestList.current) setList({ rows });
+      } catch (error) {
+        if (request === latestList.current) setList((current) => ({ rows: current.rows ?? [], error }));
+      }
+    },
+    [api, filter],
+  );
   const loadDetail = useCallback(
-    async (id: string) => {
-      selected.current = id;
-      setDetail({ kind: 'loading' });
+    async (id: string, preserveDetail = false) => {
+      const request = { id };
+      selected.current = request;
+      setDetail((current) =>
+        preserveDetail && current.kind === 'ready' && current.detail.configurationId === id
+          ? { ...current, refreshing: true }
+          : { kind: 'loading' },
+      );
       try {
         const next = await fetchConfiguration(api, id);
-        if (selected.current === id) setDetail({ kind: 'ready', detail: next, sync: { kind: 'none' } });
+        if (selected.current === request) setDetail({ kind: 'ready', detail: next, sync: { kind: 'none' } });
       } catch (error) {
-        if (selected.current === id) setDetail({ kind: 'error', error });
+        if (selected.current === request) setDetail({ kind: 'error', error });
       }
     },
     [api],
@@ -507,8 +517,8 @@ export function ConfigurationsController({
     void loadList();
   }, [loadList]);
   const refresh = () => {
-    void loadList();
-    if (selected.current !== null) void loadDetail(selected.current);
+    void loadList(true);
+    if (selected.current !== null) void loadDetail(selected.current.id, true);
   };
   return (
     <ConfigurationsPage
@@ -524,13 +534,17 @@ export function ConfigurationsController({
         setDetail({ kind: 'none' });
       }}
       onLoadSyncStatus={(version) => {
-        const id = selected.current;
-        if (id === null) return;
+        const selection = selected.current;
+        if (selection === null) return;
+        const request = ++latestSync.current;
         setDetail((old) => (old.kind === 'ready' ? { ...old, sync: { kind: 'loading', version } } : old));
-        void fetchConfigurationVersionStatus(api, id, version).then(
-          (data) => setDetail((old) => (old.kind === 'ready' ? { ...old, sync: { kind: 'ready', data } } : old)),
-          (error: unknown) =>
-            setDetail((old) => (old.kind === 'ready' ? { ...old, sync: { kind: 'error', version, error } } : old)),
+        const finish = (sync: Extract<ConfigurationDetailState, { kind: 'ready' }>['sync']) => {
+          if (selected.current !== selection || latestSync.current !== request) return;
+          setDetail((old) => (old.kind === 'ready' ? { ...old, sync } : old));
+        };
+        void fetchConfigurationVersionStatus(api, selection.id, version).then(
+          (data) => finish({ kind: 'ready', data }),
+          (error: unknown) => finish({ kind: 'error', version, error }),
         );
       }}
       onCreate={(input) => createConfiguration(api, input)}

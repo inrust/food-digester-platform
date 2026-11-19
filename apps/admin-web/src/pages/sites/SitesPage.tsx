@@ -47,10 +47,16 @@ export interface SitesPageProps {
     label: string;
   }[];
   readonly canWrite: boolean;
+  readonly onReadSite: (siteId: string) => Promise<SiteView>;
   readonly onCreate: (customerId: string, input: SiteInput) => Promise<SiteView>;
   readonly onUpdate: (site: SiteView, input: SiteInput) => Promise<SiteView>;
   readonly onDeactivate: (site: SiteView, reason: string) => Promise<SiteView>;
 }
+type SiteDetail =
+  | { kind: 'loading'; siteId: string }
+  | { kind: 'error'; siteId: string; error: unknown }
+  | { kind: 'ready'; site: SiteView };
+
 type Dialog =
   | {
       kind: 'create';
@@ -84,6 +90,7 @@ function SiteFormDialog({
   error,
   onSubmit,
   onCancel,
+  onRefresh,
 }: {
   readonly dialog: Extract<
     Dialog,
@@ -96,6 +103,7 @@ function SiteFormDialog({
   readonly error: unknown;
   readonly onSubmit: (customerId: string, input: SiteInput) => void;
   readonly onCancel: () => void;
+  readonly onRefresh: () => void;
 }) {
   const editing = dialog.kind === 'edit' ? dialog.site : null;
   const [customerId, setCustomerId] = useState(editing?.customerId ?? '');
@@ -187,7 +195,7 @@ function SiteFormDialog({
         (v) => set({ contactEmail: textOrNull(v) }),
         'contactEmail',
       )}
-      {error !== null && error !== undefined ? <ErrorNotice error={error} /> : null}
+      {error !== null && error !== undefined ? <ErrorNotice error={error} onRefresh={onRefresh} /> : null}
       <div className="dialog-actions">
         <Button type="button" onClick={onCancel}>
           {translate('page.4d0b4688c787')}
@@ -209,11 +217,15 @@ export function SitesPage({
   onRefresh,
   customerOptions,
   canWrite,
+  onReadSite,
   onCreate,
   onUpdate,
   onDeactivate,
 }: SitesPageProps) {
-  const [selected, setSelected] = useState<SiteView | null>(null);
+  const [detail, setDetail] = useState<SiteDetail | null>(null);
+  const selected = detail?.kind === 'ready' ? detail.site : null;
+  const selection = useRef(0);
+  const listFocus = useRef<HTMLDivElement>(null);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
@@ -227,20 +239,52 @@ export function SitesPage({
             label: customerOptions.find((option) => option.value === fixedCustomerId)?.label ?? fixedCustomerId,
           },
         ];
+  const loadDetail = (siteId: string) => {
+    const request = ++selection.current;
+    setActionError(null);
+    setDetail({ kind: 'loading', siteId });
+    void onReadSite(siteId).then(
+      (site) => {
+        if (request === selection.current) setDetail({ kind: 'ready', site });
+      },
+      (error: unknown) => {
+        if (request === selection.current) setDetail({ kind: 'error', siteId, error });
+      },
+    );
+  };
+  const closeDetail = () => {
+    ++selection.current;
+    setDetail(null);
+    setActionError(null);
+  };
+  const cancelDialog = () => {
+    if (dialog?.kind === 'create') ++selection.current;
+    setDialog(null);
+    setActionError(null);
+  };
+  const refreshDetail = () => {
+    setDialog(null);
+    if (selected !== null) loadDetail(selected.id);
+    onRefresh();
+  };
   const runAction = async (fn: () => Promise<SiteView>) => {
     if (inFlight.current) return;
     inFlight.current = true;
+    const request = selection.current;
     setBusy(true);
     setActionError(null);
     try {
       const updated = await fn();
-      setDialog(null);
-      setSelected(updated);
+      if (request === selection.current) {
+        setDialog(null);
+        setDetail({ kind: 'ready', site: updated });
+      }
       onRefresh();
     } catch (err) {
-      setActionError(err);
-      // 停用确认框无错误展示区：失败即关闭，错误在详情面板显示
-      setDialog((current) => (current?.kind === 'deactivate' ? null : current));
+      if (request === selection.current) {
+        setActionError(err);
+        setDialog((current) => (current?.kind === 'deactivate' ? null : current));
+      }
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -257,7 +301,12 @@ export function SitesPage({
             type="button"
             className="primary-button"
             data-testid="create-site"
-            onClick={() => setDialog({ kind: 'create' })}
+            disabled={busy}
+            onClick={() => {
+              ++selection.current;
+              setActionError(null);
+              setDialog({ kind: 'create' });
+            }}
           >
             {translate('page.97cf62968aef')}
           </Button>
@@ -312,85 +361,110 @@ export function SitesPage({
         </div>
       </FilterBar>
 
-      <CursorTable
-        ariaLabel={translate('page.0bfb6aec5482')}
-        columns={[
-          { key: 'name', header: translate('page.e72ec84bc978'), render: (s) => s.name },
-          { key: 'customerId', header: translate('page.467c1137f479'), render: (s) => s.customerId },
-          { key: 'region', header: translate('page.406e0f8c6852'), render: (s) => s.region ?? '—' },
-          { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (s) => s.subregion ?? '—' },
-          { key: 'timezone', header: translate('page.fb2a23dc1601'), render: (s) => s.timezone },
-          { key: 'contactName', header: translate('page.2425bd4bc11b'), render: (s) => s.contactName ?? '—' },
-          {
-            key: 'deviceCount',
-            header: translate('page.7beb4b6b2974'),
-            render: (s) => <NumberText value={s.deviceCount} />,
-          },
-          { key: 'status', header: translate('page.62e951a692ff'), render: (s) => SITE_STATUS_LABELS[s.status] },
-          {
-            key: 'actions',
-            header: translate('page.f3ea6d345e2a'),
-            render: (s) => (
-              <Button type="button" data-testid={`detail-${s.id}`} onClick={() => setSelected(s)}>
-                {translate('page.b6e664d7362f')}
-              </Button>
-            ),
-          },
-        ]}
-        rows={list.rows === null ? null : [...list.rows]}
-        rowKey={(s) => s.id}
-        {...(list.loading !== undefined ? { loading: list.loading } : {})}
-        {...(list.error !== undefined ? { error: list.error } : {})}
-        {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
-        {...(list.stale !== undefined ? { stale: list.stale } : {})}
-        {...(list.dataUpdatedAt !== undefined ? { dataUpdatedAt: list.dataUpdatedAt } : {})}
-        {...(list.hasPrevPage !== undefined ? { hasPrevPage: list.hasPrevPage } : {})}
-        onNextPage={onLoadMore}
-        {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
-        onRefresh={onRefresh}
-        emptyText={translate('page.5e494547b40c')}
-      />
+      <div ref={listFocus} tabIndex={-1}>
+        <CursorTable
+          ariaLabel={translate('page.0bfb6aec5482')}
+          columns={[
+            { key: 'name', header: translate('page.e72ec84bc978'), render: (s) => s.name },
+            { key: 'customerId', header: translate('page.467c1137f479'), render: (s) => s.customerId },
+            { key: 'region', header: translate('page.406e0f8c6852'), render: (s) => s.region ?? '—' },
+            { key: 'subregion', header: translate('page.ff0beacd69e2'), render: (s) => s.subregion ?? '—' },
+            { key: 'timezone', header: translate('page.fb2a23dc1601'), render: (s) => s.timezone },
+            { key: 'contactName', header: translate('page.2425bd4bc11b'), render: (s) => s.contactName ?? '—' },
+            {
+              key: 'deviceCount',
+              header: translate('page.7beb4b6b2974'),
+              render: (s) => <NumberText value={s.deviceCount} />,
+            },
+            { key: 'status', header: translate('page.62e951a692ff'), render: (s) => SITE_STATUS_LABELS[s.status] },
+            {
+              key: 'actions',
+              header: translate('page.f3ea6d345e2a'),
+              render: (s) => (
+                <Button type="button" data-testid={`detail-${s.id}`} onClick={() => loadDetail(s.id)}>
+                  {translate('page.b6e664d7362f')}
+                </Button>
+              ),
+            },
+          ]}
+          rows={list.rows === null ? null : [...list.rows]}
+          rowKey={(s) => s.id}
+          {...(list.loading !== undefined ? { loading: list.loading } : {})}
+          {...(list.error !== undefined ? { error: list.error } : {})}
+          {...(list.nextCursor !== undefined ? { nextCursor: list.nextCursor } : {})}
+          {...(list.stale !== undefined ? { stale: list.stale } : {})}
+          {...(list.dataUpdatedAt !== undefined ? { dataUpdatedAt: list.dataUpdatedAt } : {})}
+          {...(list.hasPrevPage !== undefined ? { hasPrevPage: list.hasPrevPage } : {})}
+          onNextPage={onLoadMore}
+          {...(onLoadPrevious !== undefined ? { onPrevPage: onLoadPrevious } : {})}
+          onRefresh={onRefresh}
+          emptyText={translate('page.5e494547b40c')}
+        />
+      </div>
 
-      {selected !== null ? (
-        <aside className="detail-panel" data-testid="site-detail" aria-label={translate('page.78e70b8d9e4e')}>
-          <h4>{translate('page.78e70b8d9e4e')}</h4>
-          <dl>
-            <dt>{translate('page.194f9bfdf96d')}</dt>
-            <dd>{selected.id}</dd>
-            <dt>{translate('page.467c1137f479')}</dt>
-            <dd>{selected.customerId}</dd>
-            <dt>{translate('page.e72ec84bc978')}</dt>
-            <dd>{selected.name}</dd>
-            <dt>{translate('page.a7a1979e6c82')}</dt>
-            <dd>
-              {selected.region ?? '—'} / {selected.subregion ?? '—'}
-            </dd>
-            <dt>{translate('page.67d2d7970f4a')}</dt>
-            <dd>{selected.address ?? '—'}</dd>
-            <dt>{translate('page.fb2a23dc1601')}</dt>
-            <dd>{selected.timezone}</dd>
-            <dt>{translate('page.2425bd4bc11b')}</dt>
-            <dd>
-              {selected.contactName ?? '—'} / {selected.contactPhone ?? '—'} / {selected.contactEmail ?? '—'}
-            </dd>
-            <dt>{translate('page.7beb4b6b2974')}</dt>
-            <dd data-testid="site-device-count">
-              <NumberText value={selected.deviceCount} />
-            </dd>
-            <dt>{translate('page.62e951a692ff')}</dt>
-            <dd data-testid="site-status">{SITE_STATUS_LABELS[selected.status]}</dd>
-            <dt>{translate('page.093dea88c930')}</dt>
-            <dd>
-              <TimeText iso={selected.updatedAt} />
-            </dd>
-          </dl>
-          {actionError !== null && dialog === null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
-          <div className="detail-actions">
-            <Button type="button" onClick={() => setSelected(null)}>
-              {translate('page.6c14bd7f6f9e')}
-            </Button>
+      <Modal
+        fallbackFocusRef={listFocus}
+        open={detail !== null}
+        title={translate('page.78e70b8d9e4e')}
+        testid="site-detail"
+        width={720}
+        onClose={closeDetail}
+      >
+        {detail?.kind === 'loading' ? (
+          <p role="status" data-testid="site-detail-loading">
+            {translate('page.300ee3dee4dc')}
+          </p>
+        ) : null}
+        {detail?.kind === 'error' ? (
+          <div className="detail-stack">
+            <ErrorNotice error={detail.error} />
+            <div className="detail-actions">
+              <Button type="button" onClick={() => loadDetail(detail.siteId)}>
+                {translate('detail.retry')}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {selected !== null ? (
+          <div className="detail-stack">
+            <section className="detail-card" aria-label={translate('detail.site.summary')}>
+              <h4>{translate('detail.site.summary')}</h4>
+              <dl>
+                <dt>{translate('page.194f9bfdf96d')}</dt>
+                <dd>{selected.id}</dd>
+                <dt>{translate('page.467c1137f479')}</dt>
+                <dd>{selected.customerId}</dd>
+                <dt>{translate('page.e72ec84bc978')}</dt>
+                <dd>{selected.name}</dd>
+                <dt>{translate('page.a7a1979e6c82')}</dt>
+                <dd>
+                  {selected.region ?? '—'} / {selected.subregion ?? '—'}
+                </dd>
+                <dt>{translate('page.67d2d7970f4a')}</dt>
+                <dd>{selected.address ?? '—'}</dd>
+                <dt>{translate('page.fb2a23dc1601')}</dt>
+                <dd>{selected.timezone}</dd>
+                <dt>{translate('page.2425bd4bc11b')}</dt>
+                <dd>
+                  {selected.contactName ?? '—'} / {selected.contactPhone ?? '—'} / {selected.contactEmail ?? '—'}
+                </dd>
+                <dt>{translate('page.7beb4b6b2974')}</dt>
+                <dd data-testid="site-device-count">
+                  <NumberText value={selected.deviceCount} />
+                </dd>
+                <dt>{translate('page.62e951a692ff')}</dt>
+                <dd data-testid="site-status">{SITE_STATUS_LABELS[selected.status]}</dd>
+                <dt>{translate('page.093dea88c930')}</dt>
+                <dd>
+                  <TimeText iso={selected.updatedAt} />
+                </dd>
+              </dl>
+            </section>
+            {actionError !== null && dialog === null ? (
+              <ErrorNotice error={actionError} onRefresh={refreshDetail} />
+            ) : null}
             {canWrite ? (
-              <>
+              <div className="detail-actions">
                 <Button
                   type="button"
                   data-testid="edit-site"
@@ -416,11 +490,11 @@ export function SitesPage({
                     {translate('page.d989e55188c9')}
                   </Button>
                 ) : null}
-              </>
+              </div>
             ) : null}
           </div>
-        </aside>
-      ) : null}
+        ) : null}
+      </Modal>
 
       {dialog !== null && dialog.kind !== 'deactivate' ? (
         <SiteFormDialog
@@ -428,7 +502,8 @@ export function SitesPage({
           customerOptions={customerOptions}
           busy={busy}
           error={actionError}
-          onCancel={() => setDialog(null)}
+          onRefresh={refreshDetail}
+          onCancel={cancelDialog}
           onSubmit={(customerId, input) => {
             if (dialog.kind === 'create') void runAction(() => onCreate(customerId, input));
             else void runAction(() => onUpdate(dialog.site, input));
@@ -456,7 +531,7 @@ export function SitesPage({
         onConfirm={(reason) => {
           if (dialog?.kind === 'deactivate') void runAction(() => onDeactivate(dialog.site, reason));
         }}
-        onCancel={() => setDialog(null)}
+        onCancel={cancelDialog}
       />
     </div>
   );

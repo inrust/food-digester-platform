@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
-const FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex]';
+const FOCUSABLE = 'a[href],button,input,select,textarea,summary:first-of-type,[tabindex]';
 
 interface DialogLayer {
   readonly overlay: HTMLElement;
@@ -13,12 +13,16 @@ const layers: DialogLayer[] = [];
 const background = new Map<HTMLElement, { inert: boolean; ariaHidden: string | null }>();
 
 function tabbableElements(dialog: HTMLElement): HTMLElement[] {
-  return [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-    (node) =>
-      node.tabIndex >= 0 &&
-      !node.matches(':disabled, input[type="hidden"]') &&
-      node.closest('[hidden], [inert], [aria-hidden="true"]') === null,
-  );
+  return [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((node) => {
+    if (
+      node.tabIndex < 0 ||
+      node.matches(':disabled, input[type="hidden"]') ||
+      node.closest('[hidden], [inert], [aria-hidden="true"]') !== null
+    )
+      return false;
+    const closedDetails = node.closest('details:not([open])');
+    return closedDetails === null || closedDetails.querySelector(':scope > summary')?.contains(node) === true;
+  });
 }
 
 function syncBackground(focus: (top: DialogLayer | undefined) => void) {
@@ -48,6 +52,7 @@ export function useDialogA11y(
   overlayRef: RefObject<HTMLElement | null>,
   onClose: () => void,
   initialFocusRef?: RefObject<HTMLElement | null>,
+  fallbackFocusRef?: RefObject<HTMLElement | null>,
 ) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -96,10 +101,13 @@ export function useDialogA11y(
         ) {
           previous.focus({ preventScroll: true });
         }
+        if (top === undefined && document.activeElement === document.body) {
+          fallbackFocusRef?.current?.focus({ preventScroll: true });
+        }
         if (top !== undefined && !top.dialog.contains(document.activeElement)) {
           (tabbableElements(top.dialog)[0] ?? top.dialog).focus({ preventScroll: true });
         }
       });
     };
-  }, [dialogRef, initialFocusRef, open, overlayRef]);
+  }, [dialogRef, fallbackFocusRef, initialFocusRef, open, overlayRef]);
 }

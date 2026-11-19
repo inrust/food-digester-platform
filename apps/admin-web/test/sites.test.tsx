@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError } from '../src/api/errors.js';
 import { SitesPage } from '../src/pages/sites/SitesPage.js';
@@ -46,6 +46,7 @@ function renderPage(overrides: Partial<SitesPageProps> = {}) {
     },
     customerOptions: [{ value: 'cust-1', label: '示例客户' }],
     canWrite: true,
+    onReadSite: async () => SITE,
     onCreate: async (customerId, input) => {
       calls.created.push({ customerId, input });
       return { ...SITE, id: 'site-2', customerId, name: input.name };
@@ -147,9 +148,39 @@ test('停用：展示关联设备数提示；原因必填；409 版本冲突提�
   await waitFor(() => assert.ok(screen.getByTestId('error-version-conflict')));
 });
 
-test('只读角色：写操作隐藏；403 展示无权', () => {
+test('详情关闭后忽略迟到响应，重新选择显示当前站点', async () => {
+  const user = userEvent.setup();
+  let finishFirst: (value: SiteView) => void = () => {};
+  const pending = new Promise<SiteView>((resolve) => {
+    finishFirst = resolve;
+  });
+  const second = { ...SITE, id: 'site-2', name: '二号站点' };
+  renderPage({
+    list: { rows: [SITE, second] },
+    onReadSite: (id) => (id === SITE.id ? pending : Promise.resolve(second)),
+  });
+  const trigger = screen.getByTestId('detail-site-1');
+  await user.click(trigger);
+  assert.ok(screen.getByTestId('site-detail-loading'));
+  await user.keyboard('{Escape}');
+  assert.equal(document.activeElement, trigger);
+  await user.click(screen.getByTestId('detail-site-2'));
+  await act(async () => finishFirst(SITE));
+  assert.ok(screen.getByTestId('site-detail').textContent?.includes(second.name));
+  assert.ok(!screen.getByTestId('site-detail').textContent?.includes(SITE.name));
+});
+
+test('只读角色可查看详情和关闭，写操作隐藏；403 展示无权', async () => {
+  const user = userEvent.setup();
   const { unmount } = renderPage({ canWrite: false });
   assert.equal(screen.queryByTestId('create-site'), null);
+  await user.click(screen.getByTestId('detail-site-1'));
+  const detail = screen.getByTestId('site-detail');
+  assert.ok(detail.textContent?.includes(SITE.name));
+  assert.equal(within(detail).queryByTestId('edit-site'), null);
+  assert.equal(within(detail).queryByTestId('deactivate-site'), null);
+  await user.click(within(detail).getByRole('button', { name: '关闭' }));
+  assert.equal(document.activeElement, screen.getByTestId('detail-site-1'));
   unmount();
 
   renderPage({ list: { rows: null, error: new ApiClientError(403, 'FORBIDDEN', 'denied', 'r-403') } });

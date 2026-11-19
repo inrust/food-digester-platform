@@ -377,6 +377,8 @@ test('Customer/Site CRUD 关键路径：创建、非法时区、关联停用提�
       sites = [...sites, created];
       return json(route, { data: created, meta: {} }, 201);
     }
+    const selectedSite = sites.find((record) => pathname.endsWith('/' + record.id));
+    if (selectedSite) return json(route, { data: selectedSite, meta: {} });
     return json(route, { data: sites, meta: { nextCursor: null } });
   });
 
@@ -417,6 +419,7 @@ test('Customer/Site CRUD 关键路径：创建、非法时区、关联停用提�
   await page.getByLabel('停用原因').fill('linked device review complete');
   await page.getByRole('button', { name: '确认停用' }).click();
   await expect(page.getByTestId('site-status')).toHaveText('已停用');
+  await page.getByTestId('site-detail').getByRole('button', { name: '关闭' }).click();
 
   await page.getByTestId('create-site').click();
   const conflictingSiteForm = page.getByTestId('site-form');

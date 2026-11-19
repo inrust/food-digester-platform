@@ -73,6 +73,7 @@ export type ConfigurationDetailState =
       readonly kind: 'ready';
       readonly detail: ConfigurationDetailView;
       readonly sync: SyncStatusState;
+      readonly refreshing?: boolean;
     };
 export interface ConfigurationFilter {
   readonly targetModel: string | null;
@@ -138,6 +139,7 @@ export function ConfigurationsPage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
+  const detailRefreshing = detail.kind === 'ready' && detail.refreshing === true;
   const canWrite = hasPermission(role, 'config:publish');
   const detailView = detail.kind === 'ready' ? detail.detail : null;
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
@@ -223,12 +225,14 @@ export function ConfigurationsPage({
         </div>
       </FilterBar>
 
-      {notice !== null ? (
+      {notice !== null && detail.kind === 'none' ? (
         <p className="action-notice" role="status" data-testid="action-notice">
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && detail.kind === 'none' ? (
+        <ErrorNotice error={actionError} onRefresh={onRefresh} />
+      ) : null}
 
       {list.error !== undefined ? <ErrorNotice error={list.error} onRefresh={onRefresh} /> : null}
       {list.rows === null ? (
@@ -240,139 +244,197 @@ export function ConfigurationsPage({
           {translate('page.bb7031ae5844')}
         </p>
       ) : (
-        <table aria-label={translate('page.455fb42de709')} data-testid="config-table">
-          <thead>
-            <tr>
-              <th scope="col">{translate('page.1be7ae4fc257')}</th>
-              <th scope="col">{translate('page.941f08313a1d')}</th>
-              <th scope="col">{translate('page.0aba1045c82b')}</th>
-              <th scope="col">{translate('page.ac7d92446ab6')}</th>
-              <th scope="col">{translate('page.787ad1deae49')}</th>
-              <th scope="col">{translate('page.84e3802f60a7')}</th>
-              <th scope="col">{translate('page.f3ea6d345e2a')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.rows.map((row) => (
-              <tr key={row.configurationId} data-testid={`config-row-${row.configurationId}`}>
-                <td>{row.name}</td>
-                <td>
-                  {row.targetModel !== null
-                    ? translate('page.0132ce7298ec') + ' ' + row.targetModel
-                    : translate('page.01f2c16cda65') + ' ' + (row.targetDeviceId ?? '')}
-                </td>
-                <td>
-                  <NumberText value={row.versionCount} />
-                </td>
-                <td>{row.latestPublishedVersion !== null ? `v${row.latestPublishedVersion}` : '—'}</td>
-                <td>{row.createdBy}</td>
-                <td>
-                  <TimeText iso={row.createdAt} />
-                </td>
-                <td>
-                  <Button
-                    type="button"
-                    data-testid={`config-detail-open-${row.configurationId}`}
-                    onClick={() => onSelect(row.configurationId)}
-                  >
-                    {translate('page.4f55ee1e687f')}
-                  </Button>
-                </td>
+        <div className="table-scroll" role="region" aria-label={translate('page.455fb42de709')} tabIndex={0}>
+          <table aria-label={translate('page.455fb42de709')} data-testid="config-table">
+            <thead>
+              <tr>
+                <th scope="col">{translate('page.1be7ae4fc257')}</th>
+                <th scope="col">{translate('page.941f08313a1d')}</th>
+                <th scope="col">{translate('page.0aba1045c82b')}</th>
+                <th scope="col">{translate('page.ac7d92446ab6')}</th>
+                <th scope="col">{translate('page.787ad1deae49')}</th>
+                <th scope="col">{translate('page.84e3802f60a7')}</th>
+                <th scope="col">{translate('page.f3ea6d345e2a')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.rows.map((row) => (
+                <tr key={row.configurationId} data-testid={`config-row-${row.configurationId}`}>
+                  <td>{row.name}</td>
+                  <td>
+                    {row.targetModel !== null
+                      ? translate('page.0132ce7298ec') + ' ' + row.targetModel
+                      : translate('page.01f2c16cda65') + ' ' + (row.targetDeviceId ?? '')}
+                  </td>
+                  <td>
+                    <NumberText value={row.versionCount} />
+                  </td>
+                  <td>{row.latestPublishedVersion !== null ? `v${row.latestPublishedVersion}` : '—'}</td>
+                  <td>{row.createdBy}</td>
+                  <td>
+                    <TimeText iso={row.createdAt} />
+                  </td>
+                  <td>
+                    <Button
+                      type="button"
+                      data-testid={`config-detail-open-${row.configurationId}`}
+                      onClick={() => {
+                        setActionError(null);
+                        setNotice(null);
+                        onSelect(row.configurationId);
+                      }}
+                    >
+                      {translate('page.4f55ee1e687f')}
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {detail.kind === 'loading' ? (
-        <div role="status" data-testid="config-detail-loading">
-          {translate('page.300ee3dee4dc')}
-        </div>
-      ) : null}
-      {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
-
-      {detailView !== null && detail.kind === 'ready' ? (
-        <aside className="config-detail" data-testid="config-detail" aria-label={translate('page.eefaf4d5e099')}>
-          <h4>
-            {translate('page.cd7f88e92bbd')}
-            {detailView.name}
-          </h4>
-          <dl>
-            <dt>{translate('page.941f08313a1d')}</dt>
-            <dd>
-              {detailView.targetModel !== null
-                ? translate('page.0132ce7298ec') + ' ' + detailView.targetModel
-                : translate('page.01f2c16cda65') + ' ' + (detailView.targetDeviceId ?? '')}
-            </dd>
-            <dt>{translate('page.c7bd3aea6020')}</dt>
-            <dd data-testid="config-latest-published">
-              {detailView.latestPublishedVersion !== null
-                ? `v${detailView.latestPublishedVersion}`
-                : translate('page.ff233aab26c8')}
-            </dd>
-          </dl>
-
-          {detailView.derivedContext !== null ? (
-            <section data-testid="config-derived-context" aria-label={translate('page.8de234dc2f9d')}>
-              <h5>{translate('page.df32cbc077f5')}</h5>
-              <dl>
-                <dt>{translate('page.270ec5a97320')}</dt>
-                <dd>{detailView.derivedContext.alias ?? '—'}</dd>
-                <dt>{translate('page.619bc67325a4')}</dt>
-                <dd>{detailView.derivedContext.site ?? '—'}</dd>
-                <dt>{translate('page.17fc93c9cdbb')}</dt>
-                <dd>{detailView.derivedContext.region ?? '—'}</dd>
-                <dt>{translate('page.e1973949d60a')}</dt>
-                <dd>{detailView.derivedContext.subregion ?? '—'}</dd>
-                <dt>{translate('page.72045015ab9e')}</dt>
-                <dd>
-                  {detailView.derivedContext.contract !== null
-                    ? `${detailView.derivedContext.contract.contractNumber} ${detailView.derivedContext.contract.name}`
-                    : '—'}
-                </dd>
-              </dl>
-            </section>
-          ) : null}
-
-          <section aria-label={translate('page.8770418ba3a0')}>
-            <h5>{translate('page.af998514ac51')}</h5>
-            {detailView.versions.length === 0 ? (
-              <p className="empty-state" data-testid="config-versions-empty">
-                {translate('page.123892c99043')}
-              </p>
-            ) : (
-              detailView.versions.map((v) => (
-                <VersionCard
-                  key={v.versionId}
-                  version={v}
-                  canWrite={canWrite}
-                  busy={busy}
-                  sync={detail.sync}
-                  onPublishIntent={() => setPublishTarget(v.version)}
-                  onLoadSyncStatus={() => onLoadSyncStatus(v.version)}
-                />
-              ))
-            )}
-          </section>
-
-          <div className="detail-actions">
-            <Button type="button" onClick={onCloseDetail}>
-              {translate('page.6c14bd7f6f9e')}
-            </Button>
-            {canWrite ? (
-              <Button
-                type="button"
-                className="primary-button"
-                data-testid="config-version-create"
-                disabled={busy}
-                onClick={() => setVersionFormOpen(true)}
-              >
-                {translate('page.c87926d3eb9a')}
+      <Modal
+        open={detail.kind !== 'none'}
+        title={translate('page.eefaf4d5e099')}
+        width={880}
+        testid="config-detail"
+        onClose={() => {
+          setActionError(null);
+          setNotice(null);
+          onCloseDetail();
+        }}
+      >
+        {detail.kind === 'loading' || detailRefreshing ? (
+          <p role="status" data-testid="config-detail-loading">
+            {translate('page.300ee3dee4dc')}
+          </p>
+        ) : null}
+        {detail.kind === 'error' ? (
+          <div className="detail-stack">
+            <ErrorNotice error={detail.error} />
+            <div className="detail-actions">
+              <Button type="button" onClick={onRefresh}>
+                {translate('detail.retry')}
               </Button>
-            ) : null}
+            </div>
           </div>
-        </aside>
-      ) : null}
+        ) : null}
+        {notice !== null ? (
+          <p className="action-notice" role="status" data-testid="action-notice">
+            {notice}
+          </p>
+        ) : null}
+        {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+        {detailView !== null && detail.kind === 'ready' ? (
+          <div className="detail-stack">
+            <div className="detail-grid">
+              <section className="detail-card" aria-label={translate('detail.configuration.summary')}>
+                <h4>{translate('detail.configuration.summary')}</h4>
+                <dl>
+                  <dt>{translate('page.1be7ae4fc257')}</dt>
+                  <dd>{detailView.name}</dd>
+                  <dt>{translate('detail.configuration.id')}</dt>
+                  <dd>{detailView.configurationId}</dd>
+                  <dt>{translate('page.0aba1045c82b')}</dt>
+                  <dd>
+                    <NumberText value={detailView.versionCount} />
+                  </dd>
+                  <dt>{translate('page.ac7d92446ab6')}</dt>
+                  <dd data-testid="config-latest-published">
+                    {detailView.latestPublishedVersion !== null
+                      ? `v${detailView.latestPublishedVersion}`
+                      : translate('page.ff233aab26c8')}
+                  </dd>
+                  <dt>{translate('page.787ad1deae49')}</dt>
+                  <dd>{detailView.createdBy}</dd>
+                  <dt>{translate('page.84e3802f60a7')}</dt>
+                  <dd>
+                    <TimeText iso={detailView.createdAt} />
+                  </dd>
+                </dl>
+              </section>
+              <section className="detail-card" aria-label={translate('page.941f08313a1d')}>
+                <h4>{translate('page.941f08313a1d')}</h4>
+                <dl>
+                  <dt>{translate('page.0132ce7298ec')}</dt>
+                  <dd>{detailView.targetModel ?? '—'}</dd>
+                  <dt>{translate('page.01f2c16cda65')}</dt>
+                  <dd>{detailView.targetDeviceId ?? '—'}</dd>
+                </dl>
+              </section>
+              {detailView.derivedContext !== null ? (
+                <section
+                  className="detail-card"
+                  data-testid="config-derived-context"
+                  aria-label={translate('page.8de234dc2f9d')}
+                >
+                  <h4>{translate('page.8de234dc2f9d')}</h4>
+                  <dl>
+                    <dt>{translate('page.270ec5a97320')}</dt>
+                    <dd>{detailView.derivedContext.alias ?? '—'}</dd>
+                    <dt>{translate('page.619bc67325a4')}</dt>
+                    <dd>{detailView.derivedContext.site ?? '—'}</dd>
+                    <dt>{translate('page.17fc93c9cdbb')}</dt>
+                    <dd>{detailView.derivedContext.region ?? '—'}</dd>
+                    <dt>{translate('page.e1973949d60a')}</dt>
+                    <dd>{detailView.derivedContext.subregion ?? '—'}</dd>
+                    <dt>{translate('page.72045015ab9e')}</dt>
+                    <dd>
+                      {detailView.derivedContext.contract !== null
+                        ? `${detailView.derivedContext.contract.contractNumber} ${detailView.derivedContext.contract.name}`
+                        : '—'}
+                    </dd>
+                  </dl>
+                </section>
+              ) : null}
+            </div>
+            {canWrite ? (
+              <div className="detail-actions">
+                <Button
+                  type="button"
+                  className="primary-button"
+                  data-testid="config-version-create"
+                  disabled={busy || detailRefreshing}
+                  onClick={() => setVersionFormOpen(true)}
+                >
+                  {translate('page.c87926d3eb9a')}
+                </Button>
+              </div>
+            ) : null}
+            <section className="detail-card" aria-label={translate('page.8770418ba3a0')}>
+              <h4>{translate('page.8770418ba3a0')}</h4>
+              {detailView.versions.length === 0 ? (
+                <p className="empty-state" data-testid="config-versions-empty">
+                  {translate('page.123892c99043')}
+                </p>
+              ) : (
+                <div
+                  className="config-history-scroll"
+                  role="region"
+                  aria-label={translate('page.8770418ba3a0')}
+                  tabIndex={0}
+                  data-testid="config-history-scroll"
+                >
+                  {[...detailView.versions]
+                    .sort((left, right) => right.version - left.version)
+                    .map((v) => (
+                      <VersionCard
+                        key={v.versionId}
+                        version={v}
+                        canWrite={canWrite}
+                        busy={busy || detailRefreshing}
+                        sync={detail.sync}
+                        onPublishIntent={() => setPublishTarget(v.version)}
+                        onLoadSyncStatus={() => onLoadSyncStatus(v.version)}
+                      />
+                    ))}
+                </div>
+              )}
+            </section>
+          </div>
+        ) : null}
+      </Modal>
 
       <Modal
         open={createOpen}
@@ -452,79 +514,104 @@ function VersionCard({
 }) {
   const publishable = version.status === 'DRAFT';
   return (
-    <div className="version-card" data-testid={`config-version-${version.version}`} data-status={version.status}>
-      <div className="version-head">
+    <details
+      className="config-history-entry"
+      name="configuration-history"
+      data-testid={`config-version-${version.version}`}
+      data-status={version.status}
+    >
+      <summary data-testid={`config-expand-${version.version}`}>
         <strong>v{version.version}</strong>
         <span data-testid={`config-version-${version.version}-status`}>
           {CONFIG_VERSION_STATUS_LABELS[version.status] ?? version.status}
         </span>
-        {version.effectiveAt !== null ? (
-          <span>
-            {translate('page.ba06f7a98566') + ' '}
-            <TimeText iso={version.effectiveAt} />
-          </span>
-        ) : null}
-        <span>
-          {translate('page.f3b01f3f1a0e') + ' '}
-          <TimeText iso={version.createdAt} />
-        </span>
-        {version.changeNote !== null ? (
-          <span>
-            {translate('page.a2c8f89312ec')}
-            {version.changeNote}
-          </span>
-        ) : null}
-      </div>
-      {/* 历史版本只读：payload 仅展示，不提供编辑入口（不可变版本） */}
-      <dl className="version-payload" data-testid={`config-version-${version.version}-payload`}>
-        {CONFIG_V1_FIELDS.map((field) => (
-          <div key={field.key}>
-            <dt>
-              {field.label}（{field.unitLabel}）
-            </dt>
-            <dd data-testid={`config-version-${version.version}-field-${field.key}`}>
-              <UnitValueText value={version.payload[field.key]} unit={localeUnitForConfig(field.unit)} />
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <div className="action-row">
-        <Button
-          type="button"
-          className="primary-button"
-          data-testid={`config-publish-${version.version}`}
-          disabled={!publishable || !canWrite || busy}
-          {...(!publishable ? { title: translate('page.956bedba1a79') } : {})}
-          onClick={onPublishIntent}
-        >
-          {translate('page.94f172d02f5e')}
-        </Button>
-        {version.status === 'PUBLISHED' ? (
-          <Button type="button" data-testid={`config-sync-${version.version}`} onClick={onLoadSyncStatus}>
-            {translate('page.0150205d5c21')}
-          </Button>
-        ) : null}
-      </div>
-      {sync.kind === 'loading' && sync.version === version.version ? (
-        <div role="status" data-testid={`config-sync-loading-${version.version}`}>
-          {translate('page.300ee3dee4dc')}
-        </div>
-      ) : null}
-      {sync.kind === 'error' && sync.version === version.version ? (
-        <p className="error-notice" data-testid={`config-sync-error-${version.version}`}>
-          {translate('page.fb3bcf09c86d')}
-        </p>
-      ) : null}
-      {sync.kind === 'ready' && sync.data.version === version.version ? (
-        <ul data-testid={`config-sync-targets-${version.version}`}>
-          {sync.data.targets.map((t) => (
-            <li key={t.deviceId} data-testid={`config-sync-target-${t.deviceId}`}>
-              {t.deviceId}：{CONFIG_SYNC_STATUS_LABELS[t.notificationStatus] ?? t.notificationStatus}
-            </li>
+      </summary>
+      <div className="version-card detail-card">
+        <dl>
+          <dt>{translate('page.84e3802f60a7')}</dt>
+          <dd>
+            <TimeText iso={version.createdAt} />
+          </dd>
+          {version.effectiveAt !== null ? (
+            <>
+              <dt>{translate('page.ba06f7a98566')}</dt>
+              <dd>
+                <TimeText iso={version.effectiveAt} />
+              </dd>
+            </>
+          ) : null}
+          {version.changeNote !== null ? (
+            <>
+              <dt>{translate('detail.configuration.changeNote')}</dt>
+              <dd>{version.changeNote}</dd>
+            </>
+          ) : null}
+        </dl>
+        {/* 历史版本只读：payload 仅展示，不提供编辑入口（不可变版本） */}
+        <dl className="version-payload" data-testid={`config-version-${version.version}-payload`}>
+          {CONFIG_V1_FIELDS.map((field) => (
+            <div key={field.key}>
+              <dt>
+                {field.label}（{field.unitLabel}）
+              </dt>
+              <dd data-testid={`config-version-${version.version}-field-${field.key}`}>
+                <UnitValueText value={version.payload[field.key]} unit={localeUnitForConfig(field.unit)} />
+              </dd>
+            </div>
           ))}
-        </ul>
-      ) : null}
-    </div>
+        </dl>
+        <div className="action-row">
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid={`config-publish-${version.version}`}
+            disabled={!publishable || !canWrite || busy}
+            {...(!publishable ? { title: translate('page.956bedba1a79') } : {})}
+            onClick={onPublishIntent}
+          >
+            {translate('page.94f172d02f5e')}
+          </Button>
+          {version.status === 'PUBLISHED' ? (
+            <Button
+              type="button"
+              disabled={busy}
+              data-testid={`config-sync-${version.version}`}
+              onClick={onLoadSyncStatus}
+            >
+              {translate('page.0150205d5c21')}
+            </Button>
+          ) : null}
+        </div>
+        {sync.kind === 'loading' && sync.version === version.version ? (
+          <div role="status" data-testid={`config-sync-loading-${version.version}`}>
+            {translate('page.300ee3dee4dc')}
+          </div>
+        ) : null}
+        {sync.kind === 'error' && sync.version === version.version ? (
+          <p className="error-notice" data-testid={`config-sync-error-${version.version}`}>
+            {translate('page.fb3bcf09c86d')}
+          </p>
+        ) : null}
+        {sync.kind === 'ready' && sync.data.version === version.version ? (
+          <>
+            <p className="field-hint">{translate('detail.configuration.notificationStatus')}</p>
+            {sync.data.targets.length === 0 ? (
+              <p className="empty-state" data-testid={`config-sync-empty-${version.version}`}>
+                {translate('detail.configuration.noNotifications')}
+              </p>
+            ) : (
+              <ul data-testid={`config-sync-targets-${version.version}`}>
+                {sync.data.targets.map((t) => (
+                  <li key={t.deviceId} data-testid={`config-sync-target-${t.deviceId}`}>
+                    {t.deviceId}：{CONFIG_SYNC_STATUS_LABELS[t.notificationStatus] ?? t.notificationStatus}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : null}
+      </div>
+    </details>
   );
 }
 function VersionPayloadForm({

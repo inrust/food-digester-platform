@@ -5,7 +5,7 @@ import { Modal as AntModal } from 'antd';
  */
 import { createPortal } from 'react-dom';
 import { useRef } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useDialogA11y } from './dialog-a11y.js';
 import { useI18n } from '../i18n/i18n.js';
 
@@ -15,13 +15,15 @@ export interface ModalProps {
   readonly onClose: () => void;
   readonly children: ReactNode;
   readonly testid?: string;
+  readonly width?: number;
+  readonly fallbackFocusRef?: RefObject<HTMLElement | null>;
 }
 
-export function Modal({ open, title, onClose, children, testid }: ModalProps) {
+export function Modal({ open, title, onClose, children, testid, width = 560, fallbackFocusRef }: ModalProps) {
   const { t } = useI18n();
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  useDialogA11y(open, dialogRef, overlayRef, onClose);
+  useDialogA11y(open, dialogRef, overlayRef, onClose, undefined, fallbackFocusRef);
 
   if (!open) return null;
 
@@ -31,7 +33,7 @@ export function Modal({ open, title, onClose, children, testid }: ModalProps) {
         open
         centered
         getContainer={false}
-        width={560}
+        width={width}
         footer={null}
         closable={{ 'aria-label': t('common.close') }}
         onCancel={onClose}

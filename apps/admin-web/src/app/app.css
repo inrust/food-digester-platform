@@ -1057,6 +1057,109 @@ button[aria-pressed='true'],
   }
 }
 
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+  gap: 12px;
+}
+
+.detail-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.detail-card > :is(h4, h5) {
+  margin: 0 0 12px;
+}
+.detail-card > dl {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 8px 12px;
+  margin-block: 0 12px;
+}
+.detail-card > dl > dt {
+  color: var(--color-muted);
+}
+.detail-card > dl > dd {
+  margin: 0;
+}
+.detail-card--full {
+  grid-column: 1 / -1;
+}
+.detail-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.detail-stack .detail-actions {
+  justify-content: flex-end;
+}
+.device-manage-page .manage-header {
+  justify-content: flex-start;
+  margin-block-end: 16px;
+}
+.device-manage-page .manage-header h3 {
+  margin: 0;
+}
+.detail-card .four-axis-badges {
+  margin-block: 12px;
+}
+.lifecycle-retirement {
+  margin-block-start: 16px;
+  padding-block-start: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.device-manage-page .table-scroll table {
+  min-width: 720px;
+}
+.configurations-page .table-scroll table {
+  min-width: 600px;
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}
+.config-history-scroll {
+  max-block-size: min(24rem, 48dvh);
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.config-history-entry + .config-history-entry {
+  border-block-start: 1px solid var(--color-border);
+}
+.config-history-entry > summary {
+  padding: 12px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.config-history-entry > summary > span {
+  margin-inline-start: 10px;
+}
+.config-history-entry > .version-card {
+  margin: 0 8px 8px;
+}
+.config-history-entry > .version-card > ul {
+  padding-inline-start: 20px;
+  overflow-wrap: anywhere;
+}
+.alarm-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.alarm-detail-header :is(h3, .alarm-detail-status) {
+  margin: 0;
+}
+.alarm-detail-status {
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
 .filter-bar.filter-bar--stacked {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

@@ -215,6 +215,7 @@ test('非法范围/非整数有字段级错误且禁止提交；合法后提交�
 test('发布后版本只读：PUBLISHED 无编辑入口且发布禁用；DRAFT 可发布；历史版本 payload 完整展示', () => {
   renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
   const publishedCard = screen.getByTestId('config-version-1');
+  assert.equal(publishedCard.hasAttribute('open'), false);
   // 只读展示（无 input）
   assert.equal(publishedCard.querySelector('input'), null);
   assert.ok(publishedCard.textContent?.includes('已发布'));
@@ -234,6 +235,7 @@ test('发布后版本只读：PUBLISHED 无编辑入口且发布禁用；DRAFT �
 test('发布：生效时间可选且需合法；成功后提示 CONFIG_CHANGED 通知', async () => {
   const user = userEvent.setup();
   const { calls } = renderPage({ detail: { kind: 'ready', detail: DETAIL, sync: { kind: 'none' } } });
+  await user.click(screen.getByTestId('config-expand-2'));
   await user.click(screen.getByTestId('config-publish-2'));
   const form = screen.getByTestId('config-publish-form');
   assert.ok(form.textContent?.includes('CONFIG_CHANGED'));
@@ -270,6 +272,7 @@ test('同步状态：PUBLISHED 版本可查询每设备投递状态', async () =
       },
     },
   });
+  await user.click(screen.getByTestId('config-expand-1'));
   await user.click(screen.getByTestId('config-sync-1'));
   assert.deepEqual(calls.syncLoaded, [1]);
   assert.ok(screen.getByTestId('config-sync-target-dev-001').textContent?.includes('已投递'));

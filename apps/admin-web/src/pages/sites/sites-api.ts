@@ -36,6 +36,11 @@ export async function fetchSites(
   return { items: response.data, nextCursor: response.meta.nextCursor };
 }
 
+export async function fetchSite(api: ApiClient, siteId: string): Promise<SiteView> {
+  const response = await api.request<{ data: SiteView }>(`/admin/sites/${encodeURIComponent(siteId)}`);
+  return response.data;
+}
+
 export async function createSite(api: ApiClient, customerId: string, input: SiteInput): Promise<SiteView> {
   const response = await api.request<{ data: SiteView }>('/admin/sites', {
     method: 'POST',

@@ -29,7 +29,7 @@ import {
 import type { OnboardingRequestView, OnboardingStatus } from '../pages/onboarding/types.js';
 import { SitesPage } from '../pages/sites/SitesPage.js';
 import type { SiteFilters } from '../pages/sites/SitesPage.js';
-import { createSite, deactivateSite, fetchSites, updateSite } from '../pages/sites/sites-api.js';
+import { createSite, deactivateSite, fetchSite, fetchSites, updateSite } from '../pages/sites/sites-api.js';
 import type { SiteInput, SiteView } from '../pages/sites/types.js';
 interface PageResult<T> {
   readonly items: readonly T[];
@@ -230,6 +230,7 @@ export function SitesController({
       onRefresh={page.refresh}
       customerOptions={customerOptions}
       canWrite={can(session, 'site:write')}
+      onReadSite={(id) => fetchSite(api, id)}
       onCreate={async (customerId: string, input: SiteInput) => {
         const result = await createSite(api, customerId, input);
         success(toasts, translate('ui.5992e4f5d109'));

@@ -245,8 +245,12 @@ async function checkGroup(key: string, page: Page, q: Qa08, go: () => Promise<vo
         await expect(page).toHaveURL(/\/configurations$/);
         await page.getByTestId(`config-detail-open-${f.configId}`).click();
         await expect(page.getByTestId('config-detail')).toContainText(f.config.name);
+        await page.getByTestId('config-expand-1').click();
         await page.getByTestId('config-publish-1').click();
         await expect(page.getByTestId('config-publish')).toBeEnabled();
+        await page.keyboard.press('Escape');
+        await expect(page.getByTestId('config-publish-dialog')).toHaveCount(0);
+        await expect(page.getByTestId('config-detail')).toBeVisible();
         await close(page);
       }
       await switchRole(page, 'Auditor');

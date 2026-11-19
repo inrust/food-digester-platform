@@ -145,6 +145,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     );
   }
   if (session === null) return null;
+  const sessionScope = `${session.username}:${session.customerId}:${session.roles.join(',')}`;
   let page;
   switch (verdict.route.pageState) {
     case 'dashboard':
@@ -157,7 +158,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <CustomersController api={services.api} session={session} toasts={toasts} />;
       break;
     case 'sites':
-      page = <SitesController api={services.api} session={session} toasts={toasts} />;
+      page = <SitesController key={sessionScope} api={services.api} session={session} toasts={toasts} />;
       break;
     case 'device-view':
       page = (
@@ -166,14 +167,20 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       break;
     case 'device-manage':
       page = (
-        <DeviceManageController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+        <DeviceManageController
+          key={`${sessionScope}:${location.search}`}
+          api={services.api}
+          session={session}
+          search={location.search}
+          onNavigate={navigate}
+        />
       );
       break;
     case 'licenses':
       page = <LicensesController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
       break;
     case 'configurations':
-      page = <ConfigurationsController api={services.api} session={session} />;
+      page = <ConfigurationsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'device-users':
       page = <DeviceUsersController api={services.api} session={session} />;

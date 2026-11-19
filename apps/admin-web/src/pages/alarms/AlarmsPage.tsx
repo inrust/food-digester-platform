@@ -110,6 +110,12 @@ export function AlarmsPage({
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const detailPanel = useRef<HTMLElement>(null);
+  const detailTrigger = useRef<HTMLButtonElement | null>(null);
+  const detailOpen = alarmDetail.kind !== 'none';
+  useEffect(() => {
+    if (detailOpen) detailPanel.current?.focus();
+  }, [detailOpen]);
   const [busy, setBusy] = useState(false);
   // 筛选参数与 URL 同步（replaceState，不产生历史记录堆积）
   useEffect(() => {
@@ -145,6 +151,12 @@ export function AlarmsPage({
     if (tab === 'alarm') onApplyUrlState({ ...urlState, alarm: draftAlarm });
     else if (tab === 'event') onApplyUrlState({ ...urlState, event: draftEvent });
     else onApplyUrlState({ ...urlState, tamper: draftTamper });
+  };
+  const closeDetail = () => {
+    onCloseAlarmDetail();
+    detailTrigger.current?.focus();
+    setActionError(null);
+    setNotice(null);
   };
   const alarm = alarmDetail.kind === 'ready' ? alarmDetail.alarm : null;
   return (
@@ -216,12 +228,12 @@ export function AlarmsPage({
         />
       </FilterBar>
 
-      {notice !== null ? (
+      {notice !== null && !detailOpen ? (
         <p className="action-notice" role="status" data-testid="action-notice">
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && !detailOpen ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       {tab === 'alarm' ? (
         <CursorTable
@@ -255,7 +267,12 @@ export function AlarmsPage({
                 <Button
                   type="button"
                   data-testid={`alarm-detail-${a.alarmId}`}
-                  onClick={() => onSelectAlarm(a.alarmId)}
+                  onClick={(event) => {
+                    detailTrigger.current = event.currentTarget;
+                    setActionError(null);
+                    setNotice(null);
+                    onSelectAlarm(a.alarmId);
+                  }}
                 >
                   {translate('page.4f55ee1e687f')}
                 </Button>
@@ -351,115 +368,170 @@ export function AlarmsPage({
         />
       ) : null}
 
-      {alarmDetail.kind === 'loading' ? (
-        <div role="status" data-testid="alarm-detail-loading">
-          {translate('page.300ee3dee4dc')}
-        </div>
-      ) : null}
-      {alarmDetail.kind === 'error' ? <ErrorNotice error={alarmDetail.error} onRefresh={onRefresh} /> : null}
-
-      {alarm !== null ? (
+      {detailOpen ? (
         <aside
-          className="alarm-detail"
-          data-testid="alarm-detail"
+          className="alarm-detail detail-stack"
+          data-testid="alarm-detail-panel"
           aria-label={translate('page.775787f843fe')}
-          data-severity={alarm.severity}
+          ref={detailPanel}
+          tabIndex={-1}
         >
-          <h4>
-            {translate('page.775787f843fe')}
-            <span className={`severity-badge severity-${alarm.severity.toLowerCase()}`} data-testid="detail-severity">
-              {ALARM_SEVERITY_LABELS[alarm.severity]}
-            </span>
-          </h4>
-          <dl>
-            <dt>{translate('page.beae23e3dcec')}</dt>
-            <dd>{alarm.alarmId}</dd>
-            <dt>{translate('page.c93a7d7c6a08')}</dt>
-            <dd>
-              {alarm.code} / {alarm.category}
-            </dd>
-            <dt>{translate('page.01f2c16cda65')}</dt>
-            <dd>{alarm.deviceId}</dd>
-            <dt>{translate('page.62e951a692ff')}</dt>
-            <dd data-testid="detail-status">{ALARM_STATUS_LABELS[alarm.status]}</dd>
-            <dt>{translate('page.51f85a78cac4')}</dt>
-            <dd>
-              <TimeText iso={alarm.detectedTime} />
-            </dd>
-            <dt>{translate('page.85b4a3ec4eed')}</dt>
-            <dd>{alarm.component ?? '—'}</dd>
-            <dt>{translate('page.aaab19f0f7c0')}</dt>
-            <dd>
-              {alarm.currentValue ?? '—'} / {alarm.threshold ?? '—'}
-              {alarm.unit !== null ? ` ${alarm.unit}` : ''}
-            </dd>
-            <dt>{translate('page.163aec9194a1')}</dt>
-            <dd>{alarm.message ?? '—'}</dd>
-            <dt>{translate('page.ead76f934c4e')}</dt>
-            <dd>{alarm.recommendedAction ?? '—'}</dd>
-            {alarm.acknowledgedBy !== null ? (
-              <>
-                <dt>{translate('page.b56d9ac6c5a0')}</dt>
-                <dd data-testid="detail-ack">
-                  {alarm.acknowledgedBy}
-                  {alarm.acknowledgedAt !== null ? (
-                    <>
-                      {' '}
-                      <TimeText iso={alarm.acknowledgedAt} />
-                    </>
-                  ) : null}
-                  {alarm.acknowledgeReason !== null ? ` — ${alarm.acknowledgeReason}` : ''}
-                </dd>
-              </>
-            ) : null}
-            {alarm.clearedAt !== null ? (
-              <>
-                <dt>{translate('page.7b15e5e8e7bd')}</dt>
-                <dd data-testid="detail-clear">
-                  {alarm.clearedBy ?? translate('page.32df337af2f3')} <TimeText iso={alarm.clearedAt} />
-                  {alarm.clearReason !== null ? ` — ${alarm.clearReason}` : ''}
-                </dd>
-              </>
-            ) : null}
-          </dl>
-          <section aria-label={translate('evidence.title')}>
-            <h4>{translate('evidence.title')}</h4>
-            <EvidenceImageEntry
-              sourceId={alarm.alarmId}
-              evidence={alarm.evidenceImage}
-              canRead={canReadEvidence}
-              {...(onRequestEvidenceUrl ? { requestUrl: onRequestEvidenceUrl } : {})}
-            />
-          </section>
-          <div className="detail-actions">
-            <Button type="button" onClick={onCloseAlarmDetail}>
-              {translate('page.6c14bd7f6f9e')}
-            </Button>
-            <Button
-              type="button"
-              className="primary-button"
-              data-testid="alarm-acknowledge"
-              disabled={!gateAlarmAction('acknowledge', alarm.status, role).enabled || busy}
-              {...(gateAlarmAction('acknowledge', alarm.status, role).reason !== null
-                ? { title: gateAlarmAction('acknowledge', alarm.status, role).reason ?? '' }
-                : {})}
-              onClick={() => setPendingHandle('acknowledge')}
-            >
-              {translate('page.b56d9ac6c5a0')}
-            </Button>
-            <Button
-              type="button"
-              className="danger-button"
-              data-testid="alarm-clear"
-              disabled={!gateAlarmAction('clear', alarm.status, role).enabled || busy}
-              {...(gateAlarmAction('clear', alarm.status, role).reason !== null
-                ? { title: gateAlarmAction('clear', alarm.status, role).reason ?? '' }
-                : {})}
-              onClick={() => setPendingHandle('clear')}
-            >
-              {translate('page.7b15e5e8e7bd')}
-            </Button>
-          </div>
+          {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+          {notice !== null ? (
+            <p className="action-notice" role="status" data-testid="action-notice">
+              {notice}
+            </p>
+          ) : null}
+          {alarmDetail.kind === 'loading' ? (
+            <p role="status" data-testid="alarm-detail-loading">
+              {translate('page.300ee3dee4dc')}
+            </p>
+          ) : null}
+          {alarmDetail.kind === 'error' ? (
+            <div className="detail-card detail-stack">
+              <ErrorNotice error={alarmDetail.error} />
+              <div className="detail-actions">
+                <Button type="button" onClick={onRefresh}>
+                  {translate('detail.retry')}
+                </Button>
+                <Button type="button" onClick={closeDetail}>
+                  {translate('common.close')}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+          {alarm !== null ? (
+            <div className="detail-stack" data-testid="alarm-detail" data-severity={alarm.severity}>
+              <div className="alarm-detail-header">
+                <h3>{translate('page.775787f843fe')}</h3>
+                <span
+                  className={`severity-badge severity-${alarm.severity.toLowerCase()}`}
+                  data-testid="detail-severity"
+                >
+                  {ALARM_SEVERITY_LABELS[alarm.severity]}
+                </span>
+                <span className="alarm-detail-status" data-testid="detail-status">
+                  {ALARM_STATUS_LABELS[alarm.status]}
+                </span>
+              </div>
+              <div className="detail-actions">
+                <Button type="button" onClick={closeDetail}>
+                  {translate('page.6c14bd7f6f9e')}
+                </Button>
+                <Button
+                  type="button"
+                  className="primary-button"
+                  data-testid="alarm-acknowledge"
+                  disabled={!gateAlarmAction('acknowledge', alarm.status, role).enabled || busy}
+                  {...(gateAlarmAction('acknowledge', alarm.status, role).reason !== null
+                    ? { title: gateAlarmAction('acknowledge', alarm.status, role).reason ?? '' }
+                    : {})}
+                  onClick={() => setPendingHandle('acknowledge')}
+                >
+                  {translate('page.b56d9ac6c5a0')}
+                </Button>
+                <Button
+                  type="button"
+                  className="danger-button"
+                  data-testid="alarm-clear"
+                  disabled={!gateAlarmAction('clear', alarm.status, role).enabled || busy}
+                  {...(gateAlarmAction('clear', alarm.status, role).reason !== null
+                    ? { title: gateAlarmAction('clear', alarm.status, role).reason ?? '' }
+                    : {})}
+                  onClick={() => setPendingHandle('clear')}
+                >
+                  {translate('page.7b15e5e8e7bd')}
+                </Button>
+              </div>
+
+              <div className="detail-grid">
+                <section className="detail-card" aria-label={translate('detail.alarm.source')}>
+                  <h4>{translate('detail.alarm.source')}</h4>
+                  <dl>
+                    <dt>{translate('page.beae23e3dcec')}</dt>
+                    <dd>{alarm.alarmId}</dd>
+                    <dt>{translate('page.c93a7d7c6a08')}</dt>
+                    <dd>
+                      {alarm.code} / {alarm.category}
+                    </dd>
+                    <dt>{translate('page.01f2c16cda65')}</dt>
+                    <dd>{alarm.deviceId}</dd>
+                  </dl>
+                </section>
+                <section className="detail-card" aria-label={translate('detail.alarm.timeline')}>
+                  <h4>{translate('detail.alarm.timeline')}</h4>
+                  <dl>
+                    <dt>{translate('page.51f85a78cac4')}</dt>
+                    <dd>
+                      <TimeText iso={alarm.detectedTime} />
+                    </dd>
+                    {alarm.acknowledgedBy !== null ? (
+                      <>
+                        <dt>{translate('page.b56d9ac6c5a0')}</dt>
+                        <dd data-testid="detail-ack">
+                          {alarm.acknowledgedBy}
+                          {alarm.acknowledgedAt !== null ? (
+                            <>
+                              {' '}
+                              <TimeText iso={alarm.acknowledgedAt} />
+                            </>
+                          ) : null}
+                          {alarm.acknowledgeReason !== null ? ` — ${alarm.acknowledgeReason}` : ''}
+                        </dd>
+                      </>
+                    ) : null}
+                    {alarm.clearedAt !== null ? (
+                      <>
+                        <dt>{translate('page.7b15e5e8e7bd')}</dt>
+                        <dd data-testid="detail-clear">
+                          {alarm.clearedBy ?? translate('page.32df337af2f3')} <TimeText iso={alarm.clearedAt} />
+                          {alarm.clearReason !== null ? ` — ${alarm.clearReason}` : ''}
+                        </dd>
+                      </>
+                    ) : null}
+                    {alarm.clearedAt === null ? (
+                      <>
+                        <dt>{translate('detail.alarm.clearedAt')}</dt>
+                        <dd>—</dd>
+                      </>
+                    ) : null}
+                  </dl>
+                </section>
+                <section className="detail-card" aria-label={translate('detail.alarm.observations')}>
+                  <h4>{translate('detail.alarm.observations')}</h4>
+                  <dl>
+                    <dt>{translate('page.85b4a3ec4eed')}</dt>
+                    <dd>{alarm.component ?? '—'}</dd>
+                    <dt>{translate('page.aaab19f0f7c0')}</dt>
+                    <dd>
+                      {alarm.currentValue ?? '—'} / {alarm.threshold ?? '—'}
+                      {alarm.unit !== null ? ` ${alarm.unit}` : ''}
+                    </dd>
+                    <dt>{translate('page.163aec9194a1')}</dt>
+                    <dd>{alarm.message ?? '—'}</dd>
+                    <dt>{translate('page.ead76f934c4e')}</dt>
+                    <dd>{alarm.recommendedAction ?? '—'}</dd>
+                  </dl>
+                </section>
+                <section className="detail-card" aria-label={translate('evidence.title')}>
+                  <h4>{translate('evidence.title')}</h4>
+                  <EvidenceImageEntry
+                    sourceId={alarm.alarmId}
+                    evidence={alarm.evidenceImage}
+                    canRead={canReadEvidence}
+                    {...(onRequestEvidenceUrl ? { requestUrl: onRequestEvidenceUrl } : {})}
+                  />
+                </section>
+              </div>
+            </div>
+          ) : null}
+          {alarmDetail.kind === 'loading' ? (
+            <div className="detail-actions">
+              <Button type="button" onClick={closeDetail}>
+                {translate('common.close')}
+              </Button>
+            </div>
+          ) : null}
         </aside>
       ) : null}
 

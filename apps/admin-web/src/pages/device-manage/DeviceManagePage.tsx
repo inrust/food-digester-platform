@@ -166,16 +166,8 @@ export function DeviceManagePage({
         </Button>
         <h3>
           {device.alias ?? device.serialNumber}
-          <span className="device-serial">（{device.serialNumber}）</span>
+          {device.alias !== null ? <span className="device-serial">（{device.serialNumber}）</span> : null}
         </h3>
-        <FourAxisBadges
-          status={{
-            connectivity: device.connectivity,
-            lifecycle: device.lifecycleStatus,
-            operational: device.operationalStatus,
-            license: device.license?.status ?? null,
-          }}
-        />
       </div>
 
       {notice !== null ? (
@@ -185,316 +177,368 @@ export function DeviceManagePage({
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
-      <section data-testid="lifecycle-actions" aria-label={translate('page.e4c42ba44ddc')}>
-        <h4>{translate('page.e4c42ba44ddc')}</h4>
-        <div className="action-row">
-          <Button
-            type="button"
-            data-testid="action-assign"
-            disabled={!assignGate.enabled || busy}
-            {...(assignGate.reason !== null ? { title: assignGate.reason } : {})}
-            onClick={() => setAssignOpen(true)}
-          >
-            {translate('page.9b3626b5d30f')}
-          </Button>
-          <Button
-            type="button"
-            data-testid="action-suspend"
-            disabled={!suspendGate.enabled || busy}
-            {...(suspendGate.reason !== null ? { title: suspendGate.reason } : {})}
-            onClick={() => setPendingAction('suspend')}
-          >
-            {translate('page.b16ccb7bb587')}
-          </Button>
-          <Button
-            type="button"
-            data-testid="action-reactivate"
-            disabled={!reactivateGate.enabled || busy}
-            {...(reactivateGate.reason !== null ? { title: reactivateGate.reason } : {})}
-            onClick={() => setPendingAction('reactivate')}
-          >
-            {translate('page.79748ca1c6e5')}
-          </Button>
-          <Button
-            type="button"
-            className="danger-button"
-            data-testid="action-retire"
-            disabled={!retireGate.enabled || busy}
-            {...(retireGate.reason !== null ? { title: retireGate.reason } : {})}
-            onClick={() => setPendingAction('retire')}
-          >
-            {translate('page.a3a128e21ebb')}
-          </Button>
-        </div>
-      </section>
-
-      {hasPermission(role, 'config:read') ? (
-        <section data-testid="configuration-entry" aria-label={translate('qa08.configurationEntry')}>
-          <h4>{translate('qa08.configurationEntry')}</h4>
-          <Button type="button" data-testid="goto-current-config" onClick={() => onNavigate('/configurations')}>
-            {translate('qa08.viewConfiguration')}
-          </Button>
-          {hasPermission(role, 'config:publish') ? (
-            <Button type="button" data-testid="goto-publish-config" onClick={() => onNavigate('/configurations')}>
-              {translate('qa08.updateConfiguration')}
-            </Button>
-          ) : null}
+      <div className="detail-grid">
+        <section
+          className="detail-card detail-card--full"
+          data-testid="device-manage-summary"
+          aria-label={translate('detail.device.summary')}
+        >
+          <h4>{translate('detail.device.summary')}</h4>
+          <dl>
+            <dt>{translate('page.01f2c16cda65')}</dt>
+            <dd>{device.id}</dd>
+            <dt>{translate('page.0132ce7298ec')}</dt>
+            <dd>{device.model}</dd>
+            <dt>{translate('page.467c1137f479')}</dt>
+            <dd>{device.customer?.name ?? '—'}</dd>
+            <dt>{translate('page.619bc67325a4')}</dt>
+            <dd>{device.site?.name ?? '—'}</dd>
+            <dt>{translate('detail.device.heartbeat')}</dt>
+            <dd>{device.lastHeartbeatAt === null ? '—' : <TimeText iso={device.lastHeartbeatAt} />}</dd>
+          </dl>
+          <FourAxisBadges
+            status={{
+              connectivity: device.connectivity,
+              lifecycle: device.lifecycleStatus,
+              operational: device.operationalStatus,
+              license: device.license?.status ?? null,
+            }}
+          />
         </section>
-      ) : null}
-      <section data-testid="ota-entry" aria-label={translate('page.bdb9a2faeb72')}>
-        <h4>{translate('page.bdb9a2faeb72')}</h4>
-        <p className="field-hint">{translate('page.cee3cff2e854')}</p>
-        {hasPermission(role, 'ota:read') ? (
-          <div className="action-row">
-            <Button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
-              {translate('page.35ae8f161851')}
-            </Button>
-            <Button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
-              {translate('page.51e6d9eba498')}
-            </Button>
-          </div>
-        ) : (
-          <p className="deny-reason" data-testid="ota-entry-deny">
-            {translate('page.350bcf58b643')}
-          </p>
-        )}
-      </section>
 
-      <section data-testid="alias-section" aria-label={translate('page.270ec5a97320')}>
-        <h4>{translate('page.270ec5a97320')}</h4>
-        {aliasEditing ? (
-          <div className="alias-form" data-testid="alias-form">
-            <label htmlFor="alias-input">{translate('page.00029c8b5033')}</label>
-            <Input
-              id="alias-input"
-              data-testid="alias-input"
-              value={aliasDraft}
-              onChange={(event) => setAliasDraft(event.target.value)}
-            />
-            {aliasInvalid ? (
-              <p className="field-hint">
-                {translate('page.16f069f04aeb') + ' '}
-                {aliasLength}）
-              </p>
-            ) : null}
-            <div className="action-row">
-              <Button
-                type="button"
-                className="primary-button"
-                data-testid="alias-save"
-                disabled={busy || aliasInvalid || aliasTrimmed.length === 0}
-                onClick={() =>
-                  void runAction(async () => {
-                    await onUpdateAlias(aliasTrimmed);
-                    setAliasEditing(false);
-                  }, translate('page.d3fbefdac5ea'))
-                }
-              >
-                {translate('page.fadf24dbc5a9')}
-              </Button>
-              <Button
-                type="button"
-                data-testid="alias-clear"
-                disabled={busy}
-                onClick={() =>
-                  void runAction(async () => {
-                    await onUpdateAlias(null);
-                    setAliasEditing(false);
-                  }, translate('page.2fd846713a4f'))
-                }
-              >
-                {translate('page.6b9da041716c')}
-              </Button>
-              <Button type="button" data-testid="alias-cancel" onClick={() => setAliasEditing(false)}>
-                {translate('page.4d0b4688c787')}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="alias-view">
-            <span data-testid="alias-current">{device.alias ?? '—'}</span>
+        <section
+          className="detail-card detail-card--full"
+          data-testid="lifecycle-actions"
+          aria-label={translate('page.e4c42ba44ddc')}
+        >
+          <h4>{translate('page.e4c42ba44ddc')}</h4>
+          <div className="action-row">
             <Button
               type="button"
-              data-testid="alias-edit"
-              disabled={!aliasGate.enabled || busy}
-              {...(aliasGate.reason !== null ? { title: aliasGate.reason } : {})}
-              onClick={() => {
-                setAliasDraft(device.alias ?? '');
-                setAliasEditing(true);
-              }}
+              data-testid="action-assign"
+              disabled={!assignGate.enabled || busy}
+              {...(assignGate.reason !== null ? { title: assignGate.reason } : {})}
+              onClick={() => setAssignOpen(true)}
             >
-              {translate('page.3ea46b0c32d9')}
+              {translate('page.9b3626b5d30f')}
+            </Button>
+            <Button
+              type="button"
+              data-testid="action-suspend"
+              disabled={!suspendGate.enabled || busy}
+              {...(suspendGate.reason !== null ? { title: suspendGate.reason } : {})}
+              onClick={() => setPendingAction('suspend')}
+            >
+              {translate('page.b16ccb7bb587')}
+            </Button>
+            <Button
+              type="button"
+              data-testid="action-reactivate"
+              disabled={!reactivateGate.enabled || busy}
+              {...(reactivateGate.reason !== null ? { title: reactivateGate.reason } : {})}
+              onClick={() => setPendingAction('reactivate')}
+            >
+              {translate('page.79748ca1c6e5')}
+            </Button>
+            <Button
+              type="button"
+              className="danger-button"
+              data-testid="action-retire"
+              disabled={!retireGate.enabled || busy}
+              {...(retireGate.reason !== null ? { title: retireGate.reason } : {})}
+              onClick={() => setPendingAction('retire')}
+            >
+              {translate('page.a3a128e21ebb')}
             </Button>
           </div>
-        )}
-      </section>
-
-      <section data-testid="cert-summary" aria-label={translate('page.4b495b5f07a2')}>
-        <h4>{translate('page.4b495b5f07a2')}</h4>
-        {device.certificate !== null ? (
-          <dl>
-            <dt>{translate('page.d23c1047e613')}</dt>
-            <dd data-testid="cert-id">{device.certificate.certificateId}</dd>
-            <dt>{translate('page.3852a0ca8422')}</dt>
-            <dd data-testid="cert-fingerprint">{device.certificate.fingerprint}</dd>
-            <dt>{translate('certificate.mqttVerifiedAt')}</dt>
-            <dd data-testid="cert-mqttVerifiedAt">
-              {device.certificate.mqttVerifiedAt ? <TimeText iso={device.certificate.mqttVerifiedAt} /> : '—'}
-            </dd>
-            <dt>{translate('certificate.restVerifiedAt')}</dt>
-            <dd data-testid="cert-restVerifiedAt">
-              {device.certificate.restVerifiedAt ? <TimeText iso={device.certificate.restVerifiedAt} /> : '—'}
-            </dd>
-            <dt>{translate('certificate.rotationDeadlineAt')}</dt>
-            <dd data-testid="cert-rotationDeadlineAt">
-              {device.certificate.rotationDeadlineAt ? <TimeText iso={device.certificate.rotationDeadlineAt} /> : '—'}
-            </dd>
-            <dt>{translate('certificate.rotationConfirmedAt')}</dt>
-            <dd data-testid="cert-rotationConfirmedAt">
-              {device.certificate.rotationConfirmedAt ? <TimeText iso={device.certificate.rotationConfirmedAt} /> : '—'}
-            </dd>
-
-            <dt>{translate('page.62e951a692ff')}</dt>
-            <dd data-testid="cert-status">
-              {CERTIFICATE_STATUS_LABELS[device.certificate.status] ?? device.certificate.status}
-            </dd>
-          </dl>
-        ) : (
-          <p className="empty-state" data-testid="cert-empty">
-            {translate('page.3f40287353ef')}
-          </p>
-        )}
-        {rotation !== null ? (
-          <p className="rotation-result" data-testid="rotation-result">
-            {translate('page.0c47b7e799bb')}
-            {rotation.requestId}
-            {translate('page.d5ed0bbbb522')}
-            {ROTATION_REQUEST_STATUS_LABELS[rotation.requestStatus] ?? rotation.requestStatus}
-            {translate('page.99d48c052cc1') + ' '}
-            {rotation.expiryDate}
-            {translate('page.038d6c10a99a')}
-          </p>
-        ) : null}
-        <Button
-          type="button"
-          data-testid="cert-rotate"
-          disabled={!rotationGate.enabled || busy}
-          {...(rotationGate.reason !== null ? { title: rotationGate.reason } : {})}
-          onClick={() => void runAction(onRequestRotation, translate('page.64f4faf010d5'))}
-        >
-          {translate('page.c1ba7b23295a')}
-        </Button>
-      </section>
-
-      {device.lifecycleStatus === 'Retired' ? (
-        <section
-          className="retirement-panel"
-          data-testid="retirement-panel"
-          aria-label={translate('page.acc3e1a08536')}
-        >
-          <h4>{translate('page.fd3f7462f968')}</h4>
-          {retirement !== null ? (
-            <>
-              <dl>
-                <dt>{translate('page.62e951a692ff')}</dt>
-                <dd data-testid="retirement-status">{RETIREMENT_STATUS_LABELS[retirement.status]}</dd>
-                <dt>{translate('page.44042ce0bc0b')}</dt>
-                <dd>
-                  <TimeText iso={retirement.initiatedAt} />
-                </dd>
-                <dt>{translate('page.1ff9c3d00112')}</dt>
-                <dd>{retirement.reason}</dd>
-                {retirement.completionMethod !== null ? (
-                  <>
-                    <dt>{translate('page.4ebbeb4ef7dc')}</dt>
-                    <dd data-testid="retirement-method">
-                      {COMPLETION_METHOD_LABELS[retirement.completionMethod] ?? retirement.completionMethod}
-                    </dd>
-                  </>
-                ) : null}
-                {retirement.certificateRevokedAt !== null ? (
-                  <>
-                    <dt>{translate('page.131d45c13e61')}</dt>
+          {device.lifecycleStatus === 'Retired' ? (
+            <section
+              className="detail-card lifecycle-retirement"
+              data-testid="retirement-panel"
+              aria-label={translate('page.acc3e1a08536')}
+            >
+              <h5>{translate('page.fd3f7462f968')}</h5>
+              {retirement !== null ? (
+                <>
+                  <dl>
+                    <dt>{translate('page.62e951a692ff')}</dt>
+                    <dd data-testid="retirement-status">{RETIREMENT_STATUS_LABELS[retirement.status]}</dd>
+                    <dt>{translate('page.44042ce0bc0b')}</dt>
                     <dd>
-                      <TimeText iso={retirement.certificateRevokedAt} />
+                      <TimeText iso={retirement.initiatedAt} />
                     </dd>
-                  </>
-                ) : null}
-              </dl>
-              {retirement.status === 'PENDING_CONFIRMATION' ? (
-                <p className="retirement-waiting" data-testid="retirement-waiting">
-                  {translate('page.336a1135b5c3')}
+                    <dt>{translate('page.1ff9c3d00112')}</dt>
+                    <dd>{retirement.reason}</dd>
+                    {retirement.completionMethod !== null ? (
+                      <>
+                        <dt>{translate('page.4ebbeb4ef7dc')}</dt>
+                        <dd data-testid="retirement-method">
+                          {COMPLETION_METHOD_LABELS[retirement.completionMethod] ?? retirement.completionMethod}
+                        </dd>
+                      </>
+                    ) : null}
+                    {retirement.certificateRevokedAt !== null ? (
+                      <>
+                        <dt>{translate('page.131d45c13e61')}</dt>
+                        <dd>
+                          <TimeText iso={retirement.certificateRevokedAt} />
+                        </dd>
+                      </>
+                    ) : null}
+                  </dl>
+                  {retirement.status === 'PENDING_CONFIRMATION' ? (
+                    <p className="retirement-waiting" data-testid="retirement-waiting">
+                      {translate('page.336a1135b5c3')}
+                    </p>
+                  ) : null}
+                  <Button
+                    type="button"
+                    className="danger-button"
+                    data-testid="retire-force-complete"
+                    disabled={!forceGate.enabled || busy}
+                    {...(forceGate.reason !== null ? { title: forceGate.reason } : {})}
+                    onClick={() => setPendingAction('forceComplete')}
+                  >
+                    {translate('page.041739719cce')}
+                  </Button>
+                </>
+              ) : (
+                <p className="retirement-unknown" data-testid="retirement-unknown">
+                  {translate('page.b2426c60f69f')}
                 </p>
-              ) : null}
-              <Button
-                type="button"
-                className="danger-button"
-                data-testid="retire-force-complete"
-                disabled={!forceGate.enabled || busy}
-                {...(forceGate.reason !== null ? { title: forceGate.reason } : {})}
-                onClick={() => setPendingAction('forceComplete')}
-              >
-                {translate('page.041739719cce')}
+              )}
+            </section>
+          ) : null}
+        </section>
+
+        {hasPermission(role, 'config:read') ? (
+          <section
+            className="detail-card"
+            data-testid="configuration-entry"
+            aria-label={translate('qa08.configurationEntry')}
+          >
+            <h4>{translate('qa08.configurationEntry')}</h4>
+            <div className="action-row">
+              <Button type="button" data-testid="goto-current-config" onClick={() => onNavigate('/configurations')}>
+                {translate('qa08.viewConfiguration')}
               </Button>
-            </>
+              {hasPermission(role, 'config:publish') ? (
+                <Button type="button" data-testid="goto-publish-config" onClick={() => onNavigate('/configurations')}>
+                  {translate('qa08.updateConfiguration')}
+                </Button>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+        <section className="detail-card" data-testid="ota-entry" aria-label={translate('page.bdb9a2faeb72')}>
+          <h4>{translate('page.bdb9a2faeb72')}</h4>
+          <dl>
+            <dt>{translate('detail.device.firmware')}</dt>
+            <dd>{device.firmwareVersion ?? '—'}</dd>
+          </dl>
+          <p className="field-hint">{translate('page.cee3cff2e854')}</p>
+          {hasPermission(role, 'ota:read') ? (
+            <div className="action-row">
+              <Button type="button" data-testid="goto-ota-packages" onClick={() => onNavigate('/ota/packages')}>
+                {translate('page.35ae8f161851')}
+              </Button>
+              <Button type="button" data-testid="goto-ota-campaigns" onClick={() => onNavigate('/ota/campaigns')}>
+                {translate('page.51e6d9eba498')}
+              </Button>
+            </div>
           ) : (
-            <p className="retirement-unknown" data-testid="retirement-unknown">
-              {translate('page.b2426c60f69f')}
+            <p className="deny-reason" data-testid="ota-entry-deny">
+              {translate('page.350bcf58b643')}
             </p>
           )}
         </section>
-      ) : null}
 
-      <section data-testid="assignment-history" aria-label={translate('page.c9a07e5c1fbd')}>
-        <h4>{translate('page.3ee61bf72aad')}</h4>
-        {assignmentsError !== undefined ? <ErrorNotice error={assignmentsError} onRefresh={onRefresh} /> : null}
-        {assignments === null ? (
-          <div role="status" data-testid="assignments-loading">
-            {translate('page.300ee3dee4dc')}
-          </div>
-        ) : assignments.length === 0 ? (
-          <p className="empty-state" data-testid="assignments-empty">
-            {translate('page.0db96f789d1f')}
-          </p>
-        ) : (
-          <div
-            className="table-scroll"
-            role="region"
-            aria-label={translate('page.c9a07e5c1fbd')}
-            tabIndex={0}
-            data-testid="assignment-history-scroll"
+        <section className="detail-card" data-testid="alias-section" aria-label={translate('page.270ec5a97320')}>
+          <h4>{translate('page.270ec5a97320')}</h4>
+          {aliasEditing ? (
+            <div className="alias-form" data-testid="alias-form">
+              <label htmlFor="alias-input">{translate('page.00029c8b5033')}</label>
+              <Input
+                id="alias-input"
+                data-testid="alias-input"
+                value={aliasDraft}
+                onChange={(event) => setAliasDraft(event.target.value)}
+              />
+              {aliasInvalid ? (
+                <p className="field-hint">
+                  {translate('page.16f069f04aeb') + ' '}
+                  {aliasLength}）
+                </p>
+              ) : null}
+              <div className="action-row">
+                <Button
+                  type="button"
+                  className="primary-button"
+                  data-testid="alias-save"
+                  disabled={busy || aliasInvalid || aliasTrimmed.length === 0}
+                  onClick={() =>
+                    void runAction(async () => {
+                      await onUpdateAlias(aliasTrimmed);
+                      setAliasEditing(false);
+                    }, translate('page.d3fbefdac5ea'))
+                  }
+                >
+                  {translate('page.fadf24dbc5a9')}
+                </Button>
+                <Button
+                  type="button"
+                  data-testid="alias-clear"
+                  disabled={busy}
+                  onClick={() =>
+                    void runAction(async () => {
+                      await onUpdateAlias(null);
+                      setAliasEditing(false);
+                    }, translate('page.2fd846713a4f'))
+                  }
+                >
+                  {translate('page.6b9da041716c')}
+                </Button>
+                <Button type="button" data-testid="alias-cancel" onClick={() => setAliasEditing(false)}>
+                  {translate('page.4d0b4688c787')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="alias-view">
+              <span data-testid="alias-current">{device.alias ?? '—'}</span>
+              <Button
+                type="button"
+                data-testid="alias-edit"
+                disabled={!aliasGate.enabled || busy}
+                {...(aliasGate.reason !== null ? { title: aliasGate.reason } : {})}
+                onClick={() => {
+                  setAliasDraft(device.alias ?? '');
+                  setAliasEditing(true);
+                }}
+              >
+                {translate('page.3ea46b0c32d9')}
+              </Button>
+            </div>
+          )}
+        </section>
+
+        <section className="detail-card" data-testid="cert-summary" aria-label={translate('page.4b495b5f07a2')}>
+          <h4>{translate('page.4b495b5f07a2')}</h4>
+          {device.certificate !== null ? (
+            <dl>
+              <dt>{translate('page.d23c1047e613')}</dt>
+              <dd data-testid="cert-id">{device.certificate.certificateId}</dd>
+              <dt>{translate('page.3852a0ca8422')}</dt>
+              <dd data-testid="cert-fingerprint">{device.certificate.fingerprint}</dd>
+              <dt>{translate('certificate.mqttVerifiedAt')}</dt>
+              <dd data-testid="cert-mqttVerifiedAt">
+                {device.certificate.mqttVerifiedAt ? <TimeText iso={device.certificate.mqttVerifiedAt} /> : '—'}
+              </dd>
+              <dt>{translate('certificate.restVerifiedAt')}</dt>
+              <dd data-testid="cert-restVerifiedAt">
+                {device.certificate.restVerifiedAt ? <TimeText iso={device.certificate.restVerifiedAt} /> : '—'}
+              </dd>
+              <dt>{translate('certificate.rotationDeadlineAt')}</dt>
+              <dd data-testid="cert-rotationDeadlineAt">
+                {device.certificate.rotationDeadlineAt ? <TimeText iso={device.certificate.rotationDeadlineAt} /> : '—'}
+              </dd>
+              <dt>{translate('certificate.rotationConfirmedAt')}</dt>
+              <dd data-testid="cert-rotationConfirmedAt">
+                {device.certificate.rotationConfirmedAt ? (
+                  <TimeText iso={device.certificate.rotationConfirmedAt} />
+                ) : (
+                  '—'
+                )}
+              </dd>
+
+              <dt>{translate('page.62e951a692ff')}</dt>
+              <dd data-testid="cert-status">
+                {CERTIFICATE_STATUS_LABELS[device.certificate.status] ?? device.certificate.status}
+              </dd>
+            </dl>
+          ) : (
+            <p className="empty-state" data-testid="cert-empty">
+              {translate('page.3f40287353ef')}
+            </p>
+          )}
+          {rotation !== null ? (
+            <p className="rotation-result" data-testid="rotation-result">
+              {translate('page.0c47b7e799bb')}
+              {rotation.requestId}
+              {translate('page.d5ed0bbbb522')}
+              {ROTATION_REQUEST_STATUS_LABELS[rotation.requestStatus] ?? rotation.requestStatus}
+              {translate('page.99d48c052cc1') + ' '}
+              {rotation.expiryDate}
+              {translate('page.038d6c10a99a')}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            data-testid="cert-rotate"
+            disabled={!rotationGate.enabled || busy}
+            {...(rotationGate.reason !== null ? { title: rotationGate.reason } : {})}
+            onClick={() => void runAction(onRequestRotation, translate('page.64f4faf010d5'))}
           >
-            <table aria-label={translate('page.c9a07e5c1fbd')}>
-              <thead>
-                <tr>
-                  <th scope="col">{translate('page.f20687060126')}</th>
-                  <th scope="col">{translate('page.619bc67325a4')}</th>
-                  <th scope="col">{translate('page.62e951a692ff')}</th>
-                  <th scope="col">{translate('page.af2cdb23eed1')}</th>
-                  <th scope="col">{translate('page.a0bb9f49abc5')}</th>
-                  <th scope="col">{translate('page.06858dfbbcb4')}</th>
-                  <th scope="col">{translate('page.1ff9c3d00112')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {assignments.map((a) => (
-                  <tr key={a.assignmentId} data-testid={`assignment-${a.assignmentId}`}>
-                    <td>{a.customerId}</td>
-                    <td>{a.siteId}</td>
-                    <td>{ASSIGNMENT_STATUS_LABELS[a.status] ?? a.status}</td>
-                    <td>
-                      <TimeText iso={a.assignedAt} />
-                    </td>
-                    <td>{a.endedAt !== null ? <TimeText iso={a.endedAt} /> : '—'}</td>
-                    <td>{a.assignedBy}</td>
-                    <td>{a.reason ?? '—'}</td>
+            {translate('page.c1ba7b23295a')}
+          </Button>
+        </section>
+
+        <section
+          className="detail-card detail-card--full"
+          data-testid="assignment-history"
+          aria-label={translate('page.c9a07e5c1fbd')}
+        >
+          <h4>{translate('page.3ee61bf72aad')}</h4>
+          {assignmentsError !== undefined ? (
+            <ErrorNotice error={assignmentsError} onRefresh={onRefresh} />
+          ) : assignments === null ? (
+            <div role="status" data-testid="assignments-loading">
+              {translate('page.300ee3dee4dc')}
+            </div>
+          ) : assignments.length === 0 ? (
+            <p className="empty-state" data-testid="assignments-empty">
+              {translate('page.0db96f789d1f')}
+            </p>
+          ) : (
+            <div
+              className="table-scroll"
+              role="region"
+              aria-label={translate('page.c9a07e5c1fbd')}
+              tabIndex={0}
+              data-testid="assignment-history-scroll"
+            >
+              <table aria-label={translate('page.c9a07e5c1fbd')}>
+                <thead>
+                  <tr>
+                    <th scope="col">{translate('page.f20687060126')}</th>
+                    <th scope="col">{translate('page.619bc67325a4')}</th>
+                    <th scope="col">{translate('page.62e951a692ff')}</th>
+                    <th scope="col">{translate('page.af2cdb23eed1')}</th>
+                    <th scope="col">{translate('page.a0bb9f49abc5')}</th>
+                    <th scope="col">{translate('page.06858dfbbcb4')}</th>
+                    <th scope="col">{translate('page.1ff9c3d00112')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                </thead>
+                <tbody>
+                  {assignments.map((a) => (
+                    <tr key={a.assignmentId} data-testid={`assignment-${a.assignmentId}`}>
+                      <td>{a.customerId}</td>
+                      <td>{a.siteId}</td>
+                      <td>{ASSIGNMENT_STATUS_LABELS[a.status] ?? a.status}</td>
+                      <td>
+                        <TimeText iso={a.assignedAt} />
+                      </td>
+                      <td>{a.endedAt !== null ? <TimeText iso={a.endedAt} /> : '—'}</td>
+                      <td>{a.assignedBy}</td>
+                      <td>{a.reason ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
 
       <Modal
         open={assignOpen}
