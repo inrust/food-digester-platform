@@ -111,6 +111,7 @@ function renderPage(overrides: Partial<ConsumablesPageProps> = {}) {
     },
     requestFilter: {},
     onApplyRequestFilter: (f) => calls.requestFilters.push(f),
+    onLoadRequestDevices: async () => [{ value: 'dev-001', label: 'XJ-001 · dev-001' }],
     onCreateRequest: async (deviceId, consumableType, note) => {
       calls.created.push({ deviceId, type: consumableType, ...(note !== undefined ? { note } : {}) });
       const result: ConsumableRequestCreateResult = {
@@ -297,7 +298,7 @@ test('创建申请：成功提示；开放申请重复创建幂等（replayed �
     },
   });
   await user.click(screen.getByTestId('consumable-request-create-open'));
-  await user.type(screen.getByTestId('consumable-create-device'), 'dev-001');
+  await user.selectOptions(screen.getByTestId('consumable-create-device'), 'dev-001');
   await user.selectOptions(screen.getByTestId('consumable-create-type'), 'CARBON_FILTER');
   await user.click(screen.getByTestId('consumable-create-submit'));
   let notice = await screen.findByTestId('action-notice');
@@ -305,11 +306,39 @@ test('创建申请：成功提示；开放申请重复创建幂等（replayed �
 
   replay = true;
   await user.click(screen.getByTestId('consumable-request-create-open'));
-  await user.type(screen.getByTestId('consumable-create-device'), 'dev-001');
+  await user.selectOptions(screen.getByTestId('consumable-create-device'), 'dev-001');
   await user.selectOptions(screen.getByTestId('consumable-create-type'), 'CARBON_FILTER');
   await user.click(screen.getByTestId('consumable-create-submit'));
   notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('幂等返回现有记录'));
+});
+
+test.each([
+  [404, 'NOT_FOUND'],
+  [409, 'CONFLICT'],
+  [403, 'FORBIDDEN'],
+] as const)('CMP-19 服务端拒绝设备（%s）时，提示在字段旁并阻止原选项重提', async (status, code) => {
+  const user = userEvent.setup();
+  let writes = 0;
+  renderPage({
+    onCreateRequest: async () => {
+      writes += 1;
+      throw new ApiClientError(status, code, 'fixture rejection');
+    },
+  });
+  await user.click(screen.getByTestId('consumable-request-create-open'));
+  const select = screen.getByTestId('consumable-create-device') as HTMLSelectElement;
+  const submit = screen.getByTestId('consumable-create-submit') as HTMLButtonElement;
+  await user.selectOptions(screen.getByTestId('consumable-create-type'), 'CARBON_FILTER');
+  assert.ok(submit.disabled);
+  await user.selectOptions(select, 'dev-001');
+  await user.click(submit);
+  assert.ok(await screen.findByTestId('consumable-device-error'));
+  assert.equal(select.getAttribute('aria-invalid'), 'true');
+  assert.equal(select.value, '');
+  assert.equal(select.querySelector('option[value="dev-001"]'), null);
+  assert.ok(submit.disabled);
+  assert.equal(writes, 1);
 });
 
 test('非法跳级/漂移：409 错误呈现；写权限门控（Viewer 按钮禁用）', async () => {

@@ -4,7 +4,7 @@ import { translate } from '../i18n/i18n.js';
  * FE-02 联动 Region/Subregion/Site 筛选：选项按上游选择过滤，上游变更清空下游。
  * 每个下拉均有显式 <label htmlFor>；提供“重置”。
  */
-import { applyScopeChange } from './filter-state.js';
+import { applyScopeChange, EMPTY_SCOPE_FILTER } from './filter-state.js';
 import type { ScopeFilterValue } from './filter-state.js';
 export interface FilterOption {
   readonly value: string;
@@ -25,6 +25,7 @@ export interface ScopeFilterProps {
   })[];
   readonly value: ScopeFilterValue;
   readonly onChange: (next: ScopeFilterValue) => void;
+  readonly onReset?: () => void;
   /** Device pages can pick directly from the authorized list when no location filter is active. */
   readonly allowDirectDevice?: boolean;
   readonly labels?: {
@@ -55,6 +56,7 @@ export function ScopeFilter({
   devices,
   value,
   onChange,
+  onReset,
   allowDirectDevice = false,
   labels = DEFAULT_LABELS,
 }: ScopeFilterProps) {
@@ -138,7 +140,7 @@ export function ScopeFilter({
         </div>
       ) : null}
 
-      <Button type="button" onClick={() => onChange({ region: null, subregion: null, siteId: null, deviceId: null })}>
+      <Button type="button" onClick={onReset ?? (() => onChange(EMPTY_SCOPE_FILTER))}>
         {translate('page.3d81345303ab')}
       </Button>
     </div>

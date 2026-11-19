@@ -2,6 +2,8 @@ import { translate } from '../i18n/i18n.js';
 import type { Role } from '@fdp/auth/browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ApiClient } from '../api/http-client.js';
+import { collectAll } from './collect-all.js';
+import { fetchDevices } from '../pages/devices/devices-api.js';
 import {
   activateContract,
   bindContractDevices,
@@ -442,6 +444,21 @@ export function ConsumablesController({
       requests={requests}
       requestFilter={requestQuery}
       onApplyRequestFilter={setRequestFilter}
+      onLoadRequestDevices={async () => {
+        const filter = fixedCustomerId === null ? undefined : { customerId: fixedCustomerId };
+        const devices = await collectAll((cursor) => fetchDevices(api, filter, { cursor, limit: 100 }));
+        return devices
+          .filter(
+            (device) =>
+              device.customer !== null &&
+              device.lifecycleStatus !== 'Retired' &&
+              (fixedCustomerId === null || device.customer.id === fixedCustomerId),
+          )
+          .map((device) => ({
+            value: device.id,
+            label: [device.alias, device.serialNumber, device.id].filter(Boolean).join(' · '),
+          }));
+      }}
       onCreateRequest={(deviceId, type, note) => createConsumableRequest(api, deviceId, type, note)}
       onProcess={(requestId, note, version) => processConsumableRequest(api, requestId, note, version)}
       onComplete={(requestId, note, version) => completeConsumableRequest(api, requestId, note, version)}

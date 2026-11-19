@@ -17,6 +17,7 @@ import { PercentText } from '../../components/LocaleValue.js';
 import { ScopeFilter } from '../../components/ScopeFilter.js';
 import type { ScopeFilterProps } from '../../components/ScopeFilter.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
+import { EMPTY_SCOPE_FILTER } from '../../components/filter-state.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
 import type { EsgQueryFilter } from './esg-api.js';
 import {
@@ -39,6 +40,9 @@ export interface EsgDeviceAppliedQuery {
   readonly scope: ScopeFilterValue;
   readonly from: string | null;
   readonly to: string | null;
+}
+export function deviceReportFilter(query: EsgDeviceAppliedQuery): EsgQueryFilter {
+  return { siteId: query.scope.siteId, deviceId: query.scope.deviceId ?? null, from: query.from, to: query.to };
 }
 export interface EsgDevicesPageProps {
   readonly role: Role;
@@ -99,7 +103,7 @@ export function EsgDevicesPage({
   const [draftFrom, setDraftFrom] = useState('');
   const [draftTo, setDraftTo] = useState('');
   const [dateError, setDateError] = useState<string | null>(null);
-  const [exportError, setExportError] = useState<unknown>(null);
+  const [exportError, setExportError] = useState<{ query: EsgDeviceAppliedQuery; error: unknown } | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
   const applyFilter = () => {
@@ -119,21 +123,23 @@ export function EsgDevicesPage({
     }
     onApply({ scope: draftScope, from: range.from, to: range.to });
   };
+  const resetFilters = () => {
+    setDraftScope(EMPTY_SCOPE_FILTER);
+    setDraftFrom('');
+    setDraftTo('');
+    setDateError(null);
+    setExportError(null);
+    onApply({ scope: EMPTY_SCOPE_FILTER, from: null, to: null });
+  };
   const handleExport = async () => {
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     setExportError(null);
     try {
-      await onExport({
-        dataset: 'REPORTS',
-        siteId: applied.scope.siteId,
-        deviceId: applied.scope.deviceId ?? null,
-        from: applied.from,
-        to: applied.to,
-      });
+      await onExport({ dataset: 'REPORTS', ...deviceReportFilter(applied) });
     } catch (err) {
-      setExportError(err);
+      setExportError({ query: applied, error: err });
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -169,6 +175,7 @@ export function EsgDevicesPage({
           devices={scopeOptions.devices}
           value={draftScope}
           onChange={setDraftScope}
+          onReset={resetFilters}
           labels={{
             region: translate('page.17fc93c9cdbb'),
             subregion: translate('page.e1973949d60a'),
@@ -237,7 +244,7 @@ export function EsgDevicesPage({
         </p>
       ) : null}
 
-      {exportError !== null ? <ErrorNotice error={exportError} onRefresh={onRefresh} /> : null}
+      {exportError?.query === applied ? <ErrorNotice error={exportError.error} onRefresh={onRefresh} /> : null}
       <ExportPanel
         testidPrefix="esg-device"
         canExport={canExport(role)}

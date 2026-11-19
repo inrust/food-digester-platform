@@ -139,6 +139,12 @@ export const EN: Readonly<Record<string, string>> = {
   'deviceOperate.retryTarget': 'Retry device query',
   'deviceOperate.target': 'Command target',
   'deviceOperate.invalidTarget': 'The current device selection is unavailable. Run the query again.',
+  'consumables.searchDevices': 'Find a device by name, serial number, or ID',
+  'consumables.noEligibleDevices': 'No devices are eligible for a replacement request.',
+  'consumables.noMatchingDevices': 'No eligible devices match this search.',
+  'consumables.deviceUnavailable':
+    'This device can no longer be used for a replacement request. Select another device or reload the list.',
+  'consumables.deviceForbidden': 'You do not have permission to use this device or submit the request.',
   'common.confirm': 'Confirm',
   'common.reason': 'Reason',
   'common.reasonHint': 'Required; recorded in the audit log',

@@ -7,6 +7,7 @@ import type { ApiClient } from '../api/http-client.js';
 import { useDevicePicker } from './device-picker.js';
 import { useUserTimeZone } from '../components/TimeText.js';
 import type { FilterOption } from '../components/ScopeFilter.js';
+import { EMPTY_SCOPE_FILTER } from '../components/filter-state.js';
 import { fetchCustomers } from '../pages/customers/customers-api.js';
 import {
   createActivityExport,
@@ -29,7 +30,7 @@ import {
   fetchEsgExport,
   fetchEsgReports,
 } from '../pages/esg/esg-api.js';
-import { EsgDevicesPage } from '../pages/esg/EsgDevicesPage.js';
+import { deviceReportFilter, EsgDevicesPage } from '../pages/esg/EsgDevicesPage.js';
 import type { EsgDeviceAppliedQuery } from '../pages/esg/EsgDevicesPage.js';
 import { EsgOverviewPage } from '../pages/esg/EsgOverviewPage.js';
 import type { EsgAppliedQuery } from '../pages/esg/EsgOverviewPage.js';
@@ -101,14 +102,15 @@ export async function collectAllPages<T>(
     cursor = page.nextCursor;
   }
 }
-async function topology(api: ApiClient) {
+async function topology(api: ApiClient, customerId: string | null = null) {
+  const filter = customerId === null ? undefined : { customerId };
   const [devices, sites] = await Promise.all([
     collectAllPages(async (cursor) => {
-      const page = await fetchDevices(api, undefined, { cursor: cursor ?? null, limit: 100 });
+      const page = await fetchDevices(api, filter, { cursor: cursor ?? null, limit: 100 });
       return { rows: page.items, nextCursor: page.nextCursor };
     }),
     collectAllPages(async (cursor) => {
-      const page = await fetchSites(api, undefined, { cursor: cursor ?? null, limit: 100 });
+      const page = await fetchSites(api, filter, { cursor: cursor ?? null, limit: 100 });
       return { rows: page.items, nextCursor: page.nextCursor };
     }),
   ]);
@@ -206,60 +208,73 @@ export function EsgOverviewController({
 }
 export function EsgDevicesController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
   const { timeZone } = useUserTimeZone();
+  const customerId = session.customerId;
   const [period, setPeriod] = useState<EsgPeriod>('day');
   const [applied, setApplied] = useState<EsgDeviceAppliedQuery>({
-    scope: { region: null, subregion: null, siteId: null, deviceId: null },
+    scope: EMPTY_SCOPE_FILTER,
     from: null,
     to: null,
   });
   const [devices, setDevices] = useState<readonly DeviceView[]>([]);
   const [sites, setSites] = useState<readonly SiteView[]>([]);
-  const [rows, setRows] = useState<readonly EsgReportView[] | null>(null);
-  const [versions, setVersions] = useState<readonly EsgCalculationVersionView[] | null>(null);
-  const [exportJob, setExportJob] = useState<EsgExportJobView | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>();
-  const load = useCallback(
-    async (query: EsgDeviceAppliedQuery) => {
-      setLoading(true);
-      setError(undefined);
-      try {
-        const [nextRows, nextVersions] = await Promise.all([
-          collectAllPages((cursor) =>
-            fetchEsgReports(
-              api,
-              {
-                siteId: query.scope.siteId,
-                deviceId: query.scope.deviceId ?? null,
-                from: query.from,
-                to: query.to,
-                reportType: 'DAILY',
-              },
-              cursor,
-            ),
-          ),
-          fetchEsgCalculationVersions(api),
-        ]);
-        setRows(nextRows);
-        setVersions(nextVersions);
-      } catch (nextError) {
-        setRows([]);
-        setError(nextError);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [api],
-  );
+  const [revision, setRevision] = useState(0);
+  const query = useMemo(() => ({ api, customerId, applied }), [api, customerId, applied]);
+  const reportRequest = useMemo(() => ({ query, revision }), [query, revision]);
+  const currentQuery = useRef(query);
+  currentQuery.current = query;
+  const [report, setReport] = useState<{
+    request: typeof reportRequest;
+    rows: readonly EsgReportView[];
+    versions: readonly EsgCalculationVersionView[] | null;
+    error?: unknown;
+  } | null>(null);
+  const [exportResult, setExportResult] = useState<{ query: typeof query; job: EsgExportJobView } | null>(null);
+  const [topologyError, setTopologyError] = useState<unknown>();
+
   useEffect(() => {
-    void topology(api).then((value) => {
-      setDevices(value.devices);
-      setSites(value.sites);
-    }, setError);
-  }, [api]);
+    let active = true;
+    setTopologyError(undefined);
+    void topology(api, customerId).then(
+      (value) => {
+        if (!active) return;
+        setDevices(value.devices);
+        setSites(value.sites);
+      },
+      (error: unknown) => {
+        if (active) setTopologyError(error);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [api, customerId]);
+
   useEffect(() => {
-    void load(applied);
-  }, [applied, load]);
+    let active = true;
+    const { api: client, applied: filters, customerId: fixedCustomerId } = reportRequest.query;
+    const filter = { ...deviceReportFilter(filters), customerId: fixedCustomerId, reportType: 'DAILY' } as const;
+    void Promise.all([
+      collectAllPages((cursor) =>
+        active ? fetchEsgReports(client, filter, cursor) : Promise.resolve({ rows: [], nextCursor: null }),
+      ),
+      fetchEsgCalculationVersions(client),
+    ]).then(
+      ([rows, versions]) => {
+        if (active) setReport({ request: reportRequest, rows, versions });
+      },
+      (error: unknown) => {
+        if (active) setReport({ request: reportRequest, rows: [], versions: null, error });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [reportRequest]);
+
+  const currentReport = report?.request === reportRequest ? report : null;
+  const storeExport = (job: EsgExportJobView) => {
+    if (currentQuery.current === query) setExportResult({ query, job });
+  };
   const options = useMemo(() => scopeOptions(devices, sites), [devices, sites]);
   const deviceScope = useMemo(
     () =>
@@ -282,18 +297,18 @@ export function EsgDevicesController({ api, session }: { readonly api: ApiClient
       deviceScope={deviceScope}
       applied={applied}
       onApply={setApplied}
-      rows={rows}
-      loading={loading}
-      listError={error}
-      versions={versions}
-      exportJob={exportJob}
+      rows={currentReport?.rows ?? null}
+      loading={currentReport === null}
+      listError={currentReport?.error ?? topologyError}
+      versions={currentReport?.versions ?? null}
+      exportJob={exportResult?.query === query ? exportResult.job : null}
       onExport={async (input) => {
-        const job = await createEsgExport(api, input);
-        setExportJob(job);
+        const job = await createEsgExport(api, { ...input, customerId });
+        storeExport(job);
         return job;
       }}
-      onCheckExport={(id) => void fetchEsgExport(api, id).then(setExportJob)}
-      onRefresh={() => void load(applied)}
+      onCheckExport={(id) => void fetchEsgExport(api, id).then(storeExport)}
+      onRefresh={() => setRevision((old) => old + 1)}
     />
   );
 }

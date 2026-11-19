@@ -13,10 +13,12 @@ import { translate } from '../../i18n/i18n.js';
  */
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
+import { ApiClientError } from '../../api/errors.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { PercentText } from '../../components/LocaleValue.js';
 import { Modal } from '../../components/Modal.js';
+import type { FilterOption } from '../../components/ScopeFilter.js';
 import { TimeText } from '../../components/TimeText.js';
 import type { ConsumableRequestFilter, ConsumableStatusFilter } from './consumables-api.js';
 import {
@@ -60,6 +62,7 @@ export interface ConsumablesPageProps {
   };
   readonly requestFilter: ConsumableRequestFilter;
   readonly onApplyRequestFilter: (filter: ConsumableRequestFilter) => void;
+  readonly onLoadRequestDevices: () => Promise<readonly FilterOption[]>;
   readonly onCreateRequest: (
     deviceId: string,
     consumableType: ConsumableType,
@@ -76,6 +79,11 @@ type ActionTarget = {
   readonly action: RequestAction;
   readonly request: ConsumableRequestView;
 };
+type RequestDeviceOptions =
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'ready'; readonly options: readonly FilterOption[] }
+  | { readonly kind: 'error'; readonly error: unknown };
+const EMPTY_CREATE_DRAFT = { deviceId: '', consumableType: '' as ConsumableType | '', note: '' };
 const EMPTY_STATUS_DRAFT: StatusDraft = {
   region: '',
   subregion: '',
@@ -138,6 +146,7 @@ export function ConsumablesPage({
   requests,
   requestFilter,
   onApplyRequestFilter,
+  onLoadRequestDevices,
   onCreateRequest,
   onProcess,
   onComplete,
@@ -179,13 +188,43 @@ export function ConsumablesPage({
   const [action, setAction] = useState<ActionTarget | null>(null);
   const [actionNote, setActionNote] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [createDraft, setCreateDraft] = useState({ deviceId: '', consumableType: '' as ConsumableType | '', note: '' });
+  const [createDraft, setCreateDraft] = useState(EMPTY_CREATE_DRAFT);
+  const [deviceOptions, setDeviceOptions] = useState<RequestDeviceOptions>({ kind: 'loading' });
+  const [deviceSearch, setDeviceSearch] = useState('');
+  const [deviceError, setDeviceError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<unknown>(null);
+  const deviceLoad = useRef(0);
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
   const isPlatformRole = !role.startsWith('Customer');
   const canWrite = canWriteDevices(role);
+  const deviceEligible =
+    deviceOptions.kind === 'ready' && deviceOptions.options.some((option) => option.value === createDraft.deviceId);
+  const search = deviceSearch.trim().toLowerCase();
+  const visibleDevices =
+    deviceOptions.kind === 'ready'
+      ? deviceOptions.options.filter(
+          (option) => option.value === createDraft.deviceId || option.label.toLowerCase().includes(search),
+        )
+      : [];
+  const loadRequestDevices = async () => {
+    const generation = ++deviceLoad.current;
+    setDeviceOptions({ kind: 'loading' });
+    setDeviceError(null);
+    setCreateDraft((draft) => ({ ...draft, deviceId: '' }));
+    try {
+      const options = await onLoadRequestDevices();
+      if (deviceLoad.current === generation) setDeviceOptions({ kind: 'ready', options });
+    } catch (error) {
+      if (deviceLoad.current === generation) setDeviceOptions({ kind: 'error', error });
+    }
+  };
+  const closeCreate = () => {
+    deviceLoad.current += 1;
+    setCreateOpen(false);
+  };
   const noteRequired = action?.action !== 'process';
   const noteError = action !== null ? validateRequestNote(actionNote, noteRequired) : null;
   const loadContact = async (deviceId: string) => {
@@ -197,7 +236,7 @@ export function ConsumablesPage({
       setContacts((current) => ({ ...current, [deviceId]: { kind: 'error', error } }));
     }
   };
-  const runAction = async (execute: () => Promise<string>) => {
+  const runAction = async (execute: () => Promise<string>, onError: (error: unknown) => void = setActionError) => {
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
@@ -205,10 +244,10 @@ export function ConsumablesPage({
     try {
       setNotice(await execute());
       setAction(null);
-      setCreateOpen(false);
+      closeCreate();
       onRefresh();
     } catch (err) {
-      setActionError(err);
+      onError(err);
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -229,18 +268,40 @@ export function ConsumablesPage({
       await onCancel(action.request.requestId, note, action.request.version);
       return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.a5ffdc95eeb0'));
     });
-  const submitCreate = () =>
-    runAction(async () => {
-      const result = await onCreateRequest(
-        createDraft.deviceId.trim(),
-        createDraft.consumableType as ConsumableType,
-        createDraft.note.trim() === '' ? undefined : createDraft.note.trim(),
-      );
-      setCreateDraft({ deviceId: '', consumableType: '', note: '' });
-      return result.replayed
-        ? translate('page.46c2995a52f6')
-        : translate('page.2070de48878e') + result.request.requestId + '\uFF09';
-    });
+  const submitCreate = () => {
+    const { deviceId, consumableType, note } = createDraft;
+    if (!canWrite || !deviceEligible || consumableType === '') return;
+    const generation = deviceLoad.current;
+    setCreateError(null);
+    void runAction(
+      async () => {
+        const result = await onCreateRequest(deviceId, consumableType, note.trim() === '' ? undefined : note.trim());
+        return result.replayed
+          ? translate('page.46c2995a52f6')
+          : translate('page.2070de48878e') + result.request.requestId + '\uFF09';
+      },
+      (error) => {
+        if (generation !== deviceLoad.current) {
+          setActionError(error);
+          return;
+        }
+        if (
+          error instanceof ApiClientError &&
+          (error.status === 404 || error.status === 403 || error.code === 'CONFLICT')
+        ) {
+          setCreateDraft((draft) => ({ ...draft, deviceId: '' }));
+          setDeviceOptions((current) =>
+            current.kind === 'ready'
+              ? { kind: 'ready', options: current.options.filter((option) => option.value !== deviceId) }
+              : current,
+          );
+          setDeviceError(
+            translate(error.status === 403 ? 'consumables.deviceForbidden' : 'consumables.deviceUnavailable'),
+          );
+        } else setCreateError(error);
+      },
+    );
+  };
   return (
     <div className="consumables-page" data-testid="consumables-page">
       <div className="page-header">
@@ -484,7 +545,13 @@ export function ConsumablesPage({
             data-testid="consumable-request-create-open"
             disabled={!canWrite || busy}
             {...(!canWrite ? { title: translate('page.250fd887db71') } : {})}
-            onClick={() => setCreateOpen(true)}
+            onClick={() => {
+              setCreateDraft(EMPTY_CREATE_DRAFT);
+              setDeviceSearch('');
+              setCreateError(null);
+              setCreateOpen(true);
+              void loadRequestDevices();
+            }}
           >
             {translate('page.d772b092f68b')}
           </Button>
@@ -679,16 +746,60 @@ export function ConsumablesPage({
         open={createOpen}
         title={translate('page.42438fcdc1eb')}
         testid="consumable-create-form"
-        onClose={() => setCreateOpen(false)}
+        onClose={closeCreate}
       >
+        {createError !== null ? <ErrorNotice error={createError} /> : null}
+        {deviceOptions.kind === 'ready' && deviceOptions.options.length > 0 ? (
+          <div className="dialog-field">
+            <label htmlFor="consumable-device-search">{translate('consumables.searchDevices')}</label>
+            <Input
+              id="consumable-device-search"
+              value={deviceSearch}
+              disabled={busy}
+              onChange={(event) => setDeviceSearch(event.target.value)}
+            />
+          </div>
+        ) : null}
         <div className="dialog-field">
           <label htmlFor="consumable-create-device">{translate('page.9a04e46a8d92')}</label>
-          <Input
+          <select
             id="consumable-create-device"
             data-testid="consumable-create-device"
             value={createDraft.deviceId}
-            onChange={(event) => setCreateDraft({ ...createDraft, deviceId: event.target.value })}
-          />
+            disabled={busy || visibleDevices.length === 0}
+            aria-invalid={deviceError !== null}
+            aria-describedby="consumable-device-feedback"
+            onChange={(event) => {
+              setCreateDraft({ ...createDraft, deviceId: event.target.value });
+              setDeviceError(null);
+            }}
+          >
+            <option value="">{translate('devicePicker.choose')}</option>
+            {visibleDevices.map((device) => (
+              <option key={device.value} value={device.value}>
+                {device.label}
+              </option>
+            ))}
+          </select>
+          <div id="consumable-device-feedback">
+            {deviceError !== null ? (
+              <p className="field-hint" role="alert" data-testid="consumable-device-error">
+                {deviceError}
+              </p>
+            ) : null}
+            {deviceOptions.kind === 'loading' ? <p role="status">{translate('devicePicker.loading')}</p> : null}
+            {deviceOptions.kind === 'ready' && visibleDevices.length === 0 ? (
+              <p role="status">
+                {translate(search === '' ? 'consumables.noEligibleDevices' : 'consumables.noMatchingDevices')}
+              </p>
+            ) : null}
+            {deviceOptions.kind === 'error' ? <ErrorNotice error={deviceOptions.error} /> : null}
+            {deviceOptions.kind === 'error' || deviceError !== null ? (
+              <Button type="button" disabled={busy} onClick={() => void loadRequestDevices()}>
+                {translate('devicePicker.retry')}
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="dialog-field">
           <label htmlFor="consumable-create-type">{translate('page.6c9da0502120')}</label>
@@ -719,12 +830,15 @@ export function ConsumablesPage({
           />
         </div>
         <div className="dialog-actions">
+          <Button type="button" onClick={closeCreate}>
+            {translate('common.cancel')}
+          </Button>
           <Button
             type="button"
             className="primary-button"
             data-testid="consumable-create-submit"
-            disabled={busy || createDraft.deviceId.trim() === '' || createDraft.consumableType === ''}
-            onClick={() => void submitCreate()}
+            disabled={busy || !canWrite || !deviceEligible || createDraft.consumableType === ''}
+            onClick={submitCreate}
           >
             {translate('page.7bc5480e718b')}
           </Button>
