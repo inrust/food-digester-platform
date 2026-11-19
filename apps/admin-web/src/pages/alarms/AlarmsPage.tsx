@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -170,9 +171,16 @@ export function AlarmsPage({
         ))}
       </div>
 
-      <div className="filter-bar" data-testid="alarm-filter-bar">
+      <FilterBar
+        testId="alarm-filter-bar"
+        actions={
+          <Button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
+            {translate('page.dcce9a144a40')}
+          </Button>
+        }
+      >
         {!isCustomerRole ? (
-          <>
+          <div className="filter-field">
             <label htmlFor="alarm-filter-customer">{translate('page.467c1137f479')}</label>
             <select
               id="alarm-filter-customer"
@@ -193,7 +201,7 @@ export function AlarmsPage({
                 </option>
               ))}
             </select>
-          </>
+          </div>
         ) : null}
         <CommonFilterFields
           tab={tab}
@@ -206,10 +214,7 @@ export function AlarmsPage({
           siteOptions={siteOptions}
           deviceOptions={deviceOptions}
         />
-        <Button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
-          {translate('page.dcce9a144a40')}
-        </Button>
-      </div>
+      </FilterBar>
 
       {notice !== null ? (
         <p className="action-notice" role="status" data-testid="action-notice">
@@ -542,36 +547,40 @@ function CommonFilterFields({
   };
   return (
     <>
-      <label htmlFor="filter-site">{translate('page.619bc67325a4')}</label>
-      <select
-        id="filter-site"
-        data-testid="filter-site"
-        value={draft.siteId ?? ''}
-        onChange={(e) => patchSite(e.target.value)}
-      >
-        <option value="">{translate('page.778fc8f99453')}</option>
-        {sites.map((site) => (
-          <option key={site.value} value={site.value}>
-            {site.label}
-          </option>
-        ))}
-      </select>
-      <label htmlFor="filter-device">{translate('page.01f2c16cda65')}</label>
-      <select
-        id="filter-device"
-        data-testid="filter-device"
-        value={draft.deviceId ?? ''}
-        onChange={(e) => patch('deviceId', e.target.value)}
-      >
-        <option value="">{translate('page.778fc8f99453')}</option>
-        {devices.map((device) => (
-          <option key={device.value} value={device.value}>
-            {device.label}
-          </option>
-        ))}
-      </select>
+      <div className="filter-field">
+        <label htmlFor="filter-site">{translate('page.619bc67325a4')}</label>
+        <select
+          id="filter-site"
+          data-testid="filter-site"
+          value={draft.siteId ?? ''}
+          onChange={(e) => patchSite(e.target.value)}
+        >
+          <option value="">{translate('page.778fc8f99453')}</option>
+          {sites.map((site) => (
+            <option key={site.value} value={site.value}>
+              {site.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="filter-field">
+        <label htmlFor="filter-device">{translate('page.01f2c16cda65')}</label>
+        <select
+          id="filter-device"
+          data-testid="filter-device"
+          value={draft.deviceId ?? ''}
+          onChange={(e) => patch('deviceId', e.target.value)}
+        >
+          <option value="">{translate('page.778fc8f99453')}</option>
+          {devices.map((device) => (
+            <option key={device.value} value={device.value}>
+              {device.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {tab !== 'event' ? (
-        <>
+        <div className="filter-field">
           <label htmlFor="filter-severity">{translate('page.9272e8abe5ad')}</label>
           <select
             id="filter-severity"
@@ -592,10 +601,10 @@ function CommonFilterFields({
               </option>
             ))}
           </select>
-        </>
+        </div>
       ) : null}
       {tab === 'alarm' ? (
-        <>
+        <div className="filter-field">
           <label htmlFor="filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="filter-status"
@@ -610,10 +619,10 @@ function CommonFilterFields({
               </option>
             ))}
           </select>
-        </>
+        </div>
       ) : null}
       {tab !== 'alarm' ? (
-        <>
+        <div className="filter-field">
           <label htmlFor="filter-event-type">{translate('page.5b2d75aa54d1')}</label>
           <Input
             id="filter-event-type"
@@ -627,24 +636,28 @@ function CommonFilterFields({
             }
             onChange={(e) => patchEnum('eventType', e.target.value)}
           />
-        </>
+        </div>
       ) : null}
-      <label htmlFor="filter-from">{translate('page.503889d576aa')}</label>
-      <Input
-        id="filter-from"
-        data-testid="filter-from"
-        placeholder="2026-09-01T00:00:00Z"
-        value={draft.from ?? ''}
-        onChange={(e) => patch('from', e.target.value)}
-      />
-      <label htmlFor="filter-to">{translate('page.864048b32f22')}</label>
-      <Input
-        id="filter-to"
-        data-testid="filter-to"
-        placeholder="2026-09-07T00:00:00Z"
-        value={draft.to ?? ''}
-        onChange={(e) => patch('to', e.target.value)}
-      />
+      <div className="filter-field">
+        <label htmlFor="filter-from">{translate('page.503889d576aa')}</label>
+        <Input
+          id="filter-from"
+          data-testid="filter-from"
+          placeholder="2026-09-01T00:00:00Z"
+          value={draft.from ?? ''}
+          onChange={(e) => patch('from', e.target.value)}
+        />
+      </div>
+      <div className="filter-field">
+        <label htmlFor="filter-to">{translate('page.864048b32f22')}</label>
+        <Input
+          id="filter-to"
+          data-testid="filter-to"
+          placeholder="2026-09-07T00:00:00Z"
+          value={draft.to ?? ''}
+          onChange={(e) => patch('to', e.target.value)}
+        />
+      </div>
     </>
   );
 }

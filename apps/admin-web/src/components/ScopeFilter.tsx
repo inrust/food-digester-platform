@@ -26,6 +26,7 @@ export interface ScopeFilterProps {
   readonly value: ScopeFilterValue;
   readonly onChange: (next: ScopeFilterValue) => void;
   readonly onReset?: () => void;
+  readonly showReset?: boolean;
   /** Device pages can pick directly from the authorized list when no location filter is active. */
   readonly allowDirectDevice?: boolean;
   readonly labels?: {
@@ -57,6 +58,7 @@ export function ScopeFilter({
   value,
   onChange,
   onReset,
+  showReset = true,
   allowDirectDevice = false,
   labels = DEFAULT_LABELS,
 }: ScopeFilterProps) {
@@ -140,9 +142,11 @@ export function ScopeFilter({
         </div>
       ) : null}
 
-      <Button type="button" onClick={onReset ?? (() => onChange(EMPTY_SCOPE_FILTER))}>
-        {translate('page.3d81345303ab')}
-      </Button>
+      {showReset ? (
+        <Button type="button" onClick={onReset ?? (() => onChange(EMPTY_SCOPE_FILTER))}>
+          {translate('page.3d81345303ab')}
+        </Button>
+      ) : null}
     </div>
   );
 }

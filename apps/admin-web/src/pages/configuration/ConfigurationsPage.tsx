@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -165,7 +166,43 @@ export function ConfigurationsPage({
       <header className="page-header">
         <h1>{translate('design.page.configurations')}</h1>
       </header>
-      <div className="filter-bar" data-testid="config-filter-bar">
+      {canWrite ? (
+        <div className="page-toolbar" data-testid="config-toolbar">
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid="config-create"
+            onClick={() => setCreateOpen(true)}
+          >
+            {translate('page.31cc2c4c86f0')}
+          </Button>
+        </div>
+      ) : null}
+      <FilterBar
+        testId="config-filter-bar"
+        actions={
+          <>
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="config-search"
+              onClick={() => onApplyFilter(draftFilter)}
+            >
+              {translate('page.f04090805c6e')}
+            </Button>
+            <Button
+              type="button"
+              data-testid="config-reset"
+              onClick={() => {
+                setDraftFilter(EMPTY_CONFIGURATION_FILTER);
+                onApplyFilter(EMPTY_CONFIGURATION_FILTER);
+              }}
+            >
+              {translate('page.3d81345303ab')}
+            </Button>
+          </>
+        }
+      >
         <div className="filter-field">
           <label htmlFor="config-filter-model">{translate('page.418dfc356a6d')}</label>
           <Input
@@ -184,35 +221,7 @@ export function ConfigurationsPage({
             onChange={(event) => setDraftFilter({ ...draftFilter, targetDeviceId: event.target.value })}
           />
         </div>
-        <Button
-          type="button"
-          className="primary-button"
-          data-testid="config-search"
-          onClick={() => onApplyFilter(draftFilter)}
-        >
-          {translate('page.f04090805c6e')}
-        </Button>
-        <Button
-          type="button"
-          data-testid="config-reset"
-          onClick={() => {
-            setDraftFilter(EMPTY_CONFIGURATION_FILTER);
-            onApplyFilter(EMPTY_CONFIGURATION_FILTER);
-          }}
-        >
-          {translate('page.3d81345303ab')}
-        </Button>
-        {canWrite ? (
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="config-create"
-            onClick={() => setCreateOpen(true)}
-          >
-            {translate('page.31cc2c4c86f0')}
-          </Button>
-        ) : null}
-      </div>
+      </FilterBar>
 
       {notice !== null ? (
         <p className="action-notice" role="status" data-testid="action-notice">

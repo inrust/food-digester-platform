@@ -254,6 +254,22 @@ export function DeviceOperatePage({
       ? { allowed: true, reason: null }
       : { allowed: false, reason: gates[0]?.reason ?? translate('page.142ee8e83959') };
   };
+  const quickActions = QUICK_ACTIONS.flatMap((action) => {
+    const command = action.command ?? action.commandGroup?.[0];
+    if (command === undefined) return [];
+    const gate = action.commandGroup === undefined ? gateFor(command) : groupGate(action.commandGroup);
+    return [{ action, command, category: commandSpecOf(command).category, gate }];
+  });
+  const quickCategories = [...new Set(COMMAND_CATALOG.map(({ category }) => category))].filter((category) =>
+    quickActions.some((entry) => entry.category === category),
+  );
+  const unavailable = new Map<string, { id: string; labels: string[] }>();
+  for (const { action, gate } of quickActions) {
+    if (gate.allowed || gate.reason === null) continue;
+    const entry = unavailable.get(gate.reason);
+    if (entry) entry.labels.push(action.label);
+    else unavailable.set(gate.reason, { id: `quick-reason-${action.key}`, labels: [action.label] });
+  }
   return (
     <div className="device-operate-page" data-testid="device-operate-page">
       <header className="page-header">
@@ -318,46 +334,58 @@ export function DeviceOperatePage({
 
       <section data-testid="quick-actions" aria-label={translate('page.309c0a9e6282')}>
         <h4>{translate('page.309c0a9e6282')}</h4>
-        <div className="action-row">
-          {QUICK_ACTIONS.map((action) => {
-            const gate = action.command !== undefined ? gateFor(action.command) : groupGate(action.commandGroup ?? []);
-            return (
-              <span key={action.key} className="action-item">
-                <Button
-                  type="button"
-                  data-testid={`quick-${action.key}`}
-                  disabled={!gate.allowed || busy}
-                  onClick={() => {
-                    if (action.command !== undefined) openForm(action.command);
-                    else openForm((action.commandGroup ?? [])[0] as CommandName, action.commandGroup ?? null);
-                  }}
-                >
-                  {action.label}
-                  {action.command !== undefined ? `（${action.command}）` : ''}
-                </Button>
-                {!gate.allowed && gate.reason !== null ? (
-                  <span className="deny-reason" data-testid={`quick-deny-${action.key}`}>
-                    {gate.reason}
-                  </span>
-                ) : null}
-              </span>
-            );
-          })}
-        </div>
-        <div className="action-row">
-          {CONFIG_REDIRECTS.map((redirect) => (
-            <span key={redirect.key} className="action-item">
-              <Button
-                type="button"
-                data-testid="goto-config-threshold"
-                title={redirect.hint}
-                onClick={() => onNavigate('/configurations')}
-              >
-                {redirect.label}
-              </Button>
-            </span>
+        <div className="quick-action-groups">
+          {quickCategories.map((category) => (
+            <section className="quick-action-group" key={category} aria-labelledby={`quick-category-${category}`}>
+              <h5 id={`quick-category-${category}`}>{translate(`deviceOperate.quick.category.${category}`)}</h5>
+              <div className="quick-action-buttons">
+                {quickActions
+                  .filter((entry) => entry.category === category)
+                  .map(({ action, command, gate }) => (
+                    <Button
+                      key={action.key}
+                      type="button"
+                      data-testid={`quick-${action.key}`}
+                      aria-describedby={gate.reason !== null ? unavailable.get(gate.reason)?.id : undefined}
+                      disabled={!gate.allowed || busy}
+                      onClick={() => openForm(command, action.commandGroup ?? null)}
+                    >
+                      {action.label}
+                      {action.command !== undefined ? `（${action.command}）` : ''}
+                    </Button>
+                  ))}
+              </div>
+            </section>
           ))}
+          <section className="quick-action-group" aria-labelledby="quick-category-config">
+            <h5 id="quick-category-config">{translate('deviceOperate.quick.configuration')}</h5>
+            <div className="quick-action-buttons">
+              {CONFIG_REDIRECTS.map((redirect) => (
+                <Button
+                  key={redirect.key}
+                  type="button"
+                  data-testid="goto-config-threshold"
+                  title={redirect.hint}
+                  onClick={() => onNavigate('/configurations')}
+                >
+                  {redirect.label}
+                </Button>
+              ))}
+            </div>
+          </section>
         </div>
+        {unavailable.size > 0 ? (
+          <div className="quick-action-reasons" data-testid="quick-action-reasons">
+            <p>{translate('deviceOperate.quick.unavailable')}</p>
+            <ul>
+              {[...unavailable].map(([reason, { id, labels }]) => (
+                <li key={id} id={id}>
+                  {labels.length === quickActions.length ? reason : `${labels.join(' / ')} · ${reason}`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <p className="field-hint">{translate('page.3df4035f6d6e')}</p>
       </section>
 

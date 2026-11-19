@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -102,7 +103,19 @@ export function AuditLogsPage({
       <p className="field-hint">{translate('page.0ac903fad307')}</p>
 
       <section data-testid="audit-filter" aria-label={translate('page.dcce9a144a40')}>
-        <div className="filter-bar">
+        <FilterBar
+          actions={
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="audit-filter-search"
+              disabled={fromInvalid || toInvalid || rangeInvalid}
+              onClick={applyFilter}
+            >
+              {translate('page.dcce9a144a40')}
+            </Button>
+          }
+        >
           <div className="filter-field">
             <label htmlFor="audit-filter-actor">{translate('page.6dd194b747ea')}</label>
             <Input
@@ -113,7 +126,7 @@ export function AuditLogsPage({
             />
           </div>
           {isPlatformRole ? (
-            <>
+            <div className="filter-field">
               <label htmlFor="audit-filter-customer">{translate('page.a20148b7e39a')}</label>
               <Input
                 id="audit-filter-customer"
@@ -121,7 +134,7 @@ export function AuditLogsPage({
                 value={draft.customerId}
                 onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
               />
-            </>
+            </div>
           ) : null}
           <div className="filter-field">
             <label htmlFor="audit-filter-object-type">{translate('page.bfa3562d543a')}</label>
@@ -188,16 +201,7 @@ export function AuditLogsPage({
               onChange={(event) => setDraft({ ...draft, to: event.target.value })}
             />
           </div>
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="audit-filter-search"
-            disabled={fromInvalid || toInvalid || rangeInvalid}
-            onClick={applyFilter}
-          >
-            {translate('page.dcce9a144a40')}
-          </Button>
-        </div>
+        </FilterBar>
         {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="audit-filter-time-error">
             {rangeInvalid

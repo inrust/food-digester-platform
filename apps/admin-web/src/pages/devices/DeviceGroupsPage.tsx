@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -125,7 +126,31 @@ export function DeviceGroupsPage({
       <header className="page-header">
         <h1>{translate('design.page.device-group')}</h1>
       </header>
-      <div className="filter-bar" data-testid="device-filter-bar">
+      <FilterBar
+        testId="device-filter-bar"
+        actions={
+          <>
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="device-search"
+              onClick={() => onApplyFilters(draft)}
+            >
+              {translate('page.f04090805c6e')}
+            </Button>
+            <Button
+              type="button"
+              data-testid="device-reset"
+              onClick={() => {
+                setDraft(EMPTY_DEVICE_FILTERS);
+                onApplyFilters(EMPTY_DEVICE_FILTERS);
+              }}
+            >
+              {translate('page.3d81345303ab')}
+            </Button>
+          </>
+        }
+      >
         <span className="filter-field">
           <label htmlFor="device-keyword">{translate('page.621219ff9885')}</label>
           <Input
@@ -137,6 +162,7 @@ export function DeviceGroupsPage({
           />
         </span>
         <ScopeFilter
+          showReset={false}
           regions={filterOptions.regions}
           subregions={filterOptions.subregions}
           sites={filterOptions.sites}
@@ -177,25 +203,7 @@ export function DeviceGroupsPage({
           (v) => LICENSE_FILTER_LABELS[v] ?? v,
           (v) => setDraft({ ...draft, licenseStatus: v }),
         )}
-        <Button
-          type="button"
-          className="primary-button"
-          data-testid="device-search"
-          onClick={() => onApplyFilters(draft)}
-        >
-          {translate('page.f04090805c6e')}
-        </Button>
-        <Button
-          type="button"
-          data-testid="device-reset"
-          onClick={() => {
-            setDraft(EMPTY_DEVICE_FILTERS);
-            onApplyFilters(EMPTY_DEVICE_FILTERS);
-          }}
-        >
-          {translate('page.3d81345303ab')}
-        </Button>
-      </div>
+      </FilterBar>
 
       <CursorTable
         ariaLabel={translate('page.5a1abe45b505')}

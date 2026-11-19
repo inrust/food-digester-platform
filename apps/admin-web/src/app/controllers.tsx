@@ -68,6 +68,7 @@ function useCursorController<T>(loader: (cursor: string | null) => Promise<PageR
   const reset = useCallback(() => {
     setPrevious([]);
     setCurrentCursor(null);
+    setNextCursor(null);
     setRevision((value) => value + 1);
   }, []);
   const next = useCallback(
@@ -183,6 +184,11 @@ export function SitesController({
   toasts: ToastQueue;
 }) {
   const [filters, setFilters] = useState<SiteFilters>(EMPTY_SITE_FILTERS);
+  const fixedCustomerId = session.customerId;
+  const effectiveFilters = useMemo(
+    () => (fixedCustomerId === null ? filters : { ...filters, customerId: fixedCustomerId }),
+    [filters, fixedCustomerId],
+  );
   const [customerOptions, setCustomerOptions] = useState<
     readonly {
       value: string;
@@ -197,8 +203,8 @@ export function SitesController({
     );
   }, [api, session, toasts.push]);
   const loader = useCallback(
-    (cursor: string | null) => fetchSites(api, filters, { cursor, limit: 50 }),
-    [api, filters],
+    (cursor: string | null) => fetchSites(api, effectiveFilters, { cursor, limit: 50 }),
+    [api, effectiveFilters],
   );
   const page = useCursorController<SiteView>(loader);
   const applyFilters = (next: SiteFilters) => {
@@ -216,7 +222,8 @@ export function SitesController({
         ...(page.dataUpdatedAt ? { dataUpdatedAt: page.dataUpdatedAt } : {}),
         hasPrevPage: page.hasPrevPage,
       }}
-      filters={filters}
+      filters={effectiveFilters}
+      fixedCustomerId={fixedCustomerId}
       onFilterChange={applyFilters}
       onLoadMore={page.next}
       onLoadPrevious={page.prev}
@@ -254,10 +261,25 @@ export function DeviceGroupsController({
 }) {
   const [filters, setFilters] = useState<DeviceListFilters>(EMPTY_DEVICE_FILTERS);
   const deviceLoader = useCallback(
-    (cursor: string | null) => fetchDevices(api, filters, { cursor, limit: 50 }),
-    [api, filters],
+    (cursor: string | null) => fetchDevices(api, { ...filters, customerId: session.customerId }, { cursor, limit: 50 }),
+    [api, filters, session.customerId],
   );
   const devices = useCursorController<DeviceView>(deviceLoader);
+  const [knownSites, setKnownSites] = useState<{
+    customerId: string | null;
+    sites: ReadonlyMap<string, NonNullable<DeviceView['site']>>;
+  } | null>(null);
+  useEffect(() => {
+    const customerId = session.customerId;
+    const discovered = devices.rows?.flatMap((row) =>
+      row.site && (customerId === null || row.customer?.id === customerId) ? [[row.site.id, row.site] as const] : [],
+    );
+    if (!discovered?.length) return;
+    setKnownSites((previous) => ({
+      customerId,
+      sites: new Map([...(previous?.customerId === customerId ? previous.sites : []), ...discovered]),
+    }));
+  }, [devices.rows, session.customerId]);
   const [status, setStatus] = useState<OnboardingStatus>('PENDING');
   const onboardingLoader = useCallback(
     (cursor: string | null) => fetchOnboardingRequests(api, { status, cursor, limit: 50 }),
@@ -284,33 +306,29 @@ export function DeviceGroupsController({
     );
   };
   const options = useMemo(() => {
-    const rows = devices.rows ?? [];
-    const regions = [...new Set(rows.map((row) => row.site?.region).filter((v): v is string => Boolean(v)))];
+    const locations = knownSites?.customerId === session.customerId ? [...knownSites.sites.values()] : [];
+    const regions = [...new Set(locations.map((site) => site.region).filter((v): v is string => Boolean(v)))];
     const subregions = [
       ...new Map(
-        rows.flatMap((row) =>
-          row.site?.region && row.site.subregion
+        locations.flatMap((site) =>
+          site.region && site.subregion
             ? [
                 [
-                  `${row.site.region}/${row.site.subregion}`,
-                  { value: row.site.subregion, label: row.site.subregion, region: row.site.region },
+                  `${site.region}/${site.subregion}`,
+                  { value: site.subregion, label: site.subregion, region: site.region },
                 ] as const,
               ]
             : [],
         ),
       ).values(),
     ];
-    const sites = [
-      ...new Map(
-        rows.flatMap((row) =>
-          row.site?.subregion
-            ? [[row.site.id, { value: row.site.id, label: row.site.name, subregion: row.site.subregion }] as const]
-            : [],
-        ),
-      ).values(),
-    ];
+    const sites = locations.flatMap((site) =>
+      site.region && site.subregion
+        ? [{ value: site.id, label: site.name, subregion: site.subregion, region: site.region }]
+        : [],
+    );
     return { regions: regions.map((value) => ({ value, label: value })), subregions, sites };
-  }, [devices.rows]);
+  }, [knownSites, session.customerId]);
   return (
     <DeviceGroupsPage
       list={{

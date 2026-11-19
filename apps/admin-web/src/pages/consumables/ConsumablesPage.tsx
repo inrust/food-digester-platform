@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -324,7 +325,44 @@ export function ConsumablesPage({
               ? translate('ui.consumableThresholdSetting', { version: thresholdSource.version })
               : translate('ui.consumableThresholdFallback', { reason: thresholdSource.reason })}
         </p>
-        <div className="filter-bar">
+        <FilterBar
+          testId="consumable-status-filter"
+          actions={
+            <>
+              <Button
+                type="button"
+                className="primary-button"
+                data-testid="consumable-search"
+                onClick={() =>
+                  onApplyStatusFilter({
+                    region: statusDraft.region.trim() === '' ? null : statusDraft.region.trim(),
+                    subregion: statusDraft.subregion.trim() === '' ? null : statusDraft.subregion.trim(),
+                    siteId: statusDraft.siteId.trim() === '' ? null : statusDraft.siteId.trim(),
+                    connectivity: statusDraft.connectivity === '' ? null : statusDraft.connectivity,
+                    keyword: statusDraft.keyword.trim() === '' ? null : statusDraft.keyword.trim(),
+                    maxRemainingPercent:
+                      statusDraft.maxRemainingPercent === '' ? null : Number(statusDraft.maxRemainingPercent),
+                    consumableType: statusDraft.consumableType === '' ? null : statusDraft.consumableType,
+                    customerId:
+                      isPlatformRole && statusDraft.customerId.trim() !== '' ? statusDraft.customerId.trim() : null,
+                  })
+                }
+              >
+                {translate('page.f04090805c6e')}
+              </Button>
+              <Button
+                type="button"
+                data-testid="consumable-reset"
+                onClick={() => {
+                  setStatusDraft(EMPTY_STATUS_DRAFT);
+                  onApplyStatusFilter({});
+                }}
+              >
+                {translate('page.3d81345303ab')}
+              </Button>
+            </>
+          }
+        >
           <div className="filter-field">
             <label htmlFor="consumable-filter-region">{translate('page.17fc93c9cdbb')}</label>
             <Input
@@ -413,7 +451,7 @@ export function ConsumablesPage({
             </select>
           </div>
           {isPlatformRole ? (
-            <>
+            <div className="filter-field">
               <label htmlFor="consumable-filter-customer">{translate('page.a20148b7e39a')}</label>
               <Input
                 id="consumable-filter-customer"
@@ -421,40 +459,9 @@ export function ConsumablesPage({
                 value={statusDraft.customerId}
                 onChange={(event) => setStatusDraft({ ...statusDraft, customerId: event.target.value })}
               />
-            </>
+            </div>
           ) : null}
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="consumable-search"
-            onClick={() =>
-              onApplyStatusFilter({
-                region: statusDraft.region.trim() === '' ? null : statusDraft.region.trim(),
-                subregion: statusDraft.subregion.trim() === '' ? null : statusDraft.subregion.trim(),
-                siteId: statusDraft.siteId.trim() === '' ? null : statusDraft.siteId.trim(),
-                connectivity: statusDraft.connectivity === '' ? null : statusDraft.connectivity,
-                keyword: statusDraft.keyword.trim() === '' ? null : statusDraft.keyword.trim(),
-                maxRemainingPercent:
-                  statusDraft.maxRemainingPercent === '' ? null : Number(statusDraft.maxRemainingPercent),
-                consumableType: statusDraft.consumableType === '' ? null : statusDraft.consumableType,
-                customerId:
-                  isPlatformRole && statusDraft.customerId.trim() !== '' ? statusDraft.customerId.trim() : null,
-              })
-            }
-          >
-            {translate('page.f04090805c6e')}
-          </Button>
-          <Button
-            type="button"
-            data-testid="consumable-reset"
-            onClick={() => {
-              setStatusDraft(EMPTY_STATUS_DRAFT);
-              onApplyStatusFilter({});
-            }}
-          >
-            {translate('page.3d81345303ab')}
-          </Button>
-        </div>
+        </FilterBar>
 
         <section data-testid="consumable-table" aria-label={translate('page.079ec3477314')}>
           <CursorTable
@@ -556,7 +563,25 @@ export function ConsumablesPage({
             {translate('page.d772b092f68b')}
           </Button>
         </div>
-        <div className="filter-bar">
+        <FilterBar
+          testId="consumable-request-filter"
+          actions={
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="request-filter-search"
+              onClick={() =>
+                onApplyRequestFilter({
+                  status: requestDraft.status === '' ? null : requestDraft.status,
+                  consumableType: requestDraft.consumableType === '' ? null : requestDraft.consumableType,
+                  deviceId: requestDraft.deviceId.trim() === '' ? null : requestDraft.deviceId.trim(),
+                })
+              }
+            >
+              {translate('page.dcce9a144a40')}
+            </Button>
+          }
+        >
           <div className="filter-field">
             <label htmlFor="request-filter-status">{translate('page.8542beb99054')}</label>
             <select
@@ -608,21 +633,7 @@ export function ConsumablesPage({
               onChange={(event) => setRequestDraft({ ...requestDraft, deviceId: event.target.value })}
             />
           </div>
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="request-filter-search"
-            onClick={() =>
-              onApplyRequestFilter({
-                status: requestDraft.status === '' ? null : requestDraft.status,
-                consumableType: requestDraft.consumableType === '' ? null : requestDraft.consumableType,
-                deviceId: requestDraft.deviceId.trim() === '' ? null : requestDraft.deviceId.trim(),
-              })
-            }
-          >
-            {translate('page.dcce9a144a40')}
-          </Button>
-        </div>
+        </FilterBar>
 
         <section data-testid="consumable-requests-table" aria-label={translate('page.ea93d111282f')}>
           <CursorTable

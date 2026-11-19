@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -143,28 +144,45 @@ export function EsgOverviewPage({
         {translate('page.504a12fd9000')}
       </p>
 
-      <div className="filter-bar" data-testid="esg-overview-filter">
-        <div
-          className="period-toggle"
-          role="group"
-          aria-label={translate('page.bc3d16afc041')}
-          data-testid="esg-period-toggle"
-        >
-          {ESG_PERIODS.map((p) => (
-            <Button
-              key={p}
-              type="button"
-              aria-pressed={period === p}
-              className={period === p ? 'active' : ''}
-              data-testid={`period-${p}`}
-              onClick={() => onPeriodChange(p)}
-            >
-              {ESG_PERIOD_LABELS[p]}
-            </Button>
-          ))}
+      <FilterBar
+        testId="esg-overview-filter"
+        actions={
+          <Button type="button" className="primary-button" data-testid="esg-apply" onClick={applyFilter}>
+            {translate('page.4562024ddec7')}
+          </Button>
+        }
+        feedback={
+          dateError !== null ? (
+            <p className="field-hint" data-testid="esg-date-error">
+              {dateError}
+            </p>
+          ) : null
+        }
+      >
+        <div className="filter-field">
+          <span id="esg-period-label">{translate('page.bc3d16afc041')}</span>
+          <div
+            className="period-toggle"
+            role="group"
+            aria-labelledby="esg-period-label"
+            data-testid="esg-period-toggle"
+          >
+            {ESG_PERIODS.map((p) => (
+              <Button
+                key={p}
+                type="button"
+                aria-pressed={period === p}
+                className={period === p ? 'active' : ''}
+                data-testid={`period-${p}`}
+                onClick={() => onPeriodChange(p)}
+              >
+                {ESG_PERIOD_LABELS[p]}
+              </Button>
+            ))}
+          </div>
         </div>
         {!isCustomerRole ? (
-          <>
+          <div className="filter-field">
             <label htmlFor="esg-customer">{translate('page.467c1137f479')}</label>
             <select
               id="esg-customer"
@@ -181,7 +199,7 @@ export function EsgOverviewPage({
                 </option>
               ))}
             </select>
-          </>
+          </div>
         ) : null}
         <div className="filter-field">
           <label htmlFor="esg-from">
@@ -206,15 +224,7 @@ export function EsgOverviewPage({
             onChange={(event) => setDraft({ ...draft, toDate: event.target.value })}
           />
         </div>
-        <Button type="button" className="primary-button" data-testid="esg-apply" onClick={applyFilter}>
-          {translate('page.4562024ddec7')}
-        </Button>
-        {dateError !== null ? (
-          <p className="field-hint" data-testid="esg-date-error">
-            {dateError}
-          </p>
-        ) : null}
-      </div>
+      </FilterBar>
 
       {appliedQuery.from !== null && appliedQuery.to !== null ? (
         <p className="query-hint" data-testid="esg-query-hint">

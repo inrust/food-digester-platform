@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -35,6 +36,7 @@ export interface SitesPageProps {
     readonly hasPrevPage?: boolean;
   };
   readonly filters: SiteFilters;
+  readonly fixedCustomerId?: string | null;
   readonly onFilterChange: (filters: SiteFilters) => void;
   readonly onLoadMore: (cursor: string) => void;
   readonly onLoadPrevious?: () => void;
@@ -200,6 +202,7 @@ function SiteFormDialog({
 export function SitesPage({
   list,
   filters,
+  fixedCustomerId = null,
   onFilterChange,
   onLoadMore,
   onLoadPrevious,
@@ -215,6 +218,15 @@ export function SitesPage({
   const [actionError, setActionError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
+  const filterCustomers =
+    fixedCustomerId === null
+      ? customerOptions
+      : [
+          {
+            value: fixedCustomerId,
+            label: customerOptions.find((option) => option.value === fixedCustomerId)?.label ?? fixedCustomerId,
+          },
+        ];
   const runAction = async (fn: () => Promise<SiteView>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -239,33 +251,52 @@ export function SitesPage({
       <header className="page-header">
         <h1>{translate('design.page.sites')}</h1>
       </header>
-      <div className="page-toolbar">
-        <div className="site-filters" data-testid="site-filters">
+      {canWrite ? (
+        <div className="page-toolbar" data-testid="site-toolbar">
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid="create-site"
+            onClick={() => setDialog({ kind: 'create' })}
+          >
+            {translate('page.97cf62968aef')}
+          </Button>
+        </div>
+      ) : null}
+      <FilterBar testId="site-filters">
+        <div className="filter-field">
           <label htmlFor="filter-customer">{translate('page.467c1137f479')}</label>
           <select
             id="filter-customer"
-            value={filters.customerId ?? ''}
+            value={fixedCustomerId ?? filters.customerId ?? ''}
+            disabled={fixedCustomerId !== null}
             onChange={(e) => onFilterChange({ ...filters, customerId: e.target.value === '' ? null : e.target.value })}
           >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {customerOptions.map((option) => (
+            {fixedCustomerId === null ? <option value="">{translate('page.778fc8f99453')}</option> : null}
+            {filterCustomers.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
+        </div>
+        <div className="filter-field">
           <label htmlFor="filter-region">{translate('page.406e0f8c6852')}</label>
           <Input
             id="filter-region"
             value={filters.region ?? ''}
             onChange={(e) => onFilterChange({ ...filters, region: e.target.value === '' ? null : e.target.value })}
           />
+        </div>
+        <div className="filter-field">
           <label htmlFor="filter-subregion">{translate('page.ff0beacd69e2')}</label>
           <Input
             id="filter-subregion"
             value={filters.subregion ?? ''}
             onChange={(e) => onFilterChange({ ...filters, subregion: e.target.value === '' ? null : e.target.value })}
           />
+        </div>
+        <div className="filter-field">
           <label htmlFor="filter-status">{translate('page.62e951a692ff')}</label>
           <select
             id="filter-status"
@@ -279,17 +310,7 @@ export function SitesPage({
             <option value="SUSPENDED">{translate('page.6c7dcbb73a59')}</option>
           </select>
         </div>
-        {canWrite ? (
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="create-site"
-            onClick={() => setDialog({ kind: 'create' })}
-          >
-            {translate('page.97cf62968aef')}
-          </Button>
-        ) : null}
-      </div>
+      </FilterBar>
 
       <CursorTable
         ariaLabel={translate('page.0bfb6aec5482')}

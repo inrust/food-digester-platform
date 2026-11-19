@@ -304,7 +304,9 @@ test('门控：Suspended/Retired/离线/无 Entitlement/无 command:send 均禁�
     const { unmount } = renderPage({ role, selectedDevice: makeDevice(deviceOverrides) });
     const button = screen.getByTestId('quick-agitatorForward') as HTMLButtonElement;
     assert.ok(button.disabled, `${name}：按钮应禁用`);
-    assert.match(screen.getByTestId('quick-deny-agitatorForward').textContent ?? '', pattern, name);
+    const reasonId = button.getAttribute('aria-describedby');
+    assert.ok(reasonId);
+    assert.match(document.getElementById(reasonId)?.textContent ?? '', pattern, name);
     unmount();
   }
 });

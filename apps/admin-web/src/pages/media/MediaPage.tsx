@@ -1,3 +1,4 @@
+import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -133,7 +134,19 @@ export function MediaPage({
       <p className="field-hint">{translate('page.2611c36de1a8')}</p>
 
       <section data-testid="media-filter" aria-label={translate('page.dcce9a144a40')}>
-        <div className="filter-bar">
+        <FilterBar
+          actions={
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="media-filter-search"
+              disabled={fromInvalid || toInvalid || rangeInvalid}
+              onClick={applyFilter}
+            >
+              {translate('page.dcce9a144a40')}
+            </Button>
+          }
+        >
           <div className="filter-field">
             <label htmlFor="media-filter-type">{translate('page.e4e46c7235d1')}</label>
             <select
@@ -180,7 +193,7 @@ export function MediaPage({
             />
           </div>
           {isPlatformRole ? (
-            <>
+            <div className="filter-field">
               <label htmlFor="media-filter-customer">{translate('page.a20148b7e39a')}</label>
               <Input
                 id="media-filter-customer"
@@ -188,7 +201,7 @@ export function MediaPage({
                 value={draft.customerId}
                 onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
               />
-            </>
+            </div>
           ) : null}
           <div className="filter-field">
             <label htmlFor="media-filter-from">{translate('page.4b9915a00508')}</label>
@@ -210,16 +223,7 @@ export function MediaPage({
               onChange={(event) => setDraft({ ...draft, to: event.target.value })}
             />
           </div>
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="media-filter-search"
-            disabled={fromInvalid || toInvalid || rangeInvalid}
-            onClick={applyFilter}
-          >
-            {translate('page.dcce9a144a40')}
-          </Button>
-        </div>
+        </FilterBar>
         {fromInvalid || toInvalid || rangeInvalid ? (
           <p className="field-hint" data-testid="media-filter-time-error">
             {rangeInvalid
