@@ -7,8 +7,9 @@
 | 验收候选 | [`fc1793dc`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5)。原候选 `353d2deb` 与修复候选共有 T01–T11 历史。远端 `main` 已从 `97cdd503` 快进。 |
 | 本地回归 | 管理后台与 Cloud API 类型检查通过。Vitest 67 个文件、742 项通过。Playwright Chromium 73 项通过。契约测试 321 项通过。OpenAPI、136 条 REST 路由一致性、模块边界、数据库迁移结构及管理后台交付检查通过。QA08 全量原型回归 24 项和 24 份 DOM 快照通过。 |
 | 完整验证追验 | 候选 `353d2deb` 的完整 `pnpm verify` 在 `test:scripts` 失败。仅修改验收脚本的修复候选 [`fc1793dc`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5) 完整 `pnpm verify` 通过。 [追验回执](audit/evidence/cmp-t12-353d2deb/target-preflight.json) |
-| 目标环境 | 共享测试环境四项版本证据已对齐。44 项验收索引为 10 项 PASS、1 项 FAIL、33 项 NOT_RUN，其中 31 项有部分实测记录。P1 首批为 5 项 PASS、0 项 FAIL、10 项 NOT_RUN，其中 9 项有部分实测记录。 [目标实测回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
-| 发布结论 | `BLOCKED`。CMP-23 的媒体列表在共享测试环境对升序、降序和旧客户端均返回 500。项目方签收 `OPEN`。 [复现和请求 ID](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
+| 目标环境 | 原候选 `fc1793dc` 的共享测试环境四项版本证据已对齐。原候选 44 项验收索引为 10 项 PASS、1 项 FAIL、33 项 NOT_RUN，其中 31 项有部分实测记录。P1 首批为 5 项 PASS、0 项 FAIL、10 项 NOT_RUN，其中 9 项有部分实测记录。 [目标实测回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
+| CMP-23 跟进 | [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76) 已独立完成全量验证、发布和同 SHA 绑定。CMP-23 `PASS`，发布阻塞 `RESOLVED`。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) |
+| 发布结论 | `OPEN`。CMP-23 在修复候选中解除阻塞。其余 CMP 沿用原候选记录，项目方签收与剩余目标复验仍为 `OPEN`。 [原候选复现](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) · [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) |
 
 [开发计划](CMP管理后台前端改进开发计划.md) · [执行顺序](CMP管理后台前端改进执行顺序与提示词.md) · [候选版本和检查回执](audit/evidence/cmp-t12-353d2deb/local-receipt.json)
 
@@ -80,7 +81,7 @@
 | CMP-20 | 逐个切换告警、事件和防拆，确认可见条件与实际 endpoint 一致，长筛选值下仍能查询与重置。 | `PASS_LOCAL` [三标签查询](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L79) | `NOT_RUN` · 部分实测 · 中英文告警、事件、防拆请求走各自真实 endpoint 及字段。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L1809) |
 | CMP-21 | 打开已清除及待处理告警，核对状态、发生/清除时间和原因。检查证据图片入口与确认/清除权限。 | `PASS_LOCAL` [详情布局与只读门控](../apps/admin-web/e2e/cmp-detail-layout.spec.ts#L210) · [证据图片](../apps/admin-web/e2e/evidence-image.spec.ts) | `NOT_RUN` · 部分实测 · 自有模拟告警真实送达，详情显示严重级别并可由审计员读取。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L1922) |
 | CMP-22 | 用平台与客户角色打开媒体，验证设备、客户、类型、状态和日期控件权限及窄屏可读性。按键执行查询并核对条件。 | `PASS_LOCAL` [媒体筛选](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L105) · [媒体组件和传输](../apps/admin-web/test/media.test.tsx) | `NOT_RUN` · 部分实测 · 平台媒体筛选以实际请求传递长值和客户，三种视口布局已核对。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2017) |
-| CMP-23 | 用多个同采集时间文件检查正倒序相邻两页，无重复遗漏。切换排序或筛选回首页，错误游标被拒绝，旧客户端和下载继续可用。 | `PASS_LOCAL` [换向和迟到响应](../apps/admin-web/e2e/cmp-media-capture-sort.spec.ts#L25) · [双向游标、旧客户端与租户](../apps/cloud-api/test/media.test.ts#L591) | `FAIL` · `BLOCKED` · 三个角色、两组自有租户的升序、降序和旧默认请求全部 HTTP 500。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2051) |
+| CMP-23 | 用多个同采集时间文件检查正倒序相邻两页，无重复遗漏。切换排序或筛选回首页，错误游标被拒绝，旧客户端和下载继续可用。 | `PASS_LOCAL` [换向和迟到响应](../apps/admin-web/e2e/cmp-media-capture-sort.spec.ts#L25) · [双向游标、旧客户端与租户](../apps/cloud-api/test/media.test.ts#L591) | `PASS` · 修复候选 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)。共享测试已按三种模式和两个租户验证分页，浏览器双语验证换向和筛选归第一页。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) · [原候选 500 历史](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2051) |
 | CMP-24 | ESG 概览切统计粒度、客户及日期并应用。核对查询范围、时区、估算说明与导出入口。 | `PASS_LOCAL` [筛选栏](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L113) · [导出与时区](../apps/admin-web/e2e/qa05-workflows.spec.ts#L197) | `NOT_RUN` · 部分实测 · 中英文 ESG 粒度和客户组合发出实际汇总请求。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2110) |
 | CMP-25 | 设备 ESG 分别在已应用、分页和日期错误状态重置。立即导出，再重新查询，核对日期、设备、游标被清除且保留固定客户范围。 | `PASS_LOCAL` [查询与导出请求](../apps/admin-web/e2e/cmp-consumable-esg.spec.ts#L81) | `NOT_RUN` · 部分实测 · 日期查询及错误重置后清过滤和游标，实际导出保留固定客户。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2175) |
 | CMP-26 | 合约列表选择长客户名，在小视口用筛选按钮。检查按钮和下拉可独立操作，所选客户能进入查询参数。 | `PASS_LOCAL` [双语重叠回归](../apps/admin-web/e2e/cmp-device-query.spec.ts#L162) | `PASS` · 中英文 375、768、1440 像素下无重叠，实际请求携所选客户。 [目标回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json#L2239) |
@@ -117,22 +118,28 @@
 
 44 项逐项结论为 10 项 PASS、1 项 FAIL、33 项 NOT_RUN，其中 31 项有部分实测记录。P1 为 5 项 PASS、0 项 FAIL、10 项 NOT_RUN，其中 9 项有部分实测记录。部分覆盖项仍以 `NOT_RUN` 标记其整条验收，具体已通过的断言和缺口保留在对应回执。首轮失败及其重测全部保留。项目方可按上一节的复现步骤和逐项回执继续走查。
 
+### CMP-23 修复复验
+
+原候选请求 `31d18d9d-73b7-4c28-96e5-d03ae2c40ea3` 对应的 Lambda 调用已通过认证和账号查询。媒体列表的原始查询经过实时预览的权威写入包装器时丢失 Prisma 方法接收者，三种列表模式均在媒体 SQL 发出前异常。修复让事务内外的查询保留方法所属对象，原有排序、租户范围、版本和下载契约继续生效。用本机合成数据复现修复前异常，并复验同一个包装器。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json)
+
+候选 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76) 的 `pnpm verify` 和测试部署通过。Amplify 活动构建 171、管理 API Lambda 的固定 S3 产物、OpenAPI Bundle 和 Migration Runner `fdp-test-migration-runner:27012522-f744-49fb-a5f7-7da0f621c585` 均绑定该 SHA。数据库迁移文件字节无变化，Runner 读回 45 条已完成、0 条未完成。 请求、分页和隔离均见新候选回执。下载权限、15 分钟有效期及过期拒绝均实测。 [共享测试部署](https://github.com/inrust/food-digester-platform/actions/runs/44478308608) · [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json)
+
 ## 4. 发布待办与回退版本
 
 | 状态 | 待办与放行条件 |
 | --- | --- |
-| `BLOCKED` · CMP-23 | 在已绑定的共享测试环境，用三个角色和两组自有租户查询，既有默认、升序和降序的 9 个有效请求均为 HTTP 500 `INTERNAL_ERROR`，非法方向返回 400。定位管理端媒体列表的服务端错误，新候选重新绑定后复验正倒序同时间跨页、旧默认、游标、租户隔离、下载授权与过期。目标数据库查询计划仍为 `NOT_RUN`。 [复现矩阵和请求 ID](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
+| `RESOLVED` · CMP-23 | 原候选九个有效请求的 HTTP 500 历史保留。修复候选目标复验为 `PASS`。目标数据库查询计划为 `NOT_RUN`。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) |
 | `OPEN` · P1 目标走查 | 业务用户角色确认缺专用可写业务账号。按索引补齐设备、耗材、ESG、全局设置、审计等剩余组合路径后签收。测试账号经 Cognito 登录已核实。 |
 | `OPEN` · D5 可信回执 | 真实配置 API 显示设备云端生效版本，缺少匹配的可信应用回执时显示未知。型号覆盖和设备 Sync 对照尚待补测。 |
 | `OPEN` · 项目方签收 | 走查材料与脱敏证据已登记。签收、剩余目标验收和回退执行保留各自的结果。 |
 
-本轮已部署的当前候选为 `fc1793dc`。最近一次已知成功部署的整体回退版本为 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1)，对应历史 Amplify 活动任务 169 与 [测试 API 部署作业](https://github.com/inrust/food-digester-platform/actions/runs/43667829780)。如需回退，前端和 API 应成对切换，已增加的普通索引可保留。本轮回退执行 `NOT_RUN`。
+共享测试当前候选为 `07a385f4`。最近一次已知成功部署的整体回退版本为 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1)，对应历史 Amplify 活动任务 169 与 [测试 API 部署作业](https://github.com/inrust/food-digester-platform/actions/runs/43667829780)。如需回退，前端和 API 应成对切换，已增加的普通索引可保留。本轮回退执行 `NOT_RUN`。
 
 | 失败范围 | 可回退的源码版本 | 回退注意点 |
 | --- | --- | --- |
 | 整体候选或工作包 A | [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1) | 前端与管理 API 成对回退。先查目标现存版本、对应构建产物和迁移状态。 |
 | 工作包 B 布局与详情 | [`a04640be`](https://github.com/inrust/food-digester-platform/commit/a04640becc25c8e22341fd203c973e0c6865cc45)（T04 后） | 保留工作包 A。后续批次随该版本整体退回。 |
-| CMP-23 媒体接口或排序 | [`75497720`](https://github.com/inrust/food-digester-platform/commit/7549772076d208e55783015958d48a7ae31784b3)（T07 后） | 共享测试的旧默认也返回 500。修复管理 API 或按配套候选同步回退，再从首页获取旧 ID 游标。已加的普通索引可保留。 |
+| CMP-23 媒体接口或排序 | [`75497720`](https://github.com/inrust/food-digester-platform/commit/7549772076d208e55783015958d48a7ae31784b3)（T07 后） | 原候选 `fc1793dc` 的旧默认也返回 500。修复管理 API 或按配套候选同步回退，再从首页获取旧 ID 游标。已加的普通索引可保留。 |
 | 工作包 D 顶栏和导航决定 | [`243734b8`](https://github.com/inrust/food-digester-platform/commit/243734b82ab1c3c4a505c06989fe4f54ba563475)（T08 后） | 保留媒体兼容契约。T10、T11 随 T09 成对回退。 |
 | CMP-16/17 配置发布与展示 | [`dacaf73b`](https://github.com/inrust/food-digester-platform/commit/dacaf73b35be12a210f354ab8a656a96351fa312)（T09 后） | 核对业务记录和已有配置版本，匹配前端与 API 版本。 |
 | CMP-01/02 账号与概览 | [`e6f8762b`](https://github.com/inrust/food-digester-platform/commit/e6f8762be9ff560b8c06938ae06917f4fc0644c3)（T10 后） | 保留 T10。按已留存的同版本构建与 API 产物回退。 |
