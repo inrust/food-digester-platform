@@ -2,22 +2,35 @@ import type { Page, Route } from '@playwright/test';
 
 export type Role = 'PlatformSuperAdmin' | 'PlatformOperator' | 'Auditor' | 'CustomerAdmin' | 'CustomerViewer';
 
-export function jwt(expSeconds = Math.floor(Date.now() / 1000) + 3600): string {
+export function jwt(expSeconds = Math.floor(Date.now() / 1000) + 3600, claims: Record<string, unknown> = {}): string {
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `${encode({ alg: 'none' })}.${encode({ exp: expSeconds })}.signature`;
+  return `${encode({ alg: 'none' })}.${encode({ ...claims, exp: expSeconds })}.signature`;
 }
 
-export async function seedSession(page: Page, role: Role, options: { expired?: boolean; customerId?: string } = {}) {
+export async function seedSession(
+  page: Page,
+  role: Role,
+  options: { expired?: boolean; customerId?: string; username?: string; identityClaims?: Record<string, unknown> } = {},
+) {
   const accessToken = options.expired ? 'expired-session-token' : jwt();
+  const username = options.username ?? `e2e-${role}`;
+  const idToken =
+    options.identityClaims === undefined
+      ? 'redacted-id-token'
+      : jwt(undefined, {
+          ...options.identityClaims,
+          'cognito:username': username,
+          'cognito:groups': [role],
+        });
   await page.addInitScript(
-    ({ role: selectedRole, accessToken: token, customerId }) => {
+    ({ role: selectedRole, accessToken: token, customerId, username, idToken }) => {
       sessionStorage.setItem(
         'fdp.admin.session.v1',
         JSON.stringify({
-          username: `e2e-${selectedRole}`,
+          username,
           roles: [selectedRole],
           customerId,
-          idToken: 'redacted-id-token',
+          idToken,
           accessToken: token,
           refreshToken: 'redacted-refresh-token',
           expiresInSeconds: token === 'expired-session-token' ? 1 : 3600,
@@ -25,7 +38,13 @@ export async function seedSession(page: Page, role: Role, options: { expired?: b
         }),
       );
     },
-    { role, accessToken, customerId: options.customerId ?? (role.startsWith('Customer') ? 'cust-a' : null) },
+    {
+      role,
+      accessToken,
+      username,
+      idToken,
+      customerId: options.customerId ?? (role.startsWith('Customer') ? 'cust-a' : null),
+    },
   );
 }
 
@@ -45,7 +64,9 @@ export async function layoutViolations(page: Page): Promise<string[]> {
       if (!hasDirectText) continue;
       const clipsX = ['hidden', 'clip'].includes(style.overflowX) && element.scrollWidth > element.clientWidth + 1;
       const clipsY = ['hidden', 'clip'].includes(style.overflowY) && element.scrollHeight > element.clientHeight + 1;
-      if (clipsX || clipsY) {
+      const ellipsizedAccountName =
+        element.dataset.testid === 'topbar-account-name' && style.textOverflow === 'ellipsis';
+      if ((clipsX && !ellipsizedAccountName) || clipsY) {
         const identity = element.getAttribute('data-testid') ?? element.id ?? element.className ?? element.tagName;
         violations.push(`${String(identity)}:${element.scrollWidth}x${element.scrollHeight}`);
       }

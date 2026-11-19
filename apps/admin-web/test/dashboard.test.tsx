@@ -95,6 +95,8 @@ function renderPage(state: DashboardPageState) {
   const utils = render(
     <DashboardPage
       state={state}
+      customerId={null}
+      deviceListPath="/devices/groups"
       onRefresh={() => {}}
       onSubmitCommand={async (deviceId, command) => {
         submitted.push([deviceId, command]);
@@ -232,6 +234,7 @@ test('区块部分失败独立降级，不遮蔽仍可用告警与设备卡片',
   assert.equal(screen.queryByTestId('metric-contracts'), null);
   assert.ok(screen.getByRole('alert').textContent?.includes('req-partial'));
   assert.ok(screen.getByTestId('alarm-alm-1'));
+  assert.equal(screen.getByTestId('device-preview-count').textContent, '已显示 10 台。');
   assert.equal(document.querySelectorAll('.device-card').length, 10);
 });
 

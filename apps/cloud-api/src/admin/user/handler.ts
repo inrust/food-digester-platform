@@ -3,6 +3,7 @@
  *
  * 接线：AUTH-01 withAuthorization（列表 user:read；写操作 user:write——V1 矩阵中仅
  * PlatformSuperAdmin 持有，DEC-012 固定只读）→ Service。路由：
+ * - GET /api/v1/admin/account/profile               本人业务资料（已认证主体）
  * - GET /api/v1/admin/users                         列表（筛选 + 键集游标分页）
  * - POST /api/v1/admin/users                        邀请（Cognito 临时凭证，API 不接收永久密码）
  * - PUT  /api/v1/admin/users/{userId}/roles         角色分配（整体替换）
@@ -21,6 +22,7 @@ import { AdminUserError, userValidationFailed } from './errors.js';
 import {
   assignUserRoles,
   disableUser,
+  getOwnAccountProfile,
   inviteUser,
   listUsers,
   setUserScope,
@@ -31,6 +33,7 @@ import type { UserAdminDeps } from './service.js';
 export type AdminUserHandlerDeps = UserAdminDeps;
 
 export interface AdminUserHandlers {
+  ownProfile(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   listUsers(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   inviteUser(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   assignRoles(req: AdminHttpRequest): Promise<AdminHttpResponse>;
@@ -85,6 +88,15 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
     requestId: req.requestId,
     timestamp: now().toISOString(),
     ...(nextCursor !== undefined ? { nextCursor } : {}),
+  });
+
+  const ownProfile = withAuthorization<AdminHttpRequest, AdminHttpResponse>({}, async (req) => {
+    const data = await getOwnAccountProfile(deps, req.actor);
+    return {
+      status: 200,
+      headers: { 'Cache-Control': 'private, no-store' },
+      body: { data, meta: meta(req) },
+    };
   });
 
   const list = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:read' }, async (req) => {
@@ -150,6 +162,7 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
     };
 
   return {
+    ownProfile: wrap(ownProfile),
     listUsers: wrap(list),
     inviteUser: wrap(invite),
     assignRoles: wrap(roles),

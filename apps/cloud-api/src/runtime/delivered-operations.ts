@@ -556,6 +556,12 @@ export const DELIVERED_OPERATIONS = [
     path: '/api/v1/admin/media/{mediaId}/download-url',
     runtime: 'admin-api',
   },
+  {
+    operationId: 'getOwnAccountProfile',
+    method: 'GET',
+    path: '/api/v1/admin/account/profile',
+    runtime: 'admin-api',
+  },
   { operationId: 'listUsers', method: 'GET', path: '/api/v1/admin/users', runtime: 'admin-api' },
   { operationId: 'inviteUser', method: 'POST', path: '/api/v1/admin/users', runtime: 'admin-api' },
   {

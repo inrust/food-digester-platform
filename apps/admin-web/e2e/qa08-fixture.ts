@@ -254,6 +254,8 @@ export const test = base.extend<{ qa08: Qa08 }>({
         calls.push({ path, method, query: Object.fromEntries(url.searchParams), body });
         const send = (data: any, status = 200) =>
           json(route, { data, meta: { nextCursor: null, requestId: prefix, timestamp: at } }, status);
+        if (path === '/api/v1/admin/account/profile' && method === 'GET' && url.search === '')
+          return send({ userId: null, displayName: null });
         if (path.endsWith('/dashboard/overview'))
           return send({
             ...dashboard,

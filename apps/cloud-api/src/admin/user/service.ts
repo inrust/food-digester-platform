@@ -334,6 +334,22 @@ async function assertNotLastSuperAdmin(client: DbClient, target: UserRow, removi
   }
 }
 
+/** The authenticated subject is the sole selector for the caller's business profile. */
+export async function getOwnAccountProfile(
+  deps: Pick<UserAdminDeps, 'client'>,
+  actor: ActorContext,
+): Promise<{ userId: string | null; displayName: string | null }> {
+  const account = await deps.client.user.findUnique({
+    where: { cognitoSub: actor.actorId },
+    select: { id: true, displayName: true, status: true },
+  });
+  if (account?.status === 'DISABLED') throw unauthenticated();
+  return {
+    userId: account?.id ?? null,
+    displayName: account?.displayName.trim() || null,
+  };
+}
+
 // ---------- 列表 ----------
 
 export interface ListUsersFilter {

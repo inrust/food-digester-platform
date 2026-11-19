@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Modal } from '../components/Modal.js';
 import { Icon } from '../components/Icon.js';
 import { Button } from '../components/ui.js';
 /**
@@ -7,6 +9,7 @@ import { Button } from '../components/ui.js';
 import { roleDisplayName } from '../menu/menu.js';
 import { SUPPORTED_TIME_ZONES, useUserTimeZone } from '../components/TimeText.js';
 import { LANGUAGE_LABELS, LANGUAGE_OPTIONS, isLanguage, useI18n } from '../i18n/i18n.js';
+import type { OwnAccountProfile } from '../session/account-profile.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { breadcrumbsFor } from './breadcrumb.js';
 import type { Ref } from 'react';
@@ -14,6 +17,7 @@ import type { Ref } from 'react';
 export interface TopbarProps {
   readonly path: string;
   readonly session: SessionSnapshot;
+  readonly accountProfile?: OwnAccountProfile | null;
   readonly onNavigate: (path: string) => void;
   readonly onLogout: () => void;
   /** 打开移动端抽屉（≤768px 可见，见 shell.css）。 */
@@ -22,7 +26,17 @@ export interface TopbarProps {
   readonly drawerButtonRef?: Ref<HTMLButtonElement>;
 }
 
-export function Topbar({ path, session, onNavigate, onLogout, onOpenDrawer, drawerButtonRef }: TopbarProps) {
+export function Topbar({
+  path,
+  session,
+  accountProfile,
+  onNavigate,
+  onLogout,
+  onOpenDrawer,
+  drawerButtonRef,
+}: TopbarProps) {
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountName = accountProfile?.displayName ?? session.verifiedEmail ?? session.username;
   const crumbs = breadcrumbsFor(path);
   const primaryRole = session.roles[0];
   const { timeZone, setTimeZone } = useUserTimeZone();
@@ -97,10 +111,22 @@ export function Topbar({ path, session, onNavigate, onLogout, onOpenDrawer, draw
           </select>
         </label>
         <div className="user-badge" data-testid="user-badge">
-          <span className="user-avatar" aria-hidden="true">
-            {session.username.slice(0, 1).toUpperCase()}
-          </span>
-          <span className="user-name">{session.username}</span>
+          <Button
+            type="button"
+            className="account-trigger"
+            data-testid="topbar-account"
+            aria-haspopup="dialog"
+            aria-label={t('account.open', { name: accountName })}
+            title={accountName}
+            onClick={() => setAccountOpen(true)}
+          >
+            <span className="user-avatar" aria-hidden="true">
+              {Array.from(accountName)[0]?.toUpperCase()}
+            </span>
+            <span className="user-name" data-testid="topbar-account-name">
+              {accountName}
+            </span>
+          </Button>
           {primaryRole !== undefined ? (
             <span className="role-tag" data-testid="role-tag">
               {roleDisplayName(primaryRole)}
@@ -111,6 +137,29 @@ export function Topbar({ path, session, onNavigate, onLogout, onOpenDrawer, draw
           </Button>
         </div>
       </div>
+      <Modal
+        open={accountOpen}
+        title={t('account.details')}
+        onClose={() => setAccountOpen(false)}
+        testid="account-details"
+      >
+        <dl className="account-facts">
+          <dt>{t('account.displayedName')}</dt>
+          <dd>{accountName}</dd>
+          <dt>{t('account.businessId')}</dt>
+          <dd>{accountProfile?.userId ?? t('account.unavailable')}</dd>
+          <dt>{t('account.username')}</dt>
+          <dd>{session.username}</dd>
+          <dt>{t('account.subject')}</dt>
+          <dd>{session.subject ?? t('account.unavailable')}</dd>
+          {session.verifiedEmail !== undefined ? (
+            <>
+              <dt>{t('account.verifiedEmail')}</dt>
+              <dd>{session.verifiedEmail}</dd>
+            </>
+          ) : null}
+        </dl>
+      </Modal>
     </header>
   );
 }

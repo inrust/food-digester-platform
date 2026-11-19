@@ -7,7 +7,7 @@ import {
   SessionManager,
 } from '../src/session/session-manager.js';
 import type { EstablishedSession } from '../src/session/session-manager.js';
-import { makeAccessToken, makeIdToken, expectRejects, expectThrows } from './helpers.js';
+import { makeAccessToken, makeIdToken, makeJwt, expectRejects, expectThrows } from './helpers.js';
 
 const NOW = Date.UTC(2026, 8, 6, 12, 0, 0);
 
@@ -183,4 +183,58 @@ test('登出：本地清除先于服务端调用；GlobalSignOut 失败不阻塞
   assert.equal(manager.isAuthenticated(), false);
   assert.equal(store.load(), null);
   assert.deepEqual(reasons, ['logout']);
+});
+
+test('已有会话读取 ID Token 的 sub 与已验证邮箱，忽略缺失字段和未验证邮箱', () => {
+  const existing = makeSession({});
+  const base = { 'cognito:username': existing.username, 'cognito:groups': existing.roles };
+  const { manager } = makeManager({
+    session: {
+      ...existing,
+      idToken: makeJwt({ ...base, sub: 'fixture-subject', email: 'verified@example.test', email_verified: true }),
+    },
+  });
+  assert.include(manager.current(), { subject: 'fixture-subject', verifiedEmail: 'verified@example.test' });
+  manager.establish({
+    ...existing,
+    idToken: makeJwt({ ...base, email: 'unverified@example.test', email_verified: false }),
+  });
+  assert.isUndefined(manager.current()?.subject);
+  assert.isUndefined(manager.current()?.verifiedEmail);
+});
+
+test('同时读取账号资料和页面时共用刷新，登出后迟到的颁发结果无法恢复会话', async () => {
+  const expired = { ...makeSession({ accessTokenExpiresAtMs: NOW - 1000 }), obtainedAtMs: NOW - 7200_000 };
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let refreshes = 0;
+  const { manager, store } = makeManager({
+    session: expired,
+    refreshTokens: async () => {
+      refreshes += 1;
+      await gate;
+      return {
+        accessToken: makeAccessToken(NOW + 3600_000),
+        idToken: makeIdToken({ groups: ['PlatformSuperAdmin'], expSeconds: NOW / 1000 + 3600 }),
+        expiresInSeconds: 3600,
+        tokenType: 'Bearer',
+      };
+    },
+  });
+  const reads = Promise.allSettled([
+    manager.ensureFreshIdToken({ forceRefresh: true }),
+    manager.ensureFreshAccessToken(),
+  ]);
+  assert.equal(refreshes, 1);
+  await manager.logout();
+  release();
+  const settled = await reads;
+  assert.deepEqual(
+    settled.map((result) => result.status),
+    ['rejected', 'rejected'],
+  );
+  assert.isNull(manager.current());
+  assert.isNull(store.load());
 });

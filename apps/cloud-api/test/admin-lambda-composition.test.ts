@@ -133,6 +133,7 @@ const routeSet = (): AdminOnboardingRouteSet => ({
   },
   media: { listMedia: handler(), createDownloadUrl: handler() },
   users: {
+    ownProfile: handler(),
     listUsers: handler(),
     inviteUser: handler(),
     assignRoles: handler(),
@@ -161,7 +162,7 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     const operations = DELIVERED_OPERATIONS.slice(firstTargetIndex).filter(
       (operation) => operation.runtime === 'admin-api',
     );
-    assert.equal(operations.length, 88);
+    assert.equal(operations.length, 89);
     for (const operation of operations) {
       const path = operation.path.replaceAll(/\{[^}]+\}/gu, 'encoded%2Fid');
       const response = await createAdminRoute(

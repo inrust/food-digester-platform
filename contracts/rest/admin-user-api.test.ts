@@ -33,6 +33,7 @@ test('端点齐备且 CognitoJwt 认证：列表/邀请/角色/scope/停用/密�
   assert.equal(doc.openapi, '3.1.0');
   const basePath = '/api/v1/admin/users';
   const expectations: Array<[string, string, string, string[]]> = [
+    ['/api/v1/admin/account/profile', 'get', 'getOwnAccountProfile', ['200', '401', '403', '500']],
     [basePath, 'get', 'listUsers', ['200', '400', '401', '403']],
     [basePath, 'post', 'inviteUser', ['201', '400', '401', '403', '404', '409']],
     [`${basePath}/{userId}/roles`, 'put', 'assignUserRoles', ['200', '400', '401', '403', '404', '409']],

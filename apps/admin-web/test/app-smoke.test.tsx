@@ -77,7 +77,11 @@ describe('管理后台浏览器冒烟', () => {
     window.history.replaceState({}, '', '/customers');
     render(<AdminWebApp services={appServices} />);
     expect(await screen.findByTestId('customers-page')).toBeDefined();
-    await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(2));
+    expect(fetchFn).toHaveBeenCalledWith(
+      'https://api.example.test/admin/account/profile',
+      expect.objectContaining({ method: 'GET', cache: 'no-store' }),
+    );
     expect(fetchFn).toHaveBeenCalledWith(
       'https://api.example.test/admin/customers?limit=50',
       expect.objectContaining({ method: 'GET' }),
@@ -116,7 +120,7 @@ describe('管理后台浏览器冒烟', () => {
     render(<AdminWebApp services={establishedServices(fetchFn as typeof fetch)} />);
     const user = userEvent.setup();
     await screen.findByRole('heading', { name: '客户档案' });
-    await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(2));
     await user.click(screen.getByTestId('create-customer'));
     const input = screen.getByLabelText('客户名称');
     await user.type(input, 'Unsaved customer');
@@ -129,6 +133,6 @@ describe('管理后台浏览器冒烟', () => {
     expect(screen.getByLabelText('客户名称')).toBe(input);
     expect((input as HTMLInputElement).value).toBe('Unsaved customer');
     expect(window.location.pathname).toBe('/customers');
-    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 });

@@ -33,6 +33,8 @@ export type DashboardPageState =
     };
 export interface DashboardPageProps {
   readonly state: DashboardPageState;
+  readonly customerId: string | null;
+  readonly deviceListPath: string | null;
   readonly onRefresh: () => void;
   readonly onSubmitCommand: (deviceId: string, command: string) => Promise<CommandSubmitResult>;
   readonly onNavigate: (path: string) => void;
@@ -121,8 +123,15 @@ function SectionFailure({ requestId }: { requestId: string }) {
     </div>
   );
 }
-export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }: DashboardPageProps) {
-  const { language } = useI18n();
+export function DashboardPage({
+  state,
+  customerId,
+  deviceListPath,
+  onRefresh,
+  onSubmitCommand,
+  onNavigate,
+}: DashboardPageProps) {
+  const { language, t } = useI18n();
   if (state.status === 'loading') {
     return (
       <div role="status" data-testid="dashboard-loading">
@@ -134,6 +143,10 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
     return <ErrorNotice error={state.error} onRefresh={onRefresh} />;
   }
   const { overview } = state;
+  const summaryReady = overview.sections.summary.status === 'READY';
+  const cardsReady = overview.sections.deviceCards.status === 'READY';
+  const shown = formatLocaleNumber(overview.deviceCards.length, language);
+  const total = formatLocaleNumber(overview.devices.total, language);
   return (
     <div className="dashboard-page" data-testid="dashboard-page">
       <header className="page-header">
@@ -164,8 +177,8 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
           />
           <MetricCard
             testid="metric-devices"
-            label={translate('page.11c33ae6c763')}
-            value={formatLocaleNumber(overview.devices.total, language)}
+            label={t('dashboard.visibleDeviceTotal')}
+            value={total}
             sub={
               translate('page.6137da351e51') + licenseDistributionText(overview.devices.licenseDistribution, language)
             }
@@ -229,8 +242,35 @@ export function DashboardPage({ state, onRefresh, onSubmitCommand, onNavigate }:
         )}
       </section>
 
-      <section className="device-cards" data-testid="device-cards">
-        <h4>{translate('page.6c2c68d2d64b')}</h4>
+      <section className="device-cards" data-testid="device-cards" aria-labelledby="device-preview-heading">
+        <div className="device-preview-header">
+          <div>
+            <h4 id="device-preview-heading">{t('dashboard.devicePreview')}</h4>
+            <p className="field-hint" data-testid="device-preview-scope">
+              {customerId === null ? t('dashboard.platformScope') : t('dashboard.customerScope', { customerId })}
+            </p>
+            <p className="field-hint">{t('dashboard.devicePreviewRule')}</p>
+            {cardsReady ? (
+              <p className="field-hint" data-testid="device-preview-count">
+                {summaryReady
+                  ? t('dashboard.devicePreviewCount', { shown, total })
+                  : t('dashboard.devicePreviewShown', { shown })}
+              </p>
+            ) : null}
+          </div>
+          {deviceListPath !== null ? (
+            <a
+              href={deviceListPath}
+              onClick={(event) => {
+                if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+                event.preventDefault();
+                onNavigate(deviceListPath);
+              }}
+            >
+              {t('dashboard.openDeviceList')}
+            </a>
+          ) : null}
+        </div>
         {overview.sections.deviceCards.status === 'ERROR' ? (
           <SectionFailure requestId={overview.sections.deviceCards.requestId} />
         ) : overview.deviceCards.length === 0 ? (

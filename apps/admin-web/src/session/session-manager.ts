@@ -17,6 +17,9 @@ import type { AuthenticationResult } from '../auth/cognito-idp.js';
 
 export interface SessionSnapshot {
   readonly username: string;
+  /** Display-only claims from the current Cognito ID token. */
+  readonly subject?: string;
+  readonly verifiedEmail?: string;
   readonly roles: readonly Role[];
   readonly customerId: string | null;
 }
@@ -118,6 +121,7 @@ export function buildSessionFromTokens(
 
 export class SessionManager {
   private session: EstablishedSession | null;
+  private pendingRefresh: { session: EstablishedSession; promise: Promise<EstablishedSession> } | null = null;
 
   private readonly deps: SessionManagerDeps;
 
@@ -147,7 +151,24 @@ export class SessionManager {
 
   current(): SessionSnapshot | null {
     const s = this.session;
-    return s === null ? null : { username: s.username, roles: s.roles, customerId: s.customerId };
+    if (s === null) return null;
+    const snapshot = { username: s.username, roles: s.roles, customerId: s.customerId };
+    // Derive from the current token for both new sign-ins and existing browser sessions.
+    let claims: Record<string, unknown>;
+    try {
+      claims = decodeJwtPayload(s.idToken);
+    } catch {
+      return snapshot;
+    }
+    const subject = claims['sub'];
+    const email = claims['email'];
+    return {
+      ...snapshot,
+      ...(typeof subject === 'string' && subject.trim() !== '' ? { subject } : {}),
+      ...(claims['email_verified'] === true && typeof email === 'string' && email.trim() !== ''
+        ? { verifiedEmail: email.trim() }
+        : {}),
+    };
   }
 
   isAuthenticated(): boolean {
@@ -198,18 +219,7 @@ export class SessionManager {
     if (options?.forceRefresh !== true && now < this.accessTokenExpiresAtMs(session) - this.refreshSkewMs) {
       return session.accessToken;
     }
-    try {
-      const tokens = await this.deps.refreshTokens(session.refreshToken);
-      const refreshed = buildSessionFromTokens(tokens, {
-        refreshToken: tokens.refreshToken ?? session.refreshToken,
-        nowMs: this.clock(),
-      });
-      this.establish(refreshed);
-      return refreshed.accessToken;
-    } catch {
-      this.clearSession('refresh-failed');
-      throw new SessionExpiredError('refresh-failed', 'The session could not be refreshed');
-    }
+    return (await this.refreshSession(session)).accessToken;
   }
 
   /**
@@ -231,16 +241,31 @@ export class SessionManager {
     if (options?.forceRefresh !== true && now < expiresAt - this.refreshSkewMs) {
       return session.idToken;
     }
+    return (await this.refreshSession(session)).idToken;
+  }
+
+  /** Profile and page requests may need fresh credentials at the same time. */
+  private refreshSession(session: EstablishedSession): Promise<EstablishedSession> {
+    if (this.pendingRefresh?.session === session) return this.pendingRefresh.promise;
+    const promise = this.performRefresh(session).finally(() => {
+      if (this.pendingRefresh?.session === session) this.pendingRefresh = null;
+    });
+    this.pendingRefresh = { session, promise };
+    return promise;
+  }
+
+  private async performRefresh(session: EstablishedSession): Promise<EstablishedSession> {
     try {
       const tokens = await this.deps.refreshTokens(session.refreshToken);
+      if (this.session !== session) throw new SessionExpiredError('no-session', 'The session has changed');
       const refreshed = buildSessionFromTokens(tokens, {
         refreshToken: tokens.refreshToken ?? session.refreshToken,
         nowMs: this.clock(),
       });
       this.establish(refreshed);
-      return refreshed.idToken;
+      return refreshed;
     } catch {
-      this.clearSession('refresh-failed');
+      if (this.session === session) this.clearSession('refresh-failed');
       throw new SessionExpiredError('refresh-failed', 'The session could not be refreshed');
     }
   }

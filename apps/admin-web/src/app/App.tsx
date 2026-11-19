@@ -6,6 +6,8 @@ import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { resetUserTimeZonePreference, TimeZoneProvider } from '../components/TimeText.js';
 import { I18nProvider, useI18n } from '../i18n/i18n.js';
 import { resolveRoute } from '../router/guard.js';
+import { fetchOwnAccountProfile } from '../session/account-profile.js';
+import type { OwnAccountProfile } from '../session/account-profile.js';
 import { AppShell } from '../shell/AppShell.js';
 import type { AdminWebServices } from './composition-root.js';
 import { CustomersController, DashboardController, DeviceGroupsController, SitesController } from './controllers.js';
@@ -94,6 +96,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   useI18n();
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
+  const [account, setAccount] = useState<{ key: string; profile: OwnAccountProfile } | null>(null);
   const [contractNavigationBlocked, setContractNavigationBlocked] = useState(false);
   const navigateWithinApp = useCallback(
     (path: string, options?: { replace?: boolean }) => {
@@ -107,12 +110,26 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   useEffect(
     () =>
       services.session.onClear(() => {
+        setAccount(null);
         setSessionRevision((value) => value + 1);
         navigate('/login', { replace: true });
       }),
     [navigate, services.session],
   );
-  void sessionRevision;
+  const accountKey = session === null ? null : JSON.stringify([sessionRevision, session.subject, session.username]);
+  useEffect(() => {
+    if (accountKey === null) return;
+    const request = new AbortController();
+    void fetchOwnAccountProfile(services.api, request.signal).then(
+      (profile) => {
+        if (!request.signal.aborted) setAccount({ key: accountKey, profile });
+      },
+      () => {
+        // Login identity remains available when the business profile cannot be read.
+      },
+    );
+    return () => request.abort();
+  }, [accountKey, services.api]);
   const verdict = resolveRoute(location.pathname, session);
   useEffect(() => {
     if (verdict.kind === 'redirect-login') {
@@ -149,7 +166,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   let page;
   switch (verdict.route.pageState) {
     case 'dashboard':
-      page = <DashboardController api={services.api} onNavigate={navigate} />;
+      page = <DashboardController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'device-group':
       page = <DeviceGroupsController api={services.api} session={session} toasts={toasts} onNavigate={navigate} />;
@@ -263,6 +280,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       <AppShell
         path={location.pathname}
         session={session}
+        accountProfile={account?.key === accountKey ? account.profile : null}
         onNavigate={navigateWithinApp}
         onLogout={() => void services.auth.logout()}
       >

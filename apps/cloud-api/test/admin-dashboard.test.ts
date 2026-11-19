@@ -404,12 +404,19 @@ describe('BE-DASH-01 总览聚合（固定 10 设备 Fixture）', () => {
     assert.equal(Number(viewB.esgToday.carbonReductionKg), 7);
     assert.equal(viewB.latestAlarms.length, 1);
     assert.equal(viewB.latestAlarms[0].code, 'ALM-B');
-    assert.equal(viewB.deviceCards.length, 1);
+    assert.deepEqual(
+      viewB.deviceCards.map((card: { deviceId: string }) => card.deviceId),
+      ['dash-b-01'],
+    );
 
     // 平台角色：全平台（A 10 台 + B 1 台；Contract 2+1）
     const resP = await h.getOverview(req(superAdmin));
     const viewP = (resP.body as DataBody).data;
     assert.equal(viewP.devices.total, 11);
+    assert.deepEqual(
+      viewP.deviceCards.map((card: { deviceId: string }) => card.deviceId),
+      [...deviceIdsA].sort(),
+    );
     assert.equal(viewP.contracts.effectiveTotal, 3);
     assert.equal(Number(viewP.esgToday.carbonReductionKg), 11);
   });

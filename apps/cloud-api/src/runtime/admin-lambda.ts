@@ -267,6 +267,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       retryOtaCampaignFailures: routes.otaCampaigns.retryCampaign,
       listMedia: routes.media.listMedia,
       createMediaDownloadUrl: routes.media.createDownloadUrl,
+      getOwnAccountProfile: routes.users.ownProfile,
       listUsers: routes.users.listUsers,
       inviteUser: routes.users.inviteUser,
       assignUserRoles: routes.users.assignRoles,

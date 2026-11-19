@@ -105,6 +105,7 @@ test('无 Token 安全回登录；五角色菜单和受限路由均由组合根�
     await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
     await page.goto('/dashboard');
     await expect(page.getByText(item.visible, { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: '查看设备列表' })).toHaveAttribute('href', '/devices/groups');
     await expect(page.locator('body')).not.toContainText('redacted-refresh-token');
     await page.goto(item.forbidden);
     if (item.forbidden === '/not-a-route') await expect(page.getByRole('heading', { name: '404' })).toBeVisible();

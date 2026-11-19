@@ -18,6 +18,25 @@
     }
   ],
   "paths": {
+    "/api/v1/admin/account/profile": {
+      "get": {
+        "tags": ["admin"],
+        "operationId": "getOwnAccountProfile",
+        "summary": "查看本人业务资料",
+        "description": "五种已认证的管理端角色均可访问。服务端以验签后的 Cognito sub 匹配自身 users.cognito_sub，返回业务 userId 和 displayName。启动账号等无业务记录时两个字段均为 null，存量空白显示名返回 null。",
+        "security": [{ "CognitoJwt": [] }],
+        "responses": {
+          "200": {
+            "description": "本人业务资料（Cache-Control: private, no-store）",
+            "headers": { "Cache-Control": { "schema": { "type": "string", "const": "private, no-store" } } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OwnAccountProfileSuccess" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "tags": ["admin"],
@@ -223,6 +242,23 @@
       }
     },
     "schemas": {
+      "OwnAccountProfileSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["userId", "displayName"],
+            "properties": {
+              "userId": { "type": ["string", "null"], "minLength": 1, "description": "业务用户表的 ID" },
+              "displayName": { "type": ["string", "null"], "minLength": 1, "description": "业务用户表的显示名" }
+            }
+          },
+          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+        }
+      },
       "RoleCode": {
         "type": "string",
         "description": "封闭角色集（AUTH-01/DEC-012；V1 矩阵固定只读）",

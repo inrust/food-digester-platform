@@ -26,6 +26,7 @@ import {
 } from '../src/index.js';
 import type { AdminHttpRequest, CognitoAdminPort, UserAdminDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { assertOpenApiResponse } from './openapi-response.js';
 import { generateTestKeySet, signToken, testConfig } from '../../../packages/auth/test/helpers.js';
 import { createAdminLambdaRouter } from '../src/runtime/admin-lambda.js';
 
@@ -322,6 +323,68 @@ describe('首次认证用户状态收敛', () => {
       false,
     );
     assert.equal(await prisma.auditLog.count({ where: { action: 'user.activate' } }), before);
+  });
+});
+
+describe('CMP-01 authenticated own account profile', () => {
+  test('matches only the verified subject for all five roles and returns only the two display fields', async () => {
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const customerId = await plantCustomer();
+    const other = await plantUser({ roles: ['CustomerViewer'], customerId: await plantCustomer(), status: 'ACTIVE' });
+    const displayName = 'Synthetic account name';
+    for (const role of [
+      'PlatformSuperAdmin',
+      'PlatformOperator',
+      'Auditor',
+      'CustomerAdmin',
+      'CustomerViewer',
+    ] as const) {
+      const isCustomer = role.startsWith('Customer');
+      const user = await plantUser({ roles: [role], ...(isCustomer ? { customerId } : {}), status: 'ACTIVE' });
+      await prisma.user.update({ where: { id: user.userId }, data: { displayName } });
+      const actor: ActorContext = {
+        ...operator,
+        username: 'cognito-username-not-the-business-name',
+        actorId: user.cognitoSub,
+        roles: [role],
+        actorType: isCustomer ? 'customer' : 'platform',
+        customerId: isCustomer ? customerId : null,
+      };
+      const response = await h.ownProfile(
+        req(actor, {
+          query: { userId: other.userId, cognitoSub: other.cognitoSub, customerId: 'other-tenant' },
+        }),
+      );
+      assert.equal(response.status, 200);
+      assert.equal(response.headers?.['Cache-Control'], 'private, no-store');
+      assertOpenApiResponse('getOwnAccountProfile', 200, response.body);
+      assert.deepEqual((response.body as DataBody).data, { userId: user.userId, displayName });
+    }
+    assert.deepEqual(calls, []);
+  });
+
+  test('legacy missing rows and blank names use nulls, and unauthenticated or disabled callers get 401', async () => {
+    const { port } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const legacy = await h.ownProfile(req({ ...operator, actorId: 'fixture-unlinked-cmp01' }));
+    assert.equal(legacy.status, 200);
+    assertOpenApiResponse('getOwnAccountProfile', 200, legacy.body);
+    assert.deepEqual((legacy.body as DataBody).data, { userId: null, displayName: null });
+
+    const blank = await plantUser({ roles: ['PlatformOperator'], status: 'ACTIVE' });
+    await prisma.user.update({ where: { id: blank.userId }, data: { displayName: '   ' } });
+    const actor = { ...operator, actorId: blank.cognitoSub };
+    const blankResponse = await h.ownProfile(req(actor));
+    assert.equal(blankResponse.status, 200);
+    assert.deepEqual((blankResponse.body as DataBody).data, { userId: blank.userId, displayName: null });
+
+    await prisma.user.update({ where: { id: blank.userId }, data: { status: 'DISABLED' } });
+    for (const invalidActor of [undefined, actor]) {
+      const denied = await h.ownProfile(req(invalidActor));
+      assert.equal(denied.status, 401);
+      assertOpenApiResponse('getOwnAccountProfile', 401, denied.body);
+    }
   });
 });
 

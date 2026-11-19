@@ -160,6 +160,7 @@
   font-weight: 400;
 }
 .topbar-right {
+  min-width: 0;
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -183,11 +184,21 @@
   font-size: 12px;
 }
 .user-badge {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-left: 14px;
   border-left: 1px solid #e3e9ef;
+}
+.account-trigger.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: auto;
+  padding: 3px 6px;
+  border-color: transparent;
 }
 .user-avatar {
   display: grid;
@@ -201,9 +212,28 @@
   font-weight: 600;
 }
 .user-name {
-  max-width: 120px;
-  overflow-wrap: anywhere;
+  max-width: 160px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
+}
+.account-facts {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+.account-facts dt {
+  font-weight: 600;
+}
+.account-facts dd {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.user-badge .role-tag,
+.user-badge .logout-button {
+  flex-shrink: 0;
 }
 .role-tag {
   padding: 3px 7px;
@@ -251,9 +281,6 @@
     flex-wrap: wrap;
     padding-block: 12px;
   }
-  .user-name {
-    display: none;
-  }
 }
 @media (max-width: 768px) {
   .topbar-menu-button {
@@ -294,22 +321,24 @@
     display: none;
   }
   .topbar-right {
+    flex: 1 1 auto;
     gap: 8px;
     flex-wrap: wrap;
   }
   .time-zone-control span,
-  .language-control span,
-  .user-name,
-  .role-tag,
-  .user-avatar {
+  .language-control span {
     display: none;
   }
   .time-zone-control select {
     width: 118px;
   }
   .user-badge {
+    max-width: 100%;
     padding-left: 0;
     border: 0;
+  }
+  .user-name {
+    max-width: 120px;
   }
   .skip-link {
     left: 12px;

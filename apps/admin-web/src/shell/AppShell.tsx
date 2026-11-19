@@ -10,17 +10,19 @@ import { translate } from '../i18n/i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { menuForRoles } from '../menu/menu.js';
+import type { OwnAccountProfile } from '../session/account-profile.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { Sidebar } from './Sidebar.js';
 import { Topbar } from './Topbar.js';
 export interface AppShellProps {
   readonly path: string;
   readonly session: SessionSnapshot;
+  readonly accountProfile?: OwnAccountProfile | null;
   readonly onNavigate: (path: string) => void;
   readonly onLogout: () => void;
   readonly children: ReactNode;
 }
-export function AppShell({ path, session, onNavigate, onLogout, children }: AppShellProps) {
+export function AppShell({ path, session, accountProfile = null, onNavigate, onLogout, children }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeDrawer = (returnFocus: boolean) => {
@@ -63,6 +65,7 @@ export function AppShell({ path, session, onNavigate, onLogout, children }: AppS
         <Topbar
           path={path}
           session={session}
+          accountProfile={accountProfile}
           onNavigate={onNavigate}
           onLogout={onLogout}
           onOpenDrawer={() => setDrawerOpen(true)}

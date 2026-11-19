@@ -142,7 +142,7 @@
       },
       {
         "file": "admin-user-api.json",
-        "sha256": "08d7587b64b07df2cc4970754135c3756a58b8911264bf009700a43966bda905",
+        "sha256": "59ab4175489d99bdb2fe8e920b6c02e24f4de37bc4145292ee36a34e937adf9c",
         "status": "implemented"
       },
       {
@@ -8821,6 +8821,52 @@
           }
         },
         "x-source-document": "admin-site-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/account/profile": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "getOwnAccountProfile",
+        "summary": "查看本人业务资料",
+        "description": "五种已认证的管理端角色均可访问。服务端以验签后的 Cognito sub 匹配自身 users.cognito_sub，返回业务 userId 和 displayName。启动账号等无业务记录时两个字段均为 null，存量空白显示名返回 null。",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "本人业务资料（Cache-Control: private, no-store）",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "private, no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__OwnAccountProfileSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
         "x-contract-status": "implemented"
       }
     },
@@ -19791,6 +19837,45 @@
           },
           "meta": {
             "$ref": "#/components/schemas/PageMeta"
+          }
+        }
+      },
+      "AdminUserApi__OwnAccountProfileSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "userId",
+              "displayName"
+            ],
+            "properties": {
+              "userId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "description": "业务用户表的 ID"
+              },
+              "displayName": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1,
+                "description": "业务用户表的显示名"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
           }
         }
       },

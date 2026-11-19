@@ -26,6 +26,14 @@ export const test = base.extend<{ qa05: Qa05Fixture }>({
         await current.route('**/*', async (route) => {
           const url = new URL(route.request().url());
           if (url.origin === 'http://127.0.0.1:4173' && !url.pathname.startsWith('/api/v1/')) return route.continue();
+          if (
+            url.origin === 'http://127.0.0.1:4173' &&
+            url.pathname === '/api/v1/admin/account/profile' &&
+            url.search === '' &&
+            route.request().method() === 'GET'
+          ) {
+            return route.fulfill({ json: { data: { userId: null, displayName: null }, meta: {} } });
+          }
           unhandled.push(`${route.request().method()} ${url.hostname}${url.pathname}`);
           await route.abort('blockedbyclient');
         });

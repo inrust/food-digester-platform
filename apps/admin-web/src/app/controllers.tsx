@@ -1,8 +1,10 @@
 import { translate } from '../i18n/i18n.js';
-import { hasPermission } from '@fdp/auth/browser';
+import { actorTypeOf, hasPermission } from '@fdp/auth/browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '../api/http-client.js';
 import type { ToastQueue } from '../components/Toast.js';
+import { canAccessRoute } from '../menu/menu.js';
+import { findRoute } from '../router/routes.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { CustomersPage } from '../pages/customers/CustomersPage.js';
 import {
@@ -106,7 +108,15 @@ function can(session: SessionSnapshot, permission: Parameters<typeof hasPermissi
 function success(toasts: ToastQueue, message: string) {
   toasts.push('success', message);
 }
-export function DashboardController({ api, onNavigate }: { api: ApiClient; onNavigate: (path: string) => void }) {
+export function DashboardController({
+  api,
+  session,
+  onNavigate,
+}: {
+  api: ApiClient;
+  session: SessionSnapshot;
+  onNavigate: (path: string) => void;
+}) {
   const [state, setState] = useState<DashboardPageState>({ status: 'loading' });
   const load = useCallback(() => {
     setState({ status: 'loading' });
@@ -117,7 +127,18 @@ export function DashboardController({ api, onNavigate }: { api: ApiClient; onNav
   }, [api]);
   useEffect(load, [load]);
   const submit = useMemo(() => createDashboardCommandSubmitter(api), [api]);
-  return <DashboardPage state={state} onRefresh={load} onSubmitCommand={submit} onNavigate={onNavigate} />;
+  const deviceList = findRoute('/devices/groups');
+  const customerScope = session.roles.some((role) => actorTypeOf(role) === 'customer');
+  return (
+    <DashboardPage
+      state={state}
+      customerId={customerScope ? session.customerId : null}
+      deviceListPath={deviceList !== null && canAccessRoute(deviceList, session.roles) ? deviceList.path : null}
+      onRefresh={load}
+      onSubmitCommand={submit}
+      onNavigate={onNavigate}
+    />
+  );
 }
 export function CustomersController({
   api,
