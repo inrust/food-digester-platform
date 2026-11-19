@@ -384,7 +384,26 @@ test('Customer/Site CRUD 关键路径：创建、非法时区、关联停用提�
   });
 
   await page.goto('/customers');
-  await page.getByTestId('create-customer').click();
+  const viewport = page.viewportSize()!;
+  const createCustomer = page.getByTestId('create-customer');
+  const customerTabs = page.getByTestId('customers-page').getByRole('tablist');
+  for (const width of [1440, 768, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(createCustomer).toBeVisible();
+    await expect(customerTabs).toBeVisible();
+    const button = (await createCustomer.boundingBox())!;
+    const tabs = (await customerTabs.boundingBox())!;
+    if (width <= 480) {
+      expect(button.x).toBe(tabs.x);
+      expect(button.width).toBe(tabs.width);
+      expect(button.y).toBeGreaterThanOrEqual(tabs.y + tabs.height);
+    } else {
+      expect(button.x).toBeGreaterThanOrEqual(tabs.x + tabs.width);
+      expect(Math.abs(button.y + button.height / 2 - (tabs.y + tabs.height / 2))).toBeLessThan(1);
+    }
+  }
+  await page.setViewportSize(viewport);
+  await createCustomer.click();
   await page.getByLabel('客户名称').fill('新客户');
   await page.getByRole('button', { name: '保存' }).click();
   await expect(page.getByRole('cell', { name: '新客户' })).toBeVisible();
