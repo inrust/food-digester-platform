@@ -14,7 +14,7 @@ import { contractHandler } from '../../../contracts/testing/device-contract.js';
 import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
-import { encodeKeysetCursor } from '@fdp/database';
+import { encodeKeysetCursor, withLiveImageAuthorityWriters } from '@fdp/database';
 import type { PrismaClient } from '@fdp/database';
 import { certificateFingerprintFromPem } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
@@ -609,7 +609,12 @@ describe('BE-MED-01 管理端列表与下载', () => {
         [id, owner.deviceId, owner.customerId, captureTime],
       );
     }
-    const handler = createAdminMediaHandlers(mediaDeps(fakeStorage()));
+    const client = withLiveImageAuthorityWriters(prisma, {
+      async beforeMutation() {
+        assert.fail('Media listing must use the read path through the deployed authority wrapper');
+      },
+    });
+    const handler = createAdminMediaHandlers({ ...mediaDeps(fakeStorage()), client });
     const customer: ActorContext = {
       ...superAdmin,
       actorType: 'customer',
@@ -702,7 +707,16 @@ describe('BE-MED-01 管理端列表与下载', () => {
       assert.equal((response.body as ErrBody).error.code, 'CURSOR_INVALID');
     }
     assert.equal((await query({ captureTimeOrder: 'desc', customerId: foreign.customerId! })).status, 403);
-    assert.deepEqual((await read({ captureTimeOrder: 'desc', deviceId: foreign.deviceId })).ids, []);
+    for (const captureTimeOrder of ['asc', 'desc', undefined]) {
+      const sort = captureTimeOrder === undefined ? {} : { captureTimeOrder };
+      assert.deepEqual((await read({ ...sort, deviceId: foreign.deviceId })).ids, []);
+      const otherCustomer: ActorContext = {
+        ...customer,
+        roles: ['CustomerAdmin'],
+        customerId: foreign.customerId,
+      };
+      assert.deepEqual((await read(sort, otherCustomer)).ids, ['cmp23-foreign']);
+    }
     const global = await read({ captureTimeOrder: 'desc', customerId: foreign.customerId! }, superAdmin);
     assert.deepEqual(global.ids, ['cmp23-foreign']);
   });

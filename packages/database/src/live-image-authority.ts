@@ -110,14 +110,16 @@ export function withLiveImageAuthorityWriters(client: PrismaClient, hooks: Autho
     return /^\s*SELECT\b/i.test(withoutRowLock) && !/\b(insert|update|delete|call)\b/i.test(withoutRowLock);
   }
   function lazy(model: string, operation: string, args: unknown[], mutation: boolean) {
+    const invoke = (client: Dynamic): unknown => {
+      const delegate = model ? (client[model] as Dynamic) : client;
+      return (delegate[operation] as Callable)(...args);
+    };
     const execute = async (ctx: Context): Promise<unknown> => {
       if (mutation) {
         const after = await hooks.beforeMutation(ctx.tx, { model, operation, args });
         if (after) ctx.after.push(after);
       }
-      const tx = ctx.tx as unknown as Dynamic;
-      const delegate = model ? (tx[model] as Dynamic) : tx;
-      return (delegate[operation] as Callable)(...args);
+      return invoke(ctx.tx as unknown as Dynamic);
     };
     let promise: Promise<unknown> | undefined;
     const run = () =>
@@ -125,9 +127,7 @@ export function withLiveImageAuthorityWriters(client: PrismaClient, hooks: Autho
         ? execute(context.getStore()!)
         : mutation
           ? inTransaction(execute)
-          : Promise.resolve(
-              (model ? ((raw[model] as Dynamic)[operation] as Callable) : (raw[operation] as Callable))(...args),
-            ));
+          : Promise.resolve(invoke(raw)));
     const query = {
       then: (...a: Parameters<Promise<unknown>['then']>) => run().then(...a),
       catch: (...a: Parameters<Promise<unknown>['catch']>) => run().catch(...a),
