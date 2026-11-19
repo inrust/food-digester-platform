@@ -14,15 +14,16 @@ import { translate } from '../../i18n/i18n.js';
  * - 提交成功仅表示“已受理（AUTHORIZED），等待设备执行”，不声称执行成功；
  * - 详情展示 attempts/acks 时间线；TIMED_OUT 后收到的 ACK 标注“迟到 ACK”。
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { hasPermission } from '@fdp/auth/browser';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { ExportPanel } from '../../components/ExportPanel.js';
 import { Modal } from '../../components/Modal.js';
-import { ScopeFilter } from '../../components/ScopeFilter.js';
-import type { ScopeFilterProps } from '../../components/ScopeFilter.js';
+import { DeviceScopePicker } from '../../components/DeviceScopePicker.js';
+import type { DevicePickerOptions, DevicePickerState } from '../../components/DeviceScopePicker.js';
+import { EMPTY_SCOPE_FILTER } from '../../components/filter-state.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { TimeText } from '../../components/TimeText.js';
 import { UnitValueText } from '../../components/LocaleValue.js';
@@ -79,16 +80,16 @@ export type CommandDetailState =
     };
 export interface DeviceOperatePageProps {
   readonly role: Role;
-  readonly scopeOptions: {
-    readonly regions: ScopeFilterProps['regions'];
-    readonly subregions: ScopeFilterProps['subregions'];
-    readonly sites: ScopeFilterProps['sites'];
-    readonly devices: NonNullable<ScopeFilterProps['devices']>;
-  };
+  readonly scopeOptions: DevicePickerOptions;
+  readonly pickerState?: DevicePickerState;
+  readonly onRetryPicker?: () => void;
   readonly selectedDeviceId: string | null;
   readonly onSelectDevice: (deviceId: string | null) => void;
   /** 当前选中设备（四轴状态 + Entitlement，用于门控与运行状态展示）。 */
   readonly selectedDevice: DeviceView | null;
+  readonly targetLoading?: boolean;
+  readonly targetError?: unknown;
+  readonly onRetryTarget?: () => void;
   readonly liveImagePreview?: ReactNode;
   readonly onSubmitCommand: (
     deviceId: string,
@@ -126,9 +127,14 @@ export interface DeviceOperatePageProps {
 export function DeviceOperatePage({
   role,
   scopeOptions,
+  pickerState,
+  onRetryPicker,
   selectedDeviceId,
   onSelectDevice,
   selectedDevice,
+  targetLoading = false,
+  targetError,
+  onRetryTarget,
   liveImagePreview,
   onSubmitCommand,
   commands,
@@ -150,7 +156,8 @@ export function DeviceOperatePage({
   onNavigate,
   onRefresh,
 }: DeviceOperatePageProps) {
-  const [form, setForm] = useState<{
+  const [commandForm, setForm] = useState<{
+    deviceId: string;
     command: CommandName;
     group: readonly CommandName[] | null;
   } | null>(null);
@@ -162,22 +169,45 @@ export function DeviceOperatePage({
   const [draftCommandFilter, setDraftCommandFilter] = useState<CommandListFilter>(commandFilter);
   const [draftActivityFilter, setDraftActivityFilter] = useState<ActivityListFilter>(activityFilter);
   const [draftScope, setDraftScope] = useState<ScopeFilterValue>({
-    region: null,
-    subregion: null,
-    siteId: null,
+    ...EMPTY_SCOPE_FILTER,
     deviceId: selectedDeviceId,
   });
+  const [unapplied, setUnapplied] = useState(false);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
+  const appliedDevice = selectedDevice?.id === selectedDeviceId ? selectedDevice : null;
+  const draftChanged = unapplied || (draftScope.deviceId ?? null) !== selectedDeviceId;
+  const commandDevice =
+    !draftChanged && !targetLoading && targetError === undefined && (pickerState?.status ?? 'ready') === 'ready'
+      ? appliedDevice
+      : null;
+  const commandTarget = commandDevice?.id ?? null;
+  const form = commandTarget !== null && commandForm?.deviceId === commandTarget ? commandForm : null;
+  const currentTarget = useRef(commandTarget);
+  currentTarget.current = commandTarget;
+  useEffect(() => {
+    setDraftScope((previous) =>
+      previous.deviceId === selectedDeviceId ? previous : { ...EMPTY_SCOPE_FILTER, deviceId: selectedDeviceId },
+    );
+    setUnapplied(false);
+    setForm(null);
+    setActionError(null);
+    setNotice(null);
+  }, [selectedDeviceId]);
+  useEffect(() => {
+    if (commandTarget === null) setForm(null);
+  }, [commandTarget]);
   const detail = commandDetail.kind === 'ready' ? commandDetail.command : null;
   const openForm = (command: CommandName, group: readonly CommandName[] | null = null) => {
-    setForm({ command, group });
+    if (commandTarget === null) return;
+    setForm({ deviceId: commandTarget, command, group });
     setConfirmText('');
     setActionError(null);
     setNotice(null);
   };
   const submitCommand = async () => {
-    if (form === null || selectedDeviceId === null || inFlight.current) return;
+    if (form === null || currentTarget.current !== form.deviceId || inFlight.current || !gateFor(form.command).allowed)
+      return;
     const timeoutError = validateTimeoutSec(timeoutSec);
     if (timeoutError !== null) {
       setActionError(new Error(timeoutError));
@@ -190,12 +220,13 @@ export function DeviceOperatePage({
     setBusy(true);
     setActionError(null);
     try {
-      const result = await onSubmitCommand(selectedDeviceId, {
+      const result = await onSubmitCommand(form.deviceId, {
         command: form.command,
         timeoutSec: Number(timeoutSec),
         ...(remarks.trim() !== '' ? { remarks: remarks.trim() } : {}),
         ...(spec.highRisk ? { confirmation: { confirmText } } : {}),
       });
+      if (currentTarget.current !== form.deviceId) return;
       setForm(null);
       setNotice(
         result.replayed
@@ -210,13 +241,13 @@ export function DeviceOperatePage({
       );
       onRefresh();
     } catch (err) {
-      setActionError(err);
+      if (currentTarget.current === form.deviceId) setActionError(err);
     } finally {
       inFlight.current = false;
       setBusy(false);
     }
   };
-  const gateFor = (command: CommandName) => gateCommand(command, selectedDevice, role);
+  const gateFor = (command: CommandName) => gateCommand(command, commandDevice, role);
   const groupGate = (group: readonly CommandName[]) => {
     const gates = group.map((c) => gateFor(c));
     return gates.some((g) => g.allowed)
@@ -230,31 +261,56 @@ export function DeviceOperatePage({
       </header>
       <section data-testid="device-picker" aria-label={translate('page.d1f8bd836068')}>
         <h4>{translate('page.d1f8bd836068')}</h4>
-        <ScopeFilter
-          regions={scopeOptions.regions}
-          subregions={scopeOptions.subregions}
-          sites={scopeOptions.sites}
-          devices={scopeOptions.devices}
+        <DeviceScopePicker
+          options={scopeOptions}
+          {...(pickerState !== undefined ? { state: pickerState } : {})}
+          {...(onRetryPicker !== undefined ? { onRetry: onRetryPicker } : {})}
           value={draftScope}
           onChange={(next) => {
             setDraftScope(next);
-            if (next.deviceId !== selectedDeviceId) onSelectDevice(next.deviceId ?? null);
+            setUnapplied(true);
+            setForm(null);
+            setNotice(null);
+            setActionError(null);
           }}
+          onApply={(id) => {
+            setUnapplied(false);
+            onSelectDevice(id);
+          }}
+          actionLabel={translate('deviceOperate.query')}
+          actionId="operate-apply"
         />
+        {draftChanged ? <p role="status">{translate('deviceOperate.applyDraft')}</p> : null}
+        {targetLoading ? (
+          <p role="status" data-testid="operate-target-loading">
+            {translate('deviceOperate.loadingTarget')}
+          </p>
+        ) : null}
+        {targetError !== undefined ? (
+          <div data-testid="operate-target-error">
+            <ErrorNotice error={targetError} />
+            <Button type="button" onClick={onRetryTarget ?? onRefresh}>
+              {translate('deviceOperate.retryTarget')}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
-      {selectedDevice !== null ? (
+      {appliedDevice !== null ? (
         <section data-testid="device-status-panel" aria-label={translate('page.e8ba1e529354')}>
           <h4>
             {translate('page.56bbe5daae4d')}
-            {selectedDevice.alias ?? selectedDevice.serialNumber}
+            {appliedDevice.alias ?? appliedDevice.serialNumber}
           </h4>
+          <p className="field-hint" data-testid="operate-target">
+            {translate('deviceOperate.target')} · {appliedDevice.serialNumber} · {appliedDevice.id}
+          </p>
           <FourAxisBadges
             status={{
-              connectivity: selectedDevice.connectivity,
-              lifecycle: selectedDevice.lifecycleStatus,
-              operational: selectedDevice.operationalStatus,
-              license: selectedDevice.license?.status ?? null,
+              connectivity: appliedDevice.connectivity,
+              lifecycle: appliedDevice.lifecycleStatus,
+              operational: appliedDevice.operationalStatus,
+              license: appliedDevice.license?.status ?? null,
             }}
           />
         </section>
@@ -305,12 +361,12 @@ export function DeviceOperatePage({
         <p className="field-hint">{translate('page.3df4035f6d6e')}</p>
       </section>
 
-      {liveImagePreview}
-      {selectedDevice && hasPermission(role, 'device:write') ? (
+      {!draftChanged ? liveImagePreview : null}
+      {commandDevice && hasPermission(role, 'device:write') ? (
         <Button
           type="button"
           data-testid="goto-alias"
-          onClick={() => onNavigate(`/devices/manage?deviceId=${encodeURIComponent(selectedDevice.id)}`)}
+          onClick={() => onNavigate(`/devices/manage?deviceId=${encodeURIComponent(commandDevice.id)}`)}
         >
           {translate('qa08.manageAlias')}
         </Button>
@@ -329,8 +385,11 @@ export function DeviceOperatePage({
         testid="command-form"
         onClose={() => setForm(null)}
       >
-        {form !== null ? (
+        {form !== null && commandDevice !== null ? (
           <div>
+            <p data-testid="command-target">
+              {translate('deviceOperate.target')} · {commandDevice.serialNumber} · {commandDevice.id}
+            </p>
             <div className="dialog-field">
               <label htmlFor="command-select">{translate('page.a9870f07ca2d')}</label>
               <select
@@ -397,6 +456,7 @@ export function DeviceOperatePage({
                 data-testid="command-submit"
                 disabled={
                   busy ||
+                  !gateFor(form.command).allowed ||
                   validateTimeoutSec(timeoutSec) !== null ||
                   (commandSpecOf(form.command).highRisk && confirmText !== form.command)
                 }
@@ -411,7 +471,7 @@ export function DeviceOperatePage({
 
       <section data-testid="command-list-section" aria-label={translate('page.d8ae01cf4ed7')}>
         <h4>{translate('page.844c944e76d8')}</h4>
-        <div className="filter-bar">
+        <div className="filter-bar filter-bar--query">
           <div className="filter-field">
             <label htmlFor="cmd-filter-status">{translate('page.62e951a692ff')}</label>
             <select
@@ -454,14 +514,16 @@ export function DeviceOperatePage({
               ))}
             </select>
           </div>
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="cmd-filter-search"
-            onClick={() => onApplyCommandFilter({ ...draftCommandFilter, deviceId: selectedDeviceId })}
-          >
-            {translate('page.dcce9a144a40')}
-          </Button>
+          <div className="filter-query-actions">
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="cmd-filter-search"
+              onClick={() => onApplyCommandFilter({ ...draftCommandFilter, deviceId: selectedDeviceId })}
+            >
+              {translate('page.dcce9a144a40')}
+            </Button>
+          </div>
         </div>
         <CursorTable
           ariaLabel={translate('page.88072264b0c8')}

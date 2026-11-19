@@ -75,7 +75,7 @@ export function ContractsPage({
         </Button>
       </div>
 
-      <div className="filter-bar">
+      <div className="filter-bar filter-bar--query">
         <div className="filter-field">
           <label htmlFor="contract-filter-status">{translate('page.62e951a692ff')}</label>
           <select
@@ -110,19 +110,21 @@ export function ContractsPage({
             ))}
           </select>
         </div>
-        <Button
-          type="button"
-          className="primary-button"
-          data-testid="contract-filter-search"
-          onClick={() =>
-            onApplyFilter({
-              status: draft.status === '' ? null : draft.status,
-              customerId: draft.customerId === '' ? null : draft.customerId,
-            })
-          }
-        >
-          {translate('page.dcce9a144a40')}
-        </Button>
+        <div className="filter-query-actions">
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid="contract-filter-search"
+            onClick={() =>
+              onApplyFilter({
+                status: draft.status === '' ? null : draft.status,
+                customerId: draft.customerId === '' ? null : draft.customerId,
+              })
+            }
+          >
+            {translate('page.dcce9a144a40')}
+          </Button>
+        </div>
       </div>
 
       <section data-testid="contract-list" aria-label={translate('page.5ae89a50fd74')}>

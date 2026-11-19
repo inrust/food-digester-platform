@@ -17,6 +17,7 @@ export interface ScopeFilterProps {
   })[];
   readonly sites: readonly (FilterOption & {
     readonly subregion: string;
+    readonly region?: string;
   })[];
   /** FE-05：可选 Device 层级（按 siteId 过滤）。 */
   readonly devices?: readonly (FilterOption & {
@@ -24,6 +25,8 @@ export interface ScopeFilterProps {
   })[];
   readonly value: ScopeFilterValue;
   readonly onChange: (next: ScopeFilterValue) => void;
+  /** Device pages can pick directly from the authorized list when no location filter is active. */
+  readonly allowDirectDevice?: boolean;
   readonly labels?: {
     region: string;
     subregion: string;
@@ -52,11 +55,18 @@ export function ScopeFilter({
   devices,
   value,
   onChange,
+  allowDirectDevice = false,
   labels = DEFAULT_LABELS,
 }: ScopeFilterProps) {
   const visibleSubregions = value.region === null ? [] : subregions.filter((s) => s.region === value.region);
-  const visibleSites = value.subregion === null ? [] : sites.filter((s) => s.subregion === value.subregion);
-  const visibleDevices = value.siteId === null ? [] : (devices ?? []).filter((d) => d.siteId === value.siteId);
+  const visibleSites = sites.filter(
+    (site) =>
+      value.subregion !== null &&
+      site.subregion === value.subregion &&
+      (site.region === undefined || site.region === value.region),
+  );
+  const direct = allowDirectDevice && value.region === null && value.subregion === null && value.siteId === null;
+  const visibleDevices = (devices ?? []).filter((device) => direct || device.siteId === value.siteId);
   return (
     <div className="scope-filter" data-testid="scope-filter">
       <div className="filter-field">
@@ -115,10 +125,10 @@ export function ScopeFilter({
           <select
             id="scope-device"
             value={value.deviceId ?? ''}
-            disabled={value.siteId === null}
+            disabled={(value.siteId === null && !direct) || (allowDirectDevice && visibleDevices.length === 0)}
             onChange={(event) => onChange(applyScopeChange(value, 'deviceId', event.target.value || null))}
           >
-            <option value="">{translate('page.778fc8f99453')}</option>
+            <option value="">{translate(allowDirectDevice ? 'devicePicker.choose' : 'page.778fc8f99453')}</option>
             {visibleDevices.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

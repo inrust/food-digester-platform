@@ -14,8 +14,8 @@ import type { ReactNode } from 'react';
 import { ConsumableGauge } from '../../components/ConsumableGauge.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { FourAxisBadges } from '../../components/FourAxisBadge.js';
-import { ScopeFilter } from '../../components/ScopeFilter.js';
-import type { FilterOption } from '../../components/ScopeFilter.js';
+import { DeviceScopePicker } from '../../components/DeviceScopePicker.js';
+import type { DevicePickerOptions, DevicePickerState } from '../../components/DeviceScopePicker.js';
 import { EMPTY_SCOPE_FILTER } from '../../components/filter-state.js';
 import type { ScopeFilterValue } from '../../components/filter-state.js';
 import { TimeText } from '../../components/TimeText.js';
@@ -76,18 +76,9 @@ export interface DeviceViewPageProps {
   readonly liveImagePreview?: ReactNode;
   readonly mediaState?: MediaState;
   readonly activityState?: ActivityState;
-  readonly filterOptions: {
-    readonly regions: readonly FilterOption[];
-    readonly subregions: readonly (FilterOption & {
-      region: string;
-    })[];
-    readonly sites: readonly (FilterOption & {
-      subregion: string;
-    })[];
-    readonly devices: readonly (FilterOption & {
-      siteId: string;
-    })[];
-  };
+  readonly filterOptions: DevicePickerOptions;
+  readonly pickerState?: DevicePickerState;
+  readonly onRetryPicker?: () => void;
   readonly onApply: (deviceId: string) => void;
   readonly onRefreshConsole: () => void;
   readonly onLoadMoreActivities?: (cursor: string) => void;
@@ -368,6 +359,8 @@ export function DeviceViewPage({
   mediaState = { status: 'idle' },
   activityState = { status: 'idle' },
   filterOptions,
+  pickerState,
+  onRetryPicker,
   onApply,
   onRefreshConsole,
   onLoadMoreActivities = () => {},
@@ -378,26 +371,17 @@ export function DeviceViewPage({
       <header className="page-header">
         <h1>{translate('design.page.device-view')}</h1>
       </header>
-      <div className="filter-bar" data-testid="view-filter-bar">
-        <ScopeFilter
-          regions={filterOptions.regions}
-          subregions={filterOptions.subregions}
-          sites={filterOptions.sites}
-          devices={filterOptions.devices}
+      <div data-testid="view-filter-bar">
+        <DeviceScopePicker
+          options={filterOptions}
+          {...(pickerState !== undefined ? { state: pickerState } : {})}
+          {...(onRetryPicker !== undefined ? { onRetry: onRetryPicker } : {})}
           value={scope}
           onChange={setScope}
+          onApply={onApply}
+          actionLabel={translate('page.4562024ddec7')}
+          actionId="view-apply"
         />
-        <Button
-          type="button"
-          className="primary-button"
-          data-testid="view-apply"
-          disabled={scope.deviceId === null || scope.deviceId === undefined}
-          onClick={() => {
-            if (scope.deviceId !== null && scope.deviceId !== undefined) onApply(scope.deviceId);
-          }}
-        >
-          {translate('page.4562024ddec7')}
-        </Button>
       </div>
 
       {liveImagePreview}

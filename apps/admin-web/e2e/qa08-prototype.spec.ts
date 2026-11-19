@@ -504,7 +504,7 @@ for (const width of VIEWPORTS)
               ? 'view-apply'
               : p.pageState === 'esg-device'
                 ? 'esg-device-apply'
-                : undefined,
+                : 'operate-apply',
           );
         await page.waitForLoadState('networkidle');
       };

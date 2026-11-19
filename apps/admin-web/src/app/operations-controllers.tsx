@@ -4,6 +4,7 @@ import type { Role } from '@fdp/auth/browser';
 import { hasPermission } from '@fdp/auth/browser';
 import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
 import type { ApiClient } from '../api/http-client.js';
+import { useDevicePicker } from './device-picker.js';
 import { useUserTimeZone } from '../components/TimeText.js';
 import type { FilterOption } from '../components/ScopeFilter.js';
 import { fetchCustomers } from '../pages/customers/customers-api.js';
@@ -307,80 +308,125 @@ export function DeviceOperateController({
   readonly search: string;
   readonly onNavigate: Navigate;
 }) {
-  const initial = new URLSearchParams(search).get('deviceId');
-  const [devices, setDevices] = useState<readonly DeviceView[]>([]);
-  const [sites, setSites] = useState<readonly SiteView[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(initial);
-  useEffect(() => {
-    setSelectedId(new URLSearchParams(search).get('deviceId'));
-  }, [search]);
-  const [selected, setSelected] = useState<DeviceView | null>(null);
-  const [media, setMedia] = useState<LatestMediaView | null>(null);
-  const [commandFilter, setCommandFilter] = useState<CommandListFilter>({ deviceId: initial });
-  const [commands, setCommands] = useState<ListState<CommandListItemView>>({ rows: null, loading: true });
-  const [commandDetail, setCommandDetail] = useState<CommandDetailState>({ kind: 'none' });
+  const selectedId = new URLSearchParams(search).get('deviceId')?.trim() || null;
+  const picker = useDevicePicker(api, session.customerId);
+  const [commandFilter, setCommandFilter] = useState<CommandListFilter>({});
   const [activityFilter, setActivityFilter] = useState<ActivityListFilter>({});
-  const [activities, setActivities] = useState<ListState<ActivityItemView>>({ rows: null });
-  const [activityExport, setActivityExport] = useState<ActivityExportView | null>(null);
-  const load = useCallback(
-    async (deviceId: string | null, nextCommandFilter = commandFilter, nextActivityFilter = activityFilter) => {
-      if (deviceId === null) {
-        setSelected(null);
-        setMedia(null);
-        setCommands({ rows: [] });
-        setActivities({ rows: [] });
-        return;
-      }
-      setCommands({ rows: null, loading: true });
-      setActivities({ rows: null, loading: true });
-      const results = await Promise.allSettled([
-        fetchDevice(api, deviceId),
-        fetchDeviceConsole(api, deviceId),
-        fetchCommands(api, { ...nextCommandFilter, deviceId }),
-        fetchDeviceActivities(api, deviceId, nextActivityFilter),
-      ]);
-      if (results[0].status === 'fulfilled') setSelected(results[0].value);
-      if (results[1].status === 'fulfilled') setMedia(results[1].value.latestMedia);
-      setCommands(
-        results[2].status === 'fulfilled'
-          ? { rows: results[2].value.rows, nextCursor: results[2].value.nextCursor }
-          : { rows: [], error: results[2].reason },
-      );
-      setActivities(
-        results[3].status === 'fulfilled'
-          ? { rows: results[3].value.rows, nextCursor: results[3].value.nextCursor }
-          : { rows: [], error: results[3].reason },
-      );
-    },
-    [activityFilter, api, commandFilter],
+  const [revision, setRevision] = useState(0);
+  const [targetRevision, setTargetRevision] = useState(0);
+  const selection = useMemo(
+    () => ({ id: selectedId, api, username: session.username, customerId: session.customerId }),
+    [api, selectedId, session.username, session.customerId],
   );
+  const request = useMemo(
+    () => ({ selection, revision, commandFilter, activityFilter }),
+    [selection, revision, commandFilter, activityFilter],
+  );
+  const targetRequest = useMemo(() => ({ selection, targetRevision }), [selection, targetRevision]);
+  const currentRequests = useRef({ request, targetRequest });
+  currentRequests.current = { request, targetRequest };
+  const [result, setResult] = useState<{
+    request: typeof request;
+    commands: ListState<CommandListItemView>;
+    activities: ListState<ActivityItemView>;
+  } | null>(null);
+  const [target, setTarget] = useState<{
+    request: typeof targetRequest;
+    device: DeviceView | null;
+    error?: unknown;
+    media: LatestMediaView | null;
+  } | null>(null);
+  const [commandDetail, setCommandDetail] = useState<{ request: typeof request; state: CommandDetailState } | null>(
+    null,
+  );
+  const detailGeneration = useRef(0);
+  const [activityExport, setActivityExport] = useState<{
+    selection: typeof selection;
+    job: ActivityExportView;
+  } | null>(null);
+  const refresh = () => setRevision((old) => old + 1);
+  const refreshTarget = () => setTargetRevision((old) => old + 1);
+
   useEffect(() => {
-    void topology(api).then((value) => {
-      setDevices(value.devices);
-      setSites(value.sites);
+    const { id, api: client, customerId } = targetRequest.selection;
+    if (id === null) return;
+    let active = true;
+    void Promise.all([fetchDevice(client, id), fetchDeviceConsole(client, id)])
+      .then(([device, consoleView]) => {
+        if (!device || device.id !== id || (customerId !== null && device.customer?.id !== customerId)) {
+          throw new Error(translate('deviceOperate.invalidTarget'));
+        }
+        if (active && currentRequests.current.targetRequest === targetRequest) {
+          setTarget({ request: targetRequest, device, media: consoleView.latestMedia });
+        }
+      })
+      .catch((error: unknown) => {
+        if (active && currentRequests.current.targetRequest === targetRequest) {
+          setTarget({ request: targetRequest, device: null, error, media: null });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [targetRequest]);
+
+  useEffect(() => {
+    const { id, api: client } = request.selection;
+    if (id === null) return;
+    let active = true;
+    void Promise.allSettled([
+      fetchCommands(client, { ...request.commandFilter, deviceId: id }),
+      fetchDeviceActivities(client, id, request.activityFilter),
+    ]).then(([commands, activities]) => {
+      if (!active || currentRequests.current.request !== request) return;
+      setResult({
+        request,
+        commands:
+          commands.status === 'fulfilled'
+            ? { rows: commands.value.rows, nextCursor: commands.value.nextCursor }
+            : { rows: [], error: commands.reason },
+        activities:
+          activities.status === 'fulfilled'
+            ? { rows: activities.value.rows, nextCursor: activities.value.nextCursor }
+            : { rows: [], error: activities.reason },
+      });
     });
-  }, [api]);
-  useEffect(() => {
-    void load(selectedId);
-  }, [load, selectedId]);
-  const options = useMemo(() => scopeOptions(devices, sites), [devices, sites]);
+    return () => {
+      active = false;
+    };
+  }, [request]);
+
+  const currentTarget = target?.request === targetRequest ? target : null;
+  const selected = currentTarget?.device ?? null;
+  const targetLoading = selectedId !== null && currentTarget === null;
+  const current = selected !== null && result?.request === request ? result : null;
+  const historyLoading = targetLoading || (selected !== null && current === null);
   const select = (id: string | null) => {
-    setSelectedId(id);
-    setCommandFilter((old) => ({ ...old, deviceId: id }));
-    onNavigate(id ? `/devices/operate?deviceId=${encodeURIComponent(id)}` : '/devices/operate', { replace: true });
+    if (id === selectedId) {
+      refreshTarget();
+      refresh();
+    } else
+      onNavigate(id ? `/devices/operate?deviceId=${encodeURIComponent(id)}` : '/devices/operate', { replace: true });
+  };
+  const updateResult = (update: (old: NonNullable<typeof result>) => NonNullable<typeof result>) => {
+    if (currentRequests.current.request !== request) return;
+    setResult((old) => (old?.request === request ? update(old) : old));
   };
   return (
     <DeviceOperatePage
       role={roleOf(session)}
-      scopeOptions={options}
+      scopeOptions={picker.options}
+      pickerState={picker.state}
+      onRetryPicker={picker.retry}
       selectedDeviceId={selectedId}
       onSelectDevice={select}
       selectedDevice={selected}
+      targetLoading={targetLoading}
+      targetError={currentTarget?.error}
+      onRetryTarget={refreshTarget}
       liveImagePreview={
         selected &&
-        selected.id === selectedId &&
         selected.customer !== null &&
-        (session.customerId === null || session.customerId === selected.customer.id) &&
         ['Active', 'Maintenance'].includes(selected.lifecycleStatus) &&
         ['Active', 'Maintenance'].includes(selected.operationalStatus ?? '') &&
         session.roles.some((role) => hasPermission(role, 'device:read')) &&
@@ -394,54 +440,73 @@ export function DeviceOperateController({
         ) : null
       }
       onSubmitCommand={async (id, input) => {
-        const result = await createDeviceCommand(api, id, input);
-        await load(id);
-        return result;
+        if (id !== selected?.id || currentRequests.current.targetRequest !== targetRequest) {
+          throw new Error(translate('deviceOperate.invalidTarget'));
+        }
+        return createDeviceCommand(api, id, input);
       }}
-      commands={commands}
+      commands={current?.commands ?? (historyLoading ? { rows: null, loading: true } : { rows: [] })}
       commandFilter={commandFilter}
-      onApplyCommandFilter={(filter) => {
-        setCommandFilter(filter);
-        void load(selectedId, filter, activityFilter);
-      }}
-      onLoadMoreCommands={(cursor) =>
-        void fetchCommands(api, { ...commandFilter, deviceId: selectedId }, cursor).then((page) =>
-          setCommands((old) => ({ rows: [...(old.rows ?? []), ...page.rows], nextCursor: page.nextCursor })),
-        )
-      }
-      commandDetail={commandDetail}
-      onSelectCommand={(id) => {
-        setCommandDetail({ kind: 'loading' });
-        void fetchCommand(api, id).then(
-          (command) => setCommandDetail({ kind: 'ready', command }),
-          (error: unknown) => setCommandDetail({ kind: 'error', error }),
+      onApplyCommandFilter={setCommandFilter}
+      onLoadMoreCommands={(cursor) => {
+        if (selectedId === null) return;
+        void fetchCommands(api, { ...commandFilter, deviceId: selectedId }, cursor).then(
+          (page) =>
+            updateResult((old) => ({
+              ...old,
+              commands: { rows: [...(old.commands.rows ?? []), ...page.rows], nextCursor: page.nextCursor },
+            })),
+          (error: unknown) => updateResult((old) => ({ ...old, commands: { ...old.commands, error } })),
         );
       }}
-      onCloseCommandDetail={() => setCommandDetail({ kind: 'none' })}
-      activities={activities}
+      commandDetail={selected !== null && commandDetail?.request === request ? commandDetail.state : { kind: 'none' }}
+      onSelectCommand={(id) => {
+        const generation = ++detailGeneration.current;
+        setCommandDetail({ request, state: { kind: 'loading' } });
+        const finish = (state: CommandDetailState) => {
+          if (currentRequests.current.request === request && generation === detailGeneration.current) {
+            setCommandDetail({ request, state });
+          }
+        };
+        void fetchCommand(api, id).then(
+          (command) => finish({ kind: 'ready', command }),
+          (error: unknown) => finish({ kind: 'error', error }),
+        );
+      }}
+      onCloseCommandDetail={() => {
+        detailGeneration.current += 1;
+        setCommandDetail(null);
+      }}
+      activities={current?.activities ?? (historyLoading ? { rows: null, loading: true } : { rows: [] })}
       activityFilter={activityFilter}
-      onApplyActivityFilter={(filter) => {
-        setActivityFilter(filter);
-        void load(selectedId, commandFilter, filter);
-      }}
+      onApplyActivityFilter={setActivityFilter}
       onLoadMoreActivities={(cursor) => {
-        if (selectedId)
-          void fetchDeviceActivities(api, selectedId, activityFilter, cursor).then((page) =>
-            setActivities((old) => ({ rows: [...(old.rows ?? []), ...page.rows], nextCursor: page.nextCursor })),
-          );
+        if (selectedId === null) return;
+        void fetchDeviceActivities(api, selectedId, activityFilter, cursor).then(
+          (page) =>
+            updateResult((old) => ({
+              ...old,
+              activities: { rows: [...(old.activities.rows ?? []), ...page.rows], nextCursor: page.nextCursor },
+            })),
+          (error: unknown) => updateResult((old) => ({ ...old, activities: { ...old.activities, error } })),
+        );
       }}
-      activityExport={activityExport}
+      activityExport={activityExport?.selection === selection ? activityExport.job : null}
       onExportActivities={async (filter) => {
         if (!selectedId) throw new Error(translate('ui.7b372e6a09a3'));
         const job = await createActivityExport(api, selectedId, filter);
-        setActivityExport(job);
+        if (currentRequests.current.request.selection === selection) setActivityExport({ selection, job });
         return job;
       }}
-      onCheckActivityExport={(id) => void fetchActivityExport(api, id).then(setActivityExport)}
-      latestMedia={media}
-      onRefreshMedia={() => void load(selectedId)}
+      onCheckActivityExport={(id) =>
+        void fetchActivityExport(api, id).then((job) => {
+          if (currentRequests.current.request.selection === selection) setActivityExport({ selection, job });
+        })
+      }
+      latestMedia={currentTarget?.media ?? null}
+      onRefreshMedia={refreshTarget}
       onNavigate={onNavigate}
-      onRefresh={() => void load(selectedId)}
+      onRefresh={refresh}
     />
   );
 }

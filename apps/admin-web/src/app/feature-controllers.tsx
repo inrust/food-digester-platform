@@ -5,6 +5,8 @@ import { hasPermission } from '@fdp/auth/browser';
 import { createMediaDownloadUrl } from '../pages/media/media-api.js';
 import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
 import type { ApiClient } from '../api/http-client.js';
+import { collectAll } from './collect-all.js';
+import { useDevicePicker } from './device-picker.js';
 import type { FilterOption } from '../components/ScopeFilter.js';
 import {
   fetchAlarms,
@@ -84,7 +86,6 @@ import { EMPTY_LICENSE_FILTER, LicensesPage } from '../pages/licenses/LicensesPa
 import type { LicenseDetailState, LicenseFilter } from '../pages/licenses/LicensesPage.js';
 import type { LicenseView } from '../pages/licenses/types.js';
 import { fetchSites } from '../pages/sites/sites-api.js';
-import type { SiteView } from '../pages/sites/types.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 type Navigate = (
   path: string,
@@ -104,23 +105,6 @@ function queryId(search: string): string | null {
 function option(value: string, label: string): FilterOption {
   return { value, label };
 }
-async function collectAll<T>(
-  load: (cursor: string | null) => Promise<{
-    readonly items: readonly T[];
-    readonly nextCursor: string | null;
-  }>,
-): Promise<readonly T[]> {
-  const items: T[] = [];
-  const seen = new Set<string>();
-  let cursor: string | null = null;
-  for (;;) {
-    const page = await load(cursor);
-    items.push(...page.items);
-    if (page.nextCursor === null || seen.has(page.nextCursor)) return items;
-    seen.add(page.nextCursor);
-    cursor = page.nextCursor;
-  }
-}
 export function DeviceViewController({
   api,
   session,
@@ -132,17 +116,19 @@ export function DeviceViewController({
   readonly search: string;
   readonly onNavigate: Navigate;
 }) {
-  const [devices, setDevices] = useState<readonly DeviceView[]>([]);
-  const [viewSites, setViewSites] = useState<readonly SiteView[]>([]);
+  const picker = useDevicePicker(api, session.customerId);
   const [device, setDevice] = useState<DeviceView | null>(null);
   const [consoleState, setConsoleState] = useState<ConsoleState>({ status: 'idle' });
   const [mediaState, setMediaState] = useState<MediaState>({ status: 'idle' });
   const [activityState, setActivityState] = useState<ActivityState>({ status: 'idle' });
   const selectedId = useRef<string | null>(null);
+  const generation = useRef(0);
   const [previewDeviceId, setPreviewDeviceId] = useState<string | null>(null);
   const loadConsole = useCallback(
     async (deviceId: string) => {
+      const request = ++generation.current;
       selectedId.current = deviceId;
+      setDevice(null);
       setPreviewDeviceId(deviceId);
       setConsoleState({ status: 'loading' });
       setMediaState({ status: 'loading' });
@@ -153,7 +139,7 @@ export function DeviceViewController({
           fetchDeviceConsole(api, deviceId),
           fetchDeviceActivities(api, deviceId),
         ]);
-        if (selectedId.current !== deviceId) return;
+        if (generation.current !== request) return;
         setDevice(nextDevice);
         setConsoleState({ status: 'ready', console: consoleView });
         setActivityState({ status: 'ready', items: activities.items, nextCursor: activities.nextCursor });
@@ -161,15 +147,15 @@ export function DeviceViewController({
         else {
           void fetchMediaDownloadUrl(api, consoleView.latestMedia.mediaId).then(
             (media) => {
-              if (selectedId.current === deviceId) setMediaState({ status: 'ready', media });
+              if (generation.current === request) setMediaState({ status: 'ready', media });
             },
             (error: unknown) => {
-              if (selectedId.current === deviceId) setMediaState({ status: 'error', error });
+              if (generation.current === request) setMediaState({ status: 'error', error });
             },
           );
         }
       } catch (error) {
-        if (selectedId.current === deviceId) {
+        if (generation.current === request) {
           setConsoleState({ status: 'error', error });
           setActivityState({ status: 'error', error });
           setMediaState({ status: 'error', error });
@@ -179,28 +165,9 @@ export function DeviceViewController({
     [api],
   );
   useEffect(() => {
-    let active = true;
-    void Promise.all([
-      collectAll((cursor) => fetchDevices(api, undefined, { cursor, limit: 100 })),
-      collectAll((cursor) => fetchSites(api, undefined, { cursor, limit: 100 })),
-    ]).then(
-      ([deviceRows, siteRows]) => {
-        if (active) {
-          setDevices(deviceRows);
-          setViewSites(siteRows);
-        }
-      },
-      (error: unknown) => {
-        if (active) setConsoleState({ status: 'error', error });
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [api]);
-  useEffect(() => {
     const initialId = queryId(search);
     if (initialId === null && selectedId.current !== null) {
+      generation.current += 1;
       selectedId.current = null;
       setPreviewDeviceId(null);
       setDevice(null);
@@ -209,28 +176,6 @@ export function DeviceViewController({
       setActivityState({ status: 'idle' });
     } else if (initialId !== null && initialId !== selectedId.current) void loadConsole(initialId);
   }, [loadConsole, search]);
-  const filterOptions = useMemo(() => {
-    const regions = [...new Set(viewSites.map((site) => site.region).filter((v): v is string => v !== null))];
-    const subregions = [
-      ...new Set(
-        viewSites.flatMap((site) => (site.region && site.subregion ? [`${site.region}\u0000${site.subregion}`] : [])),
-      ),
-    ];
-    const sites = viewSites;
-    return {
-      regions: regions.map((value) => option(value, value)),
-      subregions: subregions.map((value) => {
-        const [region = '', subregion = ''] = value.split('\u0000');
-        return { ...option(subregion, subregion), region };
-      }),
-      sites: sites
-        .filter((site) => site.subregion !== null)
-        .map((site) => ({ ...option(site.id, site.name), subregion: site.subregion ?? '' })),
-      devices: devices
-        .filter((d) => d.site !== null)
-        .map((d) => ({ ...option(d.id, d.alias ?? d.serialNumber), siteId: d.site?.id ?? '' })),
-    };
-  }, [devices, viewSites]);
   return (
     <DeviceViewPage
       device={device}
@@ -255,7 +200,9 @@ export function DeviceViewController({
       consoleState={consoleState}
       mediaState={mediaState}
       activityState={activityState}
-      filterOptions={filterOptions}
+      filterOptions={picker.options}
+      pickerState={picker.state}
+      onRetryPicker={picker.retry}
       onApply={(id) => {
         onNavigate(`/devices/view?deviceId=${encodeURIComponent(id)}`, { replace: true });
         void loadConsole(id);
@@ -266,14 +213,19 @@ export function DeviceViewController({
       onLoadMoreActivities={(cursor) => {
         const id = selectedId.current;
         if (id === null) return;
+        const request = generation.current;
         void fetchDeviceActivities(api, id, cursor).then(
-          (page) =>
+          (page) => {
+            if (request !== generation.current) return;
             setActivityState((old) =>
               old.status === 'ready'
                 ? { status: 'ready', items: [...old.items, ...page.items], nextCursor: page.nextCursor }
                 : old,
-            ),
-          (error: unknown) => setActivityState({ status: 'error', error }),
+            );
+          },
+          (error: unknown) => {
+            if (request === generation.current) setActivityState({ status: 'error', error });
+          },
         );
       }}
     />

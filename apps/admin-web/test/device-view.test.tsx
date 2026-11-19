@@ -139,6 +139,20 @@ test('选择设备并应用：四级联动；未选设备禁用应用', async ()
   assert.deepEqual(calls.applied, ['dev-001']);
 });
 
+test('CMP-05 无站点设备可以通过授权列表直接选择', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderPage({
+    consoleState: { status: 'idle' },
+    filterOptions: { ...FILTER_OPTIONS, devices: [{ value: 'unassigned', label: '未分配站点', siteId: '' }] },
+  });
+  const apply = screen.getByTestId('view-apply') as HTMLButtonElement;
+  assert.ok(apply.disabled);
+  await user.selectOptions(screen.getByLabelText('设备'), 'unassigned');
+  assert.ok(!apply.disabled);
+  await user.click(apply);
+  assert.deepEqual(calls.applied, ['unassigned']);
+});
+
 test('控制台六区块 + 静态信息 + 合约；单位/observedAt/stale 可见', () => {
   renderPage();
   // 10 类传感器槽位全部渲染（值缺失为 —）

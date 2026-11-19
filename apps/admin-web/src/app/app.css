@@ -1037,6 +1037,26 @@ button[aria-pressed='true'],
   }
 }
 
+.filter-bar.filter-bar--query {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  align-items: end;
+}
+.filter-bar--query .filter-field select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+@media (max-width: 480px) {
+  .filter-bar.filter-bar--query {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .filter-query-actions > button {
+    width: 100%;
+  }
+}
+
 .live-image-preview {
   margin-block: 20px;
   padding: 20px;
