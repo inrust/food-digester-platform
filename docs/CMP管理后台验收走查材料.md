@@ -6,7 +6,8 @@
 | --- | --- |
 | 验收候选 | [`353d2deb643b5068450ec77c4626d9289df97514`](https://github.com/inrust/food-digester-platform/commit/353d2deb643b5068450ec77c4626d9289df97514)。T01–T11 全部在同一提交历史中，远端分支为 `codex/cmp-t11-account-dashboard`。 |
 | 本地回归 | 管理后台与 Cloud API 类型检查通过。Vitest 67 个文件、742 项通过。Playwright Chromium 73 项通过。契约测试 321 项通过。OpenAPI、136 条 REST 路由一致性、模块边界、数据库迁移结构及管理后台交付检查通过。QA08 全量原型回归 24 项和 24 份 DOM 快照通过。 |
-| 目标环境 | CMP-01 至 CMP-44 均为 `NOT_RUN`。截至本次核对，候选 SHA 尚无 GitHub Actions 运行或部署回执。版本对齐及测试材料为 `BLOCKED`，项目方走查和签收为 `OPEN`。 |
+| 完整验证追验 | 候选 `353d2deb` 的完整 `pnpm verify` 在 `test:scripts` 失败。仅修改验收脚本的修复候选 [`fc1793dc`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5) 完整 `pnpm verify` 通过。 [追验回执](audit/evidence/cmp-t12-353d2deb/target-preflight.json) |
+| 目标环境 | CMP-01 至 CMP-44 均为 `NOT_RUN`，其中 P1 为 0/15。远端 `main` 仍为 `97cdd503`。同 SHA 绑定及五角色测试资料为 `BLOCKED`，项目方走查和签收为 `OPEN`。 |
 | 发布结论 | `OPEN`。本次走查材料包含合成数据和本地回归结果。 |
 
 [开发计划](CMP管理后台前端改进开发计划.md) · [执行顺序](CMP管理后台前端改进执行顺序与提示词.md) · [候选版本和检查回执](audit/evidence/cmp-t12-353d2deb/local-receipt.json)
@@ -31,7 +32,13 @@
 
 历史分批记录只用于追溯。T01–T04 的独立原始回执本次未找到，当前候选已重跑其关键路径。T05、T06、T07、T09 分批 Playwright 最后全套分别为 58、61、64、66 项通过。T06 首轮全套有 1 项失败，T07 首轮定向有 2 项失败。T08 浏览器 65 项通过，开发期曾有 1 项采集时间 UTC 断言失败，T10 首轮有 2 项无效时间修正后提交失败，T11 首轮有 2 项缺少模拟路由。这些旧结果保留在[回执历史记录](audit/evidence/cmp-t12-353d2deb/local-receipt.json)。本候选的定向服务测试和浏览器重新覆盖相关路径。
 
-本地双语路由覆盖 375、768、1440 像素，布局回归包含 1366×768、1440×900 和 1920×1080，专项窄屏覆盖 320 像素。全仓 `pnpm verify` 为 `NOT_RUN`。构建日志保留 Vite 的包体大小告警。
+本地双语路由覆盖 375、768、1440 像素，布局回归包含 1366×768、1440×900 和 1920×1080，专项窄屏覆盖 320 像素。前述本地回执生成时，全仓 `pnpm verify` 为 `NOT_RUN`。本轮在独立工作树补跑，结果见下文。构建日志保留 Vite 的包体大小告警。
+
+### 完整 `pnpm verify` 补跑
+
+在独立工作树按 `353d2deb` 执行，Vitest 2206 项、契约 321 项通过，脚本测试 1689 项通过、5 项失败。失败记录包括 Playwright 登记的 48 项与实际发现的 73 项不符，证据要求尚未纳入两个新增 API，生产路由数从 134 更新到 136，以及只读迁移清单从 44 更新到 45。原候选在 `test:scripts` 退出，其后的构建和各门禁在该次完整运行中为 `NOT_RUN`。
+
+修复候选按完整 SHA [`fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5) 单独重跑。八个改动文件均为验收脚本或测试。应用、前端构建定义、OpenAPI、CDK 和迁移 SQL 与原候选字节一致。两个新增 API 纳入真实证据校验，浏览器注册仍需和独立发现精确匹配。完整验证退出 0，包括 2206 项 Vitest、321 项契约、1694 项脚本测试、73 项 Chromium、QA05 的 219 次串并行执行及 QA08 的 24 次快照回归。 [两次验证与日志摘要哈希](audit/evidence/cmp-t12-353d2deb/target-preflight.json)
 
 ### 前端构建与 API 契约
 
@@ -108,11 +115,32 @@
 
 项目方签收逐条回填 `PASS`、`FAIL` 或 `NOT_RUN`。失败项保留候选版本、环境、复现步骤及读回证据。需要补测的条目保持 `OPEN`，直到取得对应结果。
 
+### 同 SHA 发布路径和测试数据核对
+
+| 检查项 | 本轮结果 |
+| --- | --- |
+| 前端 | 仓库配置的测试发布入口为 Amplify Hosting 的 `main` 分支。Monorepo 构建使用 `amplify.yml`，发布 `apps/admin-web/dist/web`。本轮未取得候选的 Amplify Job 与资源哈希回执。 [构建配置](../amplify.yml) · [托管分支](../infra/src/stacks/app-dependencies-stack.ts#L241) |
+| 管理 API | `Deploy test API` 在 `main` 上先跑完整 `pnpm verify`，再由 OIDC 进入测试账号执行 CDK。已核对 GitHub 部署开关为 `true`，远端 `main` 为 `97cdd503`。该历史部署作业成功。此次候选的部署及 Lambda 产物绑定仍为 `NOT_RUN`。 [部署流程](../.github/workflows/deploy-test.yml) · [历史部署](https://github.com/inrust/food-digester-platform/actions/runs/43667829780) |
+| 契约和媒体索引 | 统一 OpenAPI SHA-256 为 `5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73`。媒体索引使用固定源码 SHA 和 S3 VersionId 的 CodeBuild Migration Runner。已在本机打包并复核候选 SHA 与 SQL 哈希。目标迁移和索引读回为 `NOT_RUN`。 [部署与迁移手册](AWS测试环境部署配置与执行手册.md#5-migration-runner-操作边界) |
+| AWS 只读复核 | AWS 只读会话续签前的两次 STS 预检均返回 `SSO_INVALID_OR_EXPIRED`，因此实际 Amplify、测试栈和 Cognito 组盘点未执行。 |
+| 五角色资料 | `BLOCKED`。目前未验证项目方批准的五角色账号可登录、两组租户与各样本归属，亦未取得批准的写操作及清理台账。历史 QA09 账号与清理记录仅供设计测试材料时参考。 |
+
+| 角色 | 本轮需核对的受控材料 | 目标证据 |
+| --- | --- | --- |
+| PlatformSuperAdmin | 待审批与拒绝样本、合约、设置、角色变更和审计记录。写操作需批准的原因、版本与清理台账。 | `NOT_RUN` |
+| PlatformOperator | 两台可测试设备、授权状态和命令控制范围，能安全核对请求目标及拒绝状态。 | `NOT_RUN` |
+| Auditor | 允许查看的配置、授权与审计数据，以及只读界面和服务端拒写证据。 | `NOT_RUN` |
+| CustomerAdmin | 已批准的本租户设备和耗材、ESG 日期与分页样本。准备外租户 ID 供验证拒绝。 | `NOT_RUN` |
+| CustomerViewer | 非空但可只读的本租户数据，以及另一租户的拒绝样本。 | `NOT_RUN` |
+
+P1 首批为 CMP-05、06、08、11、12、19、25、26、28、29、30、33、36、39、44。前端构建记录、API 部署与 Lambda 产物、OpenAPI 清单和数据库迁移均绑定同一批准 SHA 后，先验证这 15 项，再回填其余 29 项。在同 SHA 绑定或测试材料缺失时保留逐项 `NOT_RUN`。本轮目标实测暂无通过或失败判定。
+
 ## 4. 发布待办与回退版本
 
 | 状态 | 待办与放行条件 |
 | --- | --- |
-| `BLOCKED` · 目标版本 | 需要候选部署和前端发布回执，核对精确 SHA、构建产物、API 和契约。一旦候选变化，重新绑定受影响回归和走查记录。 |
+| `FAIL` · 原候选完整验证 | `353d2deb` 有 5 个脚本门禁失败，现有发布工作流会在此停止。修复候选的完整验证和 SHA 见追验回执。 |
+| `BLOCKED` · 目标版本 | 待明确批准实际发布 SHA、共享测试 `main` 发布和媒体索引迁移。发布后收集同一 SHA 的前端、API、契约和迁移回执。 |
 | `BLOCKED` · 目标数据 | 需要五角色测试账号、两组授权测试租户及批准的数据和写入范围。先复验 P1 的审批、弹窗零写、设备查询、耗材及 ESG，再恢复其他目标实测。 |
 | `OPEN` · 项目方验收 | 目标 44 项目前均为 `NOT_RUN`。完成中英文、典型视口、键盘和租户验证后签收。 |
 | `OPEN` · CMP-23 目标迁移 | 目标环境执行前确认媒体索引迁移窗口与 DDL 锁影响，执行后核对两类索引、双向分页和旧客户端。实际变更与目标查询计划为 `NOT_RUN`。 |
