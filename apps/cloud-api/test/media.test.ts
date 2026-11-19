@@ -14,6 +14,7 @@ import { contractHandler } from '../../../contracts/testing/device-contract.js';
 import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
+import { encodeKeysetCursor } from '@fdp/database';
 import type { PrismaClient } from '@fdp/database';
 import { certificateFingerprintFromPem } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
@@ -585,6 +586,125 @@ describe('BE-MED-01 管理端列表与下载', () => {
     // DELETED 仍在列表（元数据保留）
     const deletedList = await h.listMedia(req(superAdmin, { query: { status: 'DELETED' } }));
     assert.ok((deletedList.body as ListBody).data.some((m) => m.mediaId === m2));
+  });
+
+  test('CMP-23 capture-time keysets page both ways, preserve sub-millisecond precision, enforce tenant scope and accept legacy cursors', async () => {
+    const device = await plantDevice();
+    const foreign = await plantDevice();
+    const rows = [
+      ['cmp23-a', '2026-09-05T08:03:00.000000Z'],
+      ['cmp23-b', '2026-09-05T08:01:00.000100Z'],
+      ['cmp23-c', '2026-09-05T08:02:00.000400Z'],
+      ['cmp23-d', '2026-09-05T08:02:00.000400Z'],
+      ['cmp23-e', '2026-09-05T08:02:00.000800Z'],
+      ['cmp23-f', '2026-09-05T08:01:00.000200Z'],
+    ] as const;
+    for (const [id, captureTime, owner] of [
+      ...rows.map(([id, captureTime]) => [id, captureTime, device] as const),
+      ['cmp23-foreign', '2026-09-05T08:02:00.000400Z', foreign] as const,
+    ]) {
+      await pg.query(
+        `INSERT INTO media_objects (id, device_id, customer_id, media_type, capture_time, file_name, object_path, size_kb)
+         VALUES ($1, $2, $3, 'IMAGE', $4::timestamptz, $1 || '.jpg', 'fixture/' || $1, 1)`,
+        [id, owner.deviceId, owner.customerId, captureTime],
+      );
+    }
+    const handler = createAdminMediaHandlers(mediaDeps(fakeStorage()));
+    const customer: ActorContext = {
+      ...superAdmin,
+      actorType: 'customer',
+      roles: ['CustomerViewer'],
+      customerId: device.customerId,
+    };
+    const query = (parameters: Record<string, string>, actor = customer) =>
+      handler.listMedia({ actor, headers: {}, query: parameters, requestId: 'cmp23' });
+    const read = async (parameters: Record<string, string>, actor = customer) => {
+      const response = await query(parameters, actor);
+      assert.equal(response.status, 200, JSON.stringify(response.body));
+      const { data, meta } = response.body as ListBody;
+      return {
+        ids: data.map((row) => row.mediaId as string),
+        captureTimes: data.map((row) => row.captureTime as string),
+        cursor: (meta.nextCursor ?? null) as string | null,
+      };
+    };
+
+    const ascending = ['cmp23-b', 'cmp23-f', 'cmp23-c', 'cmp23-d', 'cmp23-e', 'cmp23-a'];
+    for (const direction of ['asc', 'desc']) {
+      const expected = direction === 'asc' ? ascending : [...ascending].reverse();
+      const first = await read({ captureTimeOrder: direction, limit: '3' });
+      assert.deepEqual(first.ids, expected.slice(0, 3));
+      assert.isString(first.cursor);
+      assert.equal(first.captureTimes[2], '2026-09-05T08:02:00.000Z');
+
+      const second = await read({ captureTimeOrder: direction, limit: '3', cursor: first.cursor! });
+      assert.deepEqual(second.ids, expected.slice(3));
+      assert.isNull(second.cursor);
+      assert.equal(new Set([...first.ids, ...second.ids]).size, 6);
+
+      // Explicit Customer scope, device/type/status/time filters, and cursor membership all compose.
+      const explicit = await read(
+        {
+          captureTimeOrder: direction,
+          customerId: device.customerId!,
+          deviceId: device.deviceId,
+          from: '2026-09-05T08:02:00Z',
+          to: '2026-09-05T08:03:00Z',
+          mediaType: 'IMAGE',
+          status: 'AVAILABLE',
+        },
+        superAdmin,
+      );
+      assert.deepEqual(
+        explicit.ids,
+        expected.filter((id) => !['cmp23-b', 'cmp23-f'].includes(id)),
+      );
+      const wrongDirection = await query({
+        captureTimeOrder: direction === 'asc' ? 'desc' : 'asc',
+        cursor: first.cursor!,
+      });
+      assert.equal(wrongDirection.status, 400);
+      assert.equal((wrongDirection.body as ErrBody).error.code, 'CURSOR_INVALID');
+      const wrongMode = await query({ cursor: first.cursor! });
+      assert.equal(wrongMode.status, 400);
+      assert.equal((wrongMode.body as ErrBody).error.code, 'CURSOR_INVALID');
+    }
+
+    const legacy = await read({ limit: '2' });
+    assert.deepEqual(legacy.ids, ['cmp23-a', 'cmp23-b']);
+    assert.equal(legacy.cursor, encodeKeysetCursor('cmp23-b'));
+    assert.deepEqual((await read({ cursor: encodeKeysetCursor('cmp23-b') })).ids, [
+      'cmp23-c',
+      'cmp23-d',
+      'cmp23-e',
+      'cmp23-f',
+    ]);
+    const sortedWithLegacy = await query({ captureTimeOrder: 'asc', cursor: encodeKeysetCursor('cmp23-b') });
+    assert.equal(sortedWithLegacy.status, 400);
+    assert.equal((sortedWithLegacy.body as ErrBody).error.code, 'CURSOR_INVALID');
+
+    for (const invalid of ['newest', 'ASC', '']) {
+      const response = await query({ captureTimeOrder: invalid });
+      assert.equal(response.status, 400);
+      assert.equal((response.body as ErrBody).error.code, 'VALIDATION_FAILED');
+    }
+    const malformed = Buffer.from(
+      JSON.stringify({
+        v: 2,
+        direction: 'asc',
+        captureTime: '2026-02-30T08:00:00.000000Z',
+        id: 'cmp23-a',
+      }),
+    ).toString('base64url');
+    for (const invalid of ['@invalid', malformed]) {
+      const response = await query({ captureTimeOrder: 'asc', cursor: invalid });
+      assert.equal(response.status, 400);
+      assert.equal((response.body as ErrBody).error.code, 'CURSOR_INVALID');
+    }
+    assert.equal((await query({ captureTimeOrder: 'desc', customerId: foreign.customerId! })).status, 403);
+    assert.deepEqual((await read({ captureTimeOrder: 'desc', deviceId: foreign.deviceId })).ids, []);
+    const global = await read({ captureTimeOrder: 'desc', customerId: foreign.customerId! }, superAdmin);
+    assert.deepEqual(global.ids, ['cmp23-foreign']);
   });
 });
 

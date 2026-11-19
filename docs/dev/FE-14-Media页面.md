@@ -33,6 +33,22 @@
 | `media-state.ts` | 枚举文案（parity 锁定）、isDownloadUrlExpired（到期时刻 ≤ 当前即过期）、isKnownMediaType/mediaTypeLabel（安全降级）、localDateTimeToUtcIso、MEDIA_COVERAGE 锚点 |
 | `media-api.ts` | listMedia（筛选 + 游标）、createMediaDownloadUrl（实时签发；调用方不得持久缓存） |
 
+### CMP-23 采集时间排序与分页
+
+媒体页首次查询发送 `captureTimeOrder=desc`。点击采集时间列可切换方向。换向或应用筛选后清空当前页游标，并忽略上一查询的迟到响应。
+
+`GET /api/v1/admin/media` 支持 `captureTimeOrder=asc|desc`，以 `(capture_time, id)` 同向排序，游标保留采集时间的微秒精度。省略排序参数继续使用 `id ASC` 和旧版 ID 游标。游标仅适用于原排序模式与方向，切换时从首页开始。
+
+在本地 PGlite PostgreSQL 18.3 应用迁移并构造 18 万条媒体、200 台设备、50 个客户的数据。每次读取 51 条，分别对两个方向、首页和中段游标运行 `EXPLAIN (ANALYZE, BUFFERS, TIMING OFF)`。
+
+| 查询范围 | 原索引 | 新索引 |
+| --- | --- | --- |
+| 全局 | 顺序扫描，执行 top-N 排序 | `(capture_time, id)` 正反向扫描，后续页直接从组合游标开始 |
+| 单客户及常用筛选 | 扫描并过滤大量媒体，执行 top-N 排序 | `(customer_id, capture_time, id)` 定位客户与游标，并利用时间范围条件 |
+| 单设备 | 现有 `(device_id, capture_time)` 缩小扫描范围，排序局限在该设备的记录 | 保留现有索引。每设备 900 条的合成数据未显示增加第三个组合索引的必要 |
+
+以上为本地合成数据结果。目标库查询计划与索引迁移验证为 `NOT_RUN`。
+
 ### 短期 URL 纪律
 
 授权 URL 仅存于预览组件内存状态，关闭预览（Esc）即弃用；过期（≤当前时刻）显示“重新申请”，实时重签。测试断言重开预览必重新请求。

@@ -18,6 +18,11 @@ export interface CursorTableColumn<T> {
   readonly header: string;
   readonly render: (row: T) => ReactNode;
   readonly width?: number;
+  readonly sort?: {
+    readonly direction: 'asc' | 'desc';
+    readonly toggleLabel: string;
+    readonly onToggle: () => void;
+  };
 }
 
 export interface CursorTableProps<T> {
@@ -65,23 +70,37 @@ export function CursorTable<T>({
     () => ({ table: (props: HTMLAttributes<HTMLTableElement>) => <table {...props} aria-label={ariaLabel} /> }),
     [ariaLabel],
   );
-  const resolvedEmptyText = emptyText ?? t('common.empty');
-  if (error !== undefined && error !== null) {
-    return <ErrorNotice error={error} {...(onRefresh !== undefined ? { onRefresh } : {})} />;
-  }
+  const sortable = columns.some((column) => column.sort !== undefined);
+  const errorNotice =
+    error !== undefined && error !== null ? (
+      <ErrorNotice error={error} {...(onRefresh !== undefined ? { onRefresh } : {})} />
+    ) : null;
+  const loadingState = (
+    <div className="table-loading" role="status" data-testid="table-loading">
+      {t('common.loading')}
+      <Skeleton active title={false} paragraph={{ rows: 4 }} />
+    </div>
+  );
+  if (!sortable && errorNotice !== null) return errorNotice;
+  if (!sortable && rows === null) return loadingState;
 
-  if (rows === null) {
-    return (
-      <div className="table-loading" role="status" data-testid="table-loading">
-        {t('common.loading')}
-        <Skeleton active title={false} paragraph={{ rows: 4 }} />
-      </div>
-    );
-  }
-
+  const emptyState = (
+    <div className="empty-state" data-testid="table-empty">
+      <Empty
+        image={
+          <svg aria-hidden="true" width="48" height="40" viewBox="0 0 48 40" fill="none">
+            <path d="M8 15h32v20H8z M16 15V5h16v10 M18 24h12" stroke="#a8b8c5" strokeWidth="2" />
+          </svg>
+        }
+        description={emptyText ?? t('common.empty')}
+        styles={{ image: { fontSize: 0 } }}
+      />
+    </div>
+  );
   return (
     <div className="cursor-table" data-testid="cursor-table" aria-busy={loading}>
-      {stale || loading ? (
+      {errorNotice}
+      {rows !== null && (stale || loading) ? (
         <div className="stale-banner" role="status" data-testid="table-stale">
           {t('common.stale')}
           {dataUpdatedAt !== undefined ? (
@@ -98,18 +117,8 @@ export function CursorTable<T>({
         </div>
       ) : null}
 
-      {rows.length === 0 ? (
-        <div className="empty-state" data-testid="table-empty">
-          <Empty
-            image={
-              <svg aria-hidden="true" width="48" height="40" viewBox="0 0 48 40" fill="none">
-                <path d="M8 15h32v20H8z M16 15V5h16v10 M18 24h12" stroke="#a8b8c5" strokeWidth="2" />
-              </svg>
-            }
-            description={resolvedEmptyText}
-            styles={{ image: { fontSize: 0 } }}
-          />
-        </div>
+      {!sortable && rows?.length === 0 ? (
+        emptyState
       ) : (
         <div
           className="table-scroll"
@@ -119,12 +128,31 @@ export function CursorTable<T>({
             components={tableComponents}
             size="middle"
             pagination={false}
-            dataSource={rows.map((row) => ({ key: rowKey(row), source: row }))}
-            columns={columns.map((column) => ({
-              key: column.key,
-              title: column.header,
-              ...(column.width !== undefined ? { width: column.width } : {}),
-              render: (_: unknown, record: { source: T }) => column.render(record.source),
+            dataSource={(rows ?? []).map((row) => ({ key: rowKey(row), source: row }))}
+            {...(sortable
+              ? { locale: { emptyText: rows === null ? loadingState : errorNotice === null ? emptyState : null } }
+              : {})}
+            columns={columns.map(({ key, header, width, sort, render }) => ({
+              key,
+              ...(sort
+                ? {
+                    onHeaderCell: () => ({
+                      'aria-sort': sort.direction === 'asc' ? ('ascending' as const) : ('descending' as const),
+                    }),
+                    title: (
+                      <Button
+                        type="button"
+                        className="table-sort-button"
+                        aria-label={sort.toggleLabel}
+                        onClick={sort.onToggle}
+                      >
+                        {header} <span aria-hidden="true">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                      </Button>
+                    ),
+                  }
+                : { title: header }),
+              ...(width !== undefined ? { width } : {}),
+              render: (_: unknown, record: { source: T }) => render(record.source),
             }))}
             rowClassName={(record) => rowClassName?.(record.source) ?? ''}
           />
@@ -137,7 +165,7 @@ export function CursorTable<T>({
         </Button>
         <Button
           type="button"
-          disabled={nextCursor === null}
+          disabled={nextCursor === null || (sortable && loading)}
           onClick={() => {
             if (nextCursor !== null) onNextPage?.(nextCursor);
           }}

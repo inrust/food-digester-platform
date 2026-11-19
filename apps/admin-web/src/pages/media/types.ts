@@ -3,6 +3,7 @@
  */
 
 export type MediaType = 'IMAGE' | 'VIDEO';
+export type MediaCaptureTimeOrder = 'asc' | 'desc';
 
 /** DEC-005：文件到期删除后元数据保留（DELETED 不提供下载）。 */
 export type MediaStatus = 'AVAILABLE' | 'DELETED';

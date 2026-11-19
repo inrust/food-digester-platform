@@ -70,6 +70,8 @@ function renderPage(overrides: Partial<MediaPageProps> = {}) {
       nextCursor: null,
     },
     filter: {},
+    captureTimeOrder: 'desc',
+    onChangeCaptureTimeOrder: () => {},
     onApplyFilter: (f) => calls.filterApplied.push(f),
     onLoadMore: () => {},
     onRefresh: () => {

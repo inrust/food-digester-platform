@@ -73,6 +73,8 @@ export const EN: Readonly<Record<string, string>> = {
   'rbac.module.role': 'Roles',
   'rbac.module.settings': 'Business settings',
   'rbac.module.replay': 'Replay',
+  'media.sort.ascending': 'Sort by capture time, ascending',
+  'media.sort.descending': 'Sort by capture time, descending',
   'evidence.title': 'Archived image',
   'evidence.open': 'View archived image',
   'evidence.close': 'Close image',

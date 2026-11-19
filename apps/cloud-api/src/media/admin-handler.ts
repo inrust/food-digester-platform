@@ -59,6 +59,7 @@ export function createAdminMediaHandlers(deps: AdminMediaHandlerDeps): AdminMedi
       ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
       ...(q.from !== undefined ? { from: q.from } : {}),
       ...(q.to !== undefined ? { to: q.to } : {}),
+      ...(q.captureTimeOrder !== undefined ? { captureTimeOrder: q.captureTimeOrder } : {}),
       ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
       ...(q.limit !== undefined ? { limit: q.limit } : {}),
     });

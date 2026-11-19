@@ -76,6 +76,8 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'rbac.module.role': '角色',
   'rbac.module.settings': '业务设置',
   'rbac.module.replay': '重放',
+  'media.sort.ascending': '按采集时间升序排序',
+  'media.sort.descending': '按采集时间降序排序',
   'evidence.title': '留档图片',
   'evidence.open': '查看留档图片',
   'evidence.close': '关闭图片',

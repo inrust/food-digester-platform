@@ -82,5 +82,4 @@ export function createAdminPreconnectCandidate(
 }
 
 // PrismaClient 同时导出值（测试/Worker 用适配器构造）与类型
-export { PrismaClient } from './generated/client.js';
-export type { Prisma } from './generated/client.js';
+export { Prisma, PrismaClient } from './generated/client.js';

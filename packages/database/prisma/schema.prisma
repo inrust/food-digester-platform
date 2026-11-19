@@ -999,6 +999,8 @@ model MediaObject {
 
   @@unique([id, customerId, deviceId], map: "media_objects_evidence_scope_key")
   @@index([deviceId, captureTime])
+  @@index([captureTime, id])
+  @@index([customerId, captureTime, id])
   @@map("media_objects")
 }
 

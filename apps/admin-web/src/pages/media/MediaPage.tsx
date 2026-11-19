@@ -27,12 +27,14 @@ import {
   localDateTimeToUtcIso,
   mediaTypeLabel,
 } from './media-state.js';
-import type { MediaListState, MediaStatus, MediaType, MediaView } from './types.js';
+import type { MediaCaptureTimeOrder, MediaListState, MediaStatus, MediaType, MediaView } from './types.js';
 import type { MediaDownloadUrlView } from './types.js';
 export interface MediaPageProps {
   readonly role: Role;
   readonly media: MediaListState;
   readonly filter: MediaListFilter;
+  readonly captureTimeOrder: MediaCaptureTimeOrder;
+  readonly onChangeCaptureTimeOrder: () => void;
   readonly onApplyFilter: (filter: MediaListFilter) => void;
   readonly onLoadMore: (cursor: string) => void;
   /** 手动刷新回源（获取最新设备媒体）。 */
@@ -68,6 +70,8 @@ export function MediaPage({
   role,
   media,
   filter,
+  captureTimeOrder,
+  onChangeCaptureTimeOrder,
   onApplyFilter,
   onLoadMore,
   onRefresh,
@@ -235,6 +239,7 @@ export function MediaPage({
 
       <section data-testid="media-list-section" aria-label={translate('page.625ff012768a')}>
         <CursorTable
+          keyboardScrollable
           ariaLabel={translate('page.625ff012768a')}
           columns={[
             { key: 'fileName', header: translate('page.1275f6feb703'), render: (m) => m.fileName },
@@ -244,6 +249,11 @@ export function MediaPage({
             {
               key: 'captureTime',
               header: translate('page.f9fb10d4a84e'),
+              sort: {
+                direction: captureTimeOrder,
+                toggleLabel: translate(captureTimeOrder === 'asc' ? 'media.sort.descending' : 'media.sort.ascending'),
+                onToggle: onChangeCaptureTimeOrder,
+              },
               render: (m) => <TimeText iso={m.captureTime} />,
             },
             {

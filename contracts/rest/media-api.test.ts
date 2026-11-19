@@ -82,6 +82,19 @@ test('管理端：列表/下载端点齐备且 CognitoJwt 认证；视图不泄�
   assert.equal(admin.components.schemas.MediaDownloadUrlView.properties.downloadUrl.pattern, '^https://');
 });
 
+test('CMP-23 采集时间方向为可选参数，保留 ID 默认排序且分页游标不可混用', () => {
+  const list = admin.paths['/api/v1/admin/media'].get;
+  const order = list.parameters.find((p: { name?: string }) => p.name === 'captureTimeOrder');
+  assert.equal(order.in, 'query');
+  assert.equal(order.required, false);
+  assert.deepEqual(order.schema, { type: 'string', enum: ['asc', 'desc'] });
+  assert.match(order.description, /mediaId 升序/);
+  assert.match(list.description, /CURSOR_INVALID/);
+  assert.match(list.description, /旧 ID 游标/);
+  assert.ok(list.responses['400']);
+  assert.equal(admin.paths['/api/v1/admin/media/{mediaId}/download-url'].get.parameters.length, 1);
+});
+
 test('Media 状态枚举封闭（AVAILABLE/DELETED）；配额/大小/TTL 引用 DEC-024 冻结值', () => {
   assert.deepEqual(admin.components.schemas.MediaView.properties.status.enum, ['AVAILABLE', 'DELETED']);
   assert.deepEqual(

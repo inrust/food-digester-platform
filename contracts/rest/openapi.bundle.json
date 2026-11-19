@@ -107,7 +107,7 @@
       },
       {
         "file": "admin-media-api.json",
-        "sha256": "f9923d3b5a5be53ea04d79e170b7cc46efdf0a2d5f4c2aa82c73ac6720bbd550",
+        "sha256": "a561df0ca09daf9e426874f58c338d56b1cf75c226f1ce0348d9ae51c8e02109",
         "status": "implemented"
       },
       {
@@ -6538,6 +6538,7 @@
         ],
         "operationId": "listMedia",
         "summary": "Media 元数据列表（筛选 + 键集游标分页；Customer 角色强制租户隔离）",
+        "description": "每页使用上一页返回的 nextCursor。同一分页流须保留排序方向与筛选条件。改变方向、切换排序模式或更改筛选条件时，从不带 cursor 的首页重新查询。旧 ID 游标继续适用于省略 captureTimeOrder 的请求。采集时间游标只适用于生成它的方向，混用游标返回 400 CURSOR_INVALID。",
         "security": [
           {
             "CognitoJwt": []
@@ -6604,6 +6605,19 @@
               "format": "date-time"
             },
             "description": "captureTime 止（UTC）"
+          },
+          {
+            "name": "captureTimeOrder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            },
+            "description": "按 captureTime 排序，同一采集时间按 mediaId 决定顺序，两列使用同一方向。省略时保留旧版 mediaId 升序与旧游标。"
           },
           {
             "$ref": "#/components/parameters/Cursor"
@@ -22491,7 +22505,7 @@
         }
       },
       "AdminMediaApi__BadRequest": {
-        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "description": "筛选、排序或分页大小非法（VALIDATION_FAILED）或游标非法（CURSOR_INVALID）",
         "content": {
           "application/json": {
             "schema": {

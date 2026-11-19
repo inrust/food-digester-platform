@@ -214,7 +214,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <OtaPackagesController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'media':
-      page = <MediaController api={services.api} session={session} />;
+      page = <MediaController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'audit-logs':
       page = <AuditLogsController key={sessionScope} api={services.api} session={session} />;

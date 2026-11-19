@@ -7,7 +7,7 @@
  *   DELETED（DEC-005 元数据保留）/跨 Customer → 404；每次查看/下载实时申请，不持久缓存。
  */
 import type { ApiClient } from '../../api/http-client.js';
-import type { MediaDownloadUrlView, MediaStatus, MediaType, MediaView } from './types.js';
+import type { MediaCaptureTimeOrder, MediaDownloadUrlView, MediaStatus, MediaType, MediaView } from './types.js';
 
 export interface Page<T> {
   readonly rows: readonly T[];
@@ -24,6 +24,7 @@ export interface MediaListFilter {
   readonly from?: string | null;
   /** captureTime 止（UTC ISO）。 */
   readonly to?: string | null;
+  readonly captureTimeOrder?: MediaCaptureTimeOrder;
 }
 
 function buildQuery(filter: MediaListFilter, cursor?: string): string {

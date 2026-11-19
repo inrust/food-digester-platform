@@ -23,6 +23,7 @@
         "tags": ["admin"],
         "operationId": "listMedia",
         "summary": "Media 元数据列表（筛选 + 键集游标分页；Customer 角色强制租户隔离）",
+        "description": "每页使用上一页返回的 nextCursor。同一分页流须保留排序方向与筛选条件。改变方向、切换排序模式或更改筛选条件时，从不带 cursor 的首页重新查询。旧 ID 游标继续适用于省略 captureTimeOrder 的请求。采集时间游标只适用于生成它的方向，混用游标返回 400 CURSOR_INVALID。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceId", "in": "query", "required": false, "schema": { "type": "string" } },
@@ -58,6 +59,13 @@
             "required": false,
             "schema": { "type": "string", "format": "date-time" },
             "description": "captureTime 止（UTC）"
+          },
+          {
+            "name": "captureTimeOrder",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["asc", "desc"] },
+            "description": "按 captureTime 排序，同一采集时间按 mediaId 决定顺序，两列使用同一方向。省略时保留旧版 mediaId 升序与旧游标。"
           },
           { "$ref": "#/components/parameters/Cursor" },
           { "$ref": "#/components/parameters/Limit" }
@@ -102,7 +110,7 @@
     },
     "responses": {
       "BadRequest": {
-        "description": "筛选参数非法（VALIDATION_FAILED）",
+        "description": "筛选、排序或分页大小非法（VALIDATION_FAILED）或游标非法（CURSOR_INVALID）",
         "content": {
           "application/json": { "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" } }
         }

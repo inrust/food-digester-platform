@@ -44,7 +44,7 @@ import type {
 import { listMedia, createMediaDownloadUrl } from '../pages/media/media-api.js';
 import type { MediaListFilter } from '../pages/media/media-api.js';
 import { MediaPage } from '../pages/media/MediaPage.js';
-import type { MediaListState } from '../pages/media/types.js';
+import type { MediaCaptureTimeOrder, MediaListState } from '../pages/media/types.js';
 import {
   cancelOtaCampaign,
   completeFirmwareUpload,
@@ -718,38 +718,61 @@ export function OtaCampaignsController({
   );
 }
 export function MediaController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
-  const [filter, setFilter] = useState<MediaListFilter>({});
+  const [query, setQuery] = useState<{ filter: MediaListFilter; direction: MediaCaptureTimeOrder }>({
+    filter: {},
+    direction: 'desc',
+  });
   const [media, setMedia] = useState<MediaListState>({ rows: null, loading: true });
+  const activeRequest = useRef<object | null>(null);
   const load = useCallback(
-    async (next = filter) => {
-      setMedia({ rows: null, loading: true });
+    async (current: typeof query, cursor?: string) => {
+      const request = {};
+      activeRequest.current = request;
+      setMedia((old) =>
+        cursor === undefined ? { rows: null, loading: true } : { rows: old.rows, nextCursor: cursor, loading: true },
+      );
       try {
-        const page = await listMedia(api, next);
-        setMedia({ rows: page.rows, nextCursor: page.nextCursor });
+        const page = await listMedia(api, { ...current.filter, captureTimeOrder: current.direction }, cursor);
+        if (activeRequest.current !== request) return;
+        setMedia((old) => ({
+          rows: cursor === undefined ? page.rows : [...(old.rows ?? []), ...page.rows],
+          nextCursor: page.nextCursor,
+        }));
       } catch (error) {
-        setMedia({ rows: [], error });
+        if (activeRequest.current === request) {
+          setMedia((old) =>
+            cursor === undefined ? { rows: [], error } : { rows: old.rows, nextCursor: cursor, error },
+          );
+        }
+      } finally {
+        if (activeRequest.current === request) activeRequest.current = null;
       }
     },
-    [api, filter],
+    [api],
   );
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load(query);
+    return () => {
+      activeRequest.current = null;
+    };
+  }, [load, query]);
+  const applyQuery = (next: typeof query) => {
+    activeRequest.current = null;
+    setMedia({ rows: null, loading: true });
+    setQuery(next);
+  };
   return (
     <MediaPage
       role={roleOf(session)}
       media={media}
-      filter={filter}
-      onApplyFilter={(next) => {
-        setFilter(next);
-        void load(next);
+      filter={query.filter}
+      captureTimeOrder={query.direction}
+      onChangeCaptureTimeOrder={() => applyQuery({ ...query, direction: query.direction === 'asc' ? 'desc' : 'asc' })}
+      onApplyFilter={(filter) => applyQuery({ ...query, filter })}
+      onLoadMore={(cursor) => {
+        if (activeRequest.current === null && cursor === media.nextCursor) void load(query, cursor);
       }}
-      onLoadMore={(cursor) =>
-        void listMedia(api, filter, cursor).then((page) =>
-          setMedia((old) => ({ rows: [...(old.rows ?? []), ...page.rows], nextCursor: page.nextCursor })),
-        )
-      }
-      onRefresh={() => void load()}
+      onRefresh={() => void load(query)}
       onRequestDownloadUrl={(id) => createMediaDownloadUrl(api, id)}
     />
   );

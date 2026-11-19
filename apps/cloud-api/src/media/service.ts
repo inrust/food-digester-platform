@@ -16,7 +16,7 @@
  * - 功能边界：不采集/转码媒体；保留期处置属 DEC-005/BE-ARC-02；不提供实时流媒体会话（DEC-009）。
  */
 import type { DbClient, Page } from '@fdp/database';
-import { decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
+import { CursorInvalidError, Prisma, decodeKeysetCursor, encodeKeysetCursor, normalizeLimit } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import { handleMediaMetadata } from '@fdp/media';
 import type { MediaUploadPolicyQuery } from '@fdp/media';
@@ -35,39 +35,6 @@ export interface MediaDeps {
   readonly uploadPolicy: MediaUploadPolicyQuery;
 }
 
-// ---------- 行类型与数据访问 ----------
-
-interface MediaObjectRow {
-  readonly id: string;
-  readonly deviceId: string;
-  readonly customerId: string;
-  readonly uploadSessionId: string | null;
-  readonly mediaType: string;
-  readonly captureTime: Date;
-  readonly fileName: string;
-  readonly objectPath: string;
-  readonly sizeKb: number;
-  readonly durationSec: number | null;
-  readonly sha256: string | null;
-  readonly status: string;
-  readonly sourceMessageId: string | null;
-  readonly createdAt: Date;
-}
-
-interface TableDelegate {
-  findFirst(args: { where: Record<string, unknown> }): Promise<never>;
-  findMany(args: Record<string, unknown>): Promise<never[]>;
-  create(args: { data: Record<string, unknown> }): Promise<never>;
-  updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
-  count(args: { where: Record<string, unknown> }): Promise<number>;
-}
-
-function table(client: DbClient, name: string): TableDelegate {
-  return (client as unknown as Record<string, unknown>)[name] as TableDelegate;
-}
-
-const mediaObjects = (c: DbClient) => table(c, 'mediaObject');
-
 // ---------- DTO ----------
 
 export interface MediaView {
@@ -83,18 +50,24 @@ export interface MediaView {
   readonly createdAt: string;
 }
 
-function toMediaView(row: MediaObjectRow): MediaView {
+interface MediaListRow extends Omit<MediaView, 'mediaId' | 'captureTime' | 'durationSec'> {
+  readonly id: string;
+  readonly captureKey: string;
+  readonly durationSec: number | null;
+}
+
+function toMediaView(row: MediaListRow): MediaView {
   return {
     mediaId: row.id,
     deviceId: row.deviceId,
     customerId: row.customerId,
     mediaType: row.mediaType,
-    captureTime: row.captureTime.toISOString(),
+    captureTime: row.captureKey.slice(0, -4) + 'Z',
     fileName: row.fileName,
     sizeKb: row.sizeKb,
     durationSec: row.durationSec ?? 0,
     status: row.status,
-    createdAt: row.createdAt.toISOString(),
+    createdAt: row.createdAt,
   };
 }
 
@@ -111,6 +84,7 @@ export interface ListMediaFilter {
   readonly customerId?: string | undefined;
   readonly from?: string | undefined;
   readonly to?: string | undefined;
+  readonly captureTimeOrder?: string | undefined;
   readonly cursor?: string | undefined;
   readonly limit?: string | number | undefined;
 }
@@ -120,6 +94,47 @@ function parseTime(value: string | undefined, field: string): Date | undefined {
   const time = Date.parse(value);
   if (Number.isNaN(time)) throw mediaValidationFailed(`${field} must be a valid ISO 8601 timestamp`);
   return new Date(time);
+}
+
+type CaptureTimeOrder = 'asc' | 'desc';
+
+interface CaptureTimeCursor {
+  readonly v: 2;
+  readonly direction: CaptureTimeOrder;
+  readonly captureTime: string;
+  readonly id: string;
+}
+
+const CAPTURE_CURSOR_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+
+function decodeCaptureCursor(cursor: string, direction: CaptureTimeOrder): CaptureTimeCursor {
+  try {
+    const bytes = Buffer.from(cursor, 'base64url');
+    if (bytes.toString('base64url') !== cursor) throw new CursorInvalidError();
+    const payload = JSON.parse(bytes.toString('utf8')) as Partial<CaptureTimeCursor> | null;
+    if (
+      payload?.v !== 2 ||
+      payload.direction !== direction ||
+      typeof payload.id !== 'string' ||
+      payload.id.length === 0 ||
+      payload.id.includes('\0') ||
+      typeof payload.captureTime !== 'string' ||
+      !CAPTURE_CURSOR_TIME.test(payload.captureTime) ||
+      payload.captureTime.startsWith('0000-')
+    ) {
+      throw new CursorInvalidError();
+    }
+    // Verify the calendar date without discarding the microseconds in the SQL cursor.
+    const millisecondTime = payload.captureTime.slice(0, 23) + 'Z';
+    if (new Date(millisecondTime).toISOString() !== millisecondTime) throw new CursorInvalidError();
+    return { v: 2, direction, captureTime: payload.captureTime, id: payload.id };
+  } catch {
+    throw new CursorInvalidError();
+  }
+}
+function encodeCaptureCursor(direction: CaptureTimeOrder, captureTime: string, id: string): string {
+  const cursor: CaptureTimeCursor = { v: 2, direction, captureTime, id };
+  return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
 }
 
 export async function listMedia(
@@ -138,29 +153,56 @@ export async function listMedia(
   if (actor.actorType === 'customer' && filter.customerId !== undefined && filter.customerId !== actor.customerId) {
     throw mediaForbidden('Customer roles can only query their own customer scope');
   }
+  const direction = filter.captureTimeOrder;
+  if (direction !== undefined && direction !== 'asc' && direction !== 'desc') {
+    throw mediaValidationFailed('captureTimeOrder must be one of: asc, desc');
+  }
   const limit = normalizeLimit(filter.limit ?? null);
-  const where: Record<string, unknown> = {};
-  if (scopedCustomerId) where.customerId = scopedCustomerId;
-  if (filter.deviceId) where.deviceId = filter.deviceId;
-  if (filter.mediaType) where.mediaType = filter.mediaType;
-  if (filter.status) where.status = filter.status;
+  const where: Prisma.Sql[] = [];
+  if (scopedCustomerId) where.push(Prisma.sql`customer_id = ${scopedCustomerId}`);
+  if (filter.deviceId) where.push(Prisma.sql`device_id = ${filter.deviceId}`);
+  if (filter.mediaType) where.push(Prisma.sql`media_type = ${filter.mediaType}`);
+  if (filter.status) where.push(Prisma.sql`status = ${filter.status}`);
   const from = parseTime(filter.from, 'from');
   const to = parseTime(filter.to, 'to');
-  if (from || to) {
-    where.captureTime = { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) };
+  if (from) where.push(Prisma.sql`capture_time >= ${from.toISOString()}::timestamptz`);
+  if (to) where.push(Prisma.sql`capture_time <= ${to.toISOString()}::timestamptz`);
+
+  if (direction === undefined) {
+    const after = decodeKeysetCursor(filter.cursor);
+    if (after) where.push(Prisma.sql`id > ${after}`);
+  } else if (filter.cursor) {
+    const after = decodeCaptureCursor(filter.cursor, direction);
+    const comparison = direction === 'asc' ? Prisma.sql`>` : Prisma.sql`<`;
+    where.push(Prisma.sql`(capture_time, id) ${comparison} (${after.captureTime}::timestamptz, ${after.id})`);
   }
-  const after = decodeKeysetCursor(filter.cursor ?? null);
-  if (after) where.id = { gt: after };
-  const rows = (await mediaObjects(deps.client).findMany({
-    where,
-    orderBy: { id: 'asc' },
-    take: limit + 1,
-  })) as unknown as MediaObjectRow[];
+  const orderBy =
+    direction === undefined
+      ? Prisma.sql`id ASC`
+      : direction === 'asc'
+        ? Prisma.sql`capture_time ASC, id ASC`
+        : Prisma.sql`capture_time DESC, id DESC`;
+  // Use explicit UTC text and keep the DB's full microsecond precision in the seek key.
+  const rows = await deps.client.$queryRaw<MediaListRow[]>`
+    SELECT id, device_id AS "deviceId", customer_id AS "customerId", media_type AS "mediaType",
+           file_name AS "fileName", size_kb AS "sizeKb", duration_sec AS "durationSec", status,
+           to_char(capture_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "captureKey",
+           to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt"
+    FROM "public"."media_objects"
+    ${where.length > 0 ? Prisma.sql`WHERE ${Prisma.join(where, ' AND ')}` : Prisma.empty}
+    ORDER BY ${orderBy}
+    LIMIT ${limit + 1}
+  `;
   const page = rows.slice(0, limit);
-  const last = page[page.length - 1];
+  const last = page.at(-1);
   return {
     items: page.map(toMediaView),
-    nextCursor: rows.length > limit && last ? encodeKeysetCursor(last.id) : null,
+    nextCursor:
+      rows.length <= limit || last === undefined
+        ? null
+        : direction === undefined
+          ? encodeKeysetCursor(last.id)
+          : encodeCaptureCursor(direction, last.captureKey, last.id),
   };
 }
 
@@ -177,9 +219,9 @@ export async function createMediaDownloadUrl(
   mediaId: string,
 ): Promise<MediaDownloadUrlView> {
   const now = deps.now?.() ?? new Date();
-  const row = (await mediaObjects(deps.client).findFirst({
+  const row = await deps.client.mediaObject.findFirst({
     where: { id: mediaId },
-  })) as unknown as MediaObjectRow | null;
+  });
   if (!row) throw mediaNotFound();
   if (actor.actorType === 'customer' && row.customerId !== actor.customerId) throw mediaNotFound();
   if (row.status !== 'AVAILABLE') throw mediaNotFound();
