@@ -119,19 +119,19 @@
 
 | 检查项 | 本轮结果 |
 | --- | --- |
-| 前端 | 仓库配置的测试发布入口为 Amplify Hosting 的 `main` 分支。Monorepo 构建使用 `amplify.yml`，发布 `apps/admin-web/dist/web`。本轮未取得候选的 Amplify Job 与资源哈希回执。 [构建配置](../amplify.yml) · [托管分支](../infra/src/stacks/app-dependencies-stack.ts#L241) |
-| 管理 API | `Deploy test API` 在 `main` 上先跑完整 `pnpm verify`，再由 OIDC 进入测试账号执行 CDK。已核对 GitHub 部署开关为 `true`，远端 `main` 为 `97cdd503`。该历史部署作业成功。此次候选的部署及 Lambda 产物绑定仍为 `NOT_RUN`。 [部署流程](../.github/workflows/deploy-test.yml) · [历史部署](https://github.com/inrust/food-digester-platform/actions/runs/43667829780) |
-| 契约和媒体索引 | 统一 OpenAPI SHA-256 为 `5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73`。媒体索引使用固定源码 SHA 和 S3 VersionId 的 CodeBuild Migration Runner。已在本机打包并复核候选 SHA 与 SQL 哈希。目标迁移和索引读回为 `NOT_RUN`。 [部署与迁移手册](AWS测试环境部署配置与执行手册.md#5-migration-runner-操作边界) |
-| AWS 只读复核 | AWS 只读会话续签前的两次 STS 预检均返回 `SSO_INVALID_OR_EXPIRED`，因此实际 Amplify、测试栈和 Cognito 组盘点未执行。 |
-| 五角色资料 | `BLOCKED`。目前未验证项目方批准的五角色账号可登录、两组租户与各样本归属，亦未取得批准的写操作及清理台账。历史 QA09 账号与清理记录仅供设计测试材料时参考。 |
+| 前端 | 仓库配置的测试发布入口为 Amplify Hosting 的 `main` 分支。Monorepo 构建使用 `amplify.yml`，发布 `apps/admin-web/dist/web`。续签后只读确认 `main` 启用自动构建，当前活动 Job 169 成功，对应 `97cdd503`。原候选和修复候选都与活动构建 SHA 不符。 [构建配置](../amplify.yml) · [托管分支](../infra/src/stacks/app-dependencies-stack.ts#L241) |
+| 管理 API | `Deploy test API` 在 `main` 上先跑完整 `pnpm verify`，再由 OIDC 进入测试账号执行 CDK。已核对 GitHub 部署开关为 `true`，远端 `main` 为 `97cdd503`。GitHub 最新可见测试 API 部署作业仍是 `97cdd503` 的成功运行。候选的部署及 Lambda 产物绑定仍为 `NOT_RUN`。 [部署流程](../.github/workflows/deploy-test.yml) · [历史部署](https://github.com/inrust/food-digester-platform/actions/runs/43667829780) |
+| 契约和媒体索引 | 统一 OpenAPI SHA-256 为 `5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73`。媒体索引使用固定源码 SHA 和 S3 VersionId 的 CodeBuild Migration Runner。已在本机打包并复核候选 SHA 与 SQL 哈希。只读可见的最近一次 Migration Runner 成功运行引用 `69c76e1d`。候选目标迁移与索引读回为 `NOT_RUN`。 [部署与迁移手册](AWS测试环境部署配置与执行手册.md#5-migration-runner-操作边界) |
+| AWS 只读复核 | 续签后 STS 验证通过，`fdp-test-app` 的环境标签为 `test`，状态为 `UPDATE_COMPLETE`。Amplify、Cognito 与 Migration Runner 已完成只读盘点，前两次 SSO 失败保留在追验回执。 |
+| 五角色资料 | `BLOCKED`。Cognito 盘点显示 Auditor、CustomerAdmin、CustomerViewer 均无启用且已确认的账号。两个平台角色的现有账号仍待测试批准和登录验证。两组租户、样本归属及获准写操作范围也待核对。 |
 
-| 角色 | 本轮需核对的受控材料 | 目标证据 |
-| --- | --- | --- |
-| PlatformSuperAdmin | 待审批与拒绝样本、合约、设置、角色变更和审计记录。写操作需批准的原因、版本与清理台账。 | `NOT_RUN` |
-| PlatformOperator | 两台可测试设备、授权状态和命令控制范围，能安全核对请求目标及拒绝状态。 | `NOT_RUN` |
-| Auditor | 允许查看的配置、授权与审计数据，以及只读界面和服务端拒写证据。 | `NOT_RUN` |
-| CustomerAdmin | 已批准的本租户设备和耗材、ESG 日期与分页样本。准备外租户 ID 供验证拒绝。 | `NOT_RUN` |
-| CustomerViewer | 非空但可只读的本租户数据，以及另一租户的拒绝样本。 | `NOT_RUN` |
+| 角色 | Cognito 已启用且已确认 | 本轮需核对的受控材料 | 目标证据 |
+| --- | ---: | --- | --- |
+| PlatformSuperAdmin | 3 | 待审批与拒绝样本、合约、设置、角色变更和审计记录。写操作需批准的原因、版本与清理台账。 | `NOT_RUN` |
+| PlatformOperator | 1 | 两台可测试设备、授权状态和命令控制范围，能安全核对请求目标及拒绝状态。 | `NOT_RUN` |
+| Auditor | 0 | 允许查看的配置、授权与审计数据，以及只读界面和服务端拒写证据。 | `NOT_RUN` |
+| CustomerAdmin | 0 | 已批准的本租户设备和耗材、ESG 日期与分页样本。准备外租户 ID 供验证拒绝。 | `NOT_RUN` |
+| CustomerViewer | 0 | 非空但可只读的本租户数据，以及另一租户的拒绝样本。 | `NOT_RUN` |
 
 P1 首批为 CMP-05、06、08、11、12、19、25、26、28、29、30、33、36、39、44。前端构建记录、API 部署与 Lambda 产物、OpenAPI 清单和数据库迁移均绑定同一批准 SHA 后，先验证这 15 项，再回填其余 29 项。在同 SHA 绑定或测试材料缺失时保留逐项 `NOT_RUN`。本轮目标实测暂无通过或失败判定。
 
@@ -141,7 +141,7 @@ P1 首批为 CMP-05、06、08、11、12、19、25、26、28、29、30、33、36�
 | --- | --- |
 | `FAIL` · 原候选完整验证 | `353d2deb` 有 5 个脚本门禁失败，现有发布工作流会在此停止。修复候选的完整验证和 SHA 见追验回执。 |
 | `BLOCKED` · 目标版本 | 待明确批准实际发布 SHA、共享测试 `main` 发布和媒体索引迁移。发布后收集同一 SHA 的前端、API、契约和迁移回执。 |
-| `BLOCKED` · 目标数据 | 需要五角色测试账号、两组授权测试租户及批准的数据和写入范围。先复验 P1 的审批、弹窗零写、设备查询、耗材及 ESG，再恢复其他目标实测。 |
+| `BLOCKED` · 目标数据 | 需补齐 Auditor、CustomerAdmin、CustomerViewer 的测试账号，核实两个平台角色的获准测试账号和两组租户、数据及写入范围。先复验 P1 的审批、弹窗零写、设备查询、耗材及 ESG，再恢复其他目标实测。 |
 | `OPEN` · 项目方验收 | 目标 44 项目前均为 `NOT_RUN`。完成中英文、典型视口、键盘和租户验证后签收。 |
 | `OPEN` · CMP-23 目标迁移 | 目标环境执行前确认媒体索引迁移窗口与 DDL 锁影响，执行后核对两类索引、双向分页和旧客户端。实际变更与目标查询计划为 `NOT_RUN`。 |
 | `OPEN` · D5 可信回执 | 设备协议当前缺少可信的配置版本应用回执，界面显示「未知」。该显示已符合本轮确认口径。回执接入单独评估。 |
