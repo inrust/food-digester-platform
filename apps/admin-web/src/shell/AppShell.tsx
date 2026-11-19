@@ -16,12 +16,11 @@ import { Topbar } from './Topbar.js';
 export interface AppShellProps {
   readonly path: string;
   readonly session: SessionSnapshot;
-  readonly notificationCount?: number;
   readonly onNavigate: (path: string) => void;
   readonly onLogout: () => void;
   readonly children: ReactNode;
 }
-export function AppShell({ path, session, notificationCount, onNavigate, onLogout, children }: AppShellProps) {
+export function AppShell({ path, session, onNavigate, onLogout, children }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeDrawer = (returnFocus: boolean) => {
@@ -64,7 +63,6 @@ export function AppShell({ path, session, notificationCount, onNavigate, onLogou
         <Topbar
           path={path}
           session={session}
-          {...(notificationCount !== undefined ? { notificationCount } : {})}
           onNavigate={onNavigate}
           onLogout={onLogout}
           onOpenDrawer={() => setDrawerOpen(true)}

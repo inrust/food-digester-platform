@@ -56,7 +56,6 @@ import {
 } from '../pages/settings/users-api.js';
 import type { UserListFilter } from '../pages/settings/users-api.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
-import { useDeviceUsersPageProps } from './feature-controllers.js';
 import { DEFAULT_THRESHOLDS, thresholdsFromBusinessSetting } from '../pages/consumables/consumable-state.js';
 import type { ConsumableThresholdSource, ConsumableThresholds } from '../pages/consumables/consumable-state.js';
 type Navigate = (
@@ -87,7 +86,15 @@ async function listCustomerLicenses(api: ApiClient, customerId: string) {
   } while (cursor !== null);
   return items;
 }
-export function SettingsController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
+export function SettingsController({
+  api,
+  session,
+  onNavigate,
+}: {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+  readonly onNavigate: Navigate;
+}) {
   const role = roleOf(session);
   const [filter, setFilter] = useState<UserListFilter>({});
   const [users, setUsers] = useState<{
@@ -100,7 +107,6 @@ export function SettingsController({ api, session }: { readonly api: ApiClient; 
     rows: readonly SettingView[] | null;
     error?: unknown;
   }>({ rows: null });
-  const deviceUsers = useDeviceUsersPageProps({ api, session });
   const loadUsers = useCallback(
     async (cursor?: string) => {
       if (!canReadUsers(role)) return setUsers({ rows: [] });
@@ -128,8 +134,7 @@ export function SettingsController({ api, session }: { readonly api: ApiClient; 
   const refresh = useCallback(() => {
     void loadUsers();
     void loadSettings();
-    deviceUsers.onRefresh();
-  }, [deviceUsers, loadSettings, loadUsers]);
+  }, [loadSettings, loadUsers]);
   useEffect(() => void loadUsers(), [loadUsers]);
   useEffect(() => void loadSettings(), [loadSettings]);
   return (
@@ -146,7 +151,7 @@ export function SettingsController({ api, session }: { readonly api: ApiClient; 
       onResetPassword={(userId) => triggerUserPasswordReset(api, userId)}
       settings={settings}
       onUpdateSetting={(key, value, version) => updateSetting(api, key, value, version)}
-      deviceUsers={deviceUsers}
+      onNavigate={onNavigate}
       onRefresh={refresh}
     />
   );

@@ -1,28 +1,24 @@
 /** FE-02 UTC/本地时间显示与用户时区偏好。FE-19：日期按所选语言区域格式化（时间仍按用户时区）。 */
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { localeForLanguage, useI18n } from '../i18n/i18n.js';
 
 export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
-export const SUPPORTED_TIME_ZONES = ['UTC', 'Asia/Shanghai', 'Europe/London', 'America/New_York'] as const;
+export const SUPPORTED_TIME_ZONES = [DEFAULT_TIME_ZONE, 'UTC'] as const;
+type SupportedTimeZone = (typeof SUPPORTED_TIME_ZONES)[number];
 const TIME_ZONE_KEY = 'fdp.admin.time-zone.v1';
 
 export function resetUserTimeZonePreference(): void {
   window.localStorage.removeItem(TIME_ZONE_KEY);
 }
 
-export function isSupportedTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat('zh-CN', { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
+function isSupportedTimeZone(value: string): value is SupportedTimeZone {
+  return SUPPORTED_TIME_ZONES.some((zone) => zone === value);
 }
 
 interface TimeZoneValue {
-  readonly timeZone: string;
+  readonly timeZone: SupportedTimeZone;
   readonly setTimeZone: (value: string) => void;
 }
 
@@ -33,6 +29,10 @@ export function TimeZoneProvider({ children }: { readonly children: ReactNode })
     const stored = window.localStorage.getItem(TIME_ZONE_KEY);
     return stored !== null && isSupportedTimeZone(stored) ? stored : DEFAULT_TIME_ZONE;
   });
+  useEffect(() => {
+    const stored = window.localStorage.getItem(TIME_ZONE_KEY);
+    if (stored !== null && !isSupportedTimeZone(stored)) resetUserTimeZonePreference();
+  }, []);
   const setTimeZone = (value: string) => {
     if (!isSupportedTimeZone(value)) return;
     window.localStorage.setItem(TIME_ZONE_KEY, value);

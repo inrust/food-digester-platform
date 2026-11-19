@@ -139,6 +139,6 @@ export const SETTINGS_COVERAGE: Readonly<Record<string, string>> = {
   'settings.button.addPlatformUser': 'user-invite-open',
   'settings.button.resetPlatformUserPassword': 'user-reset-<userId>',
   'settings.button.deletePlatformUser': 'user-disable-<userId>',
-  // FE-16 自有（clientSide）：设备用户筛选重置，由嵌入的 DeviceUsersPage 承载
+  // FE-16 自有（clientSide）：设备用户筛选重置，由独立 DeviceUsersPage 承载
   'settings.button.deviceUserFilterReset': 'device-user-filter-reset',
 };

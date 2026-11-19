@@ -78,6 +78,23 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'rbac.module.replay': '重放',
   'media.sort.ascending': '按采集时间升序排序',
   'media.sort.descending': '按采集时间降序排序',
+  'settings.runtime': '运行时状态',
+  'settings.consumer': '消费方',
+  'settings.consumer.FE-18': '耗材状态页（FE-18）',
+  'settings.consumer.BE-CMD-01': '高风险命令服务（BE-CMD-01）',
+  'settings.consumer.none': '尚无运行时消费方',
+  'settings.editability': '可编辑性',
+  'settings.editable': '可编辑，保存时校验版本',
+  'settings.readOnlyForRole': '当前角色只读',
+  'settings.purpose.alarm.thresholds': '维护告警阈值配置。',
+  'settings.purpose.command.confirmation': '配置高风险命令的最近认证有效窗口和允许的时钟超前秒数。',
+  'settings.purpose.dictionary.displayNames': '保存命令、Topic 类型和通知类型的显示名映射。当前界面使用内置显示名。',
+  'settings.purpose.notification.business': '保存业务通知的事件类型和渠道选择。投递能力尚未接入。',
+  'settings.effect.FE-18':
+    '耗材状态页在有设置读取权限时使用 CONSUMABLE_REMAINING_PERCENT 的 warning 和 major 进行剩余量分档。缺少权限或有效配置时使用默认分档。其他告警阈值和 critical 暂无运行时消费。',
+  'settings.effect.BE-CMD-01':
+    '服务端按 ttlSec 和 maxFutureSec 检查高风险命令的认证时间，并要求确认文字与命令名一致。确认方式和高风险命令目录由协议固定。',
+  'settings.effect.stored': '保存时校验内容、记录版本和审计。',
   'evidence.title': '留档图片',
   'evidence.open': '查看留档图片',
   'evidence.close': '关闭图片',
@@ -222,8 +239,6 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'common.breadcrumb': '面包屑',
   'common.mainMenu': '主菜单',
   'common.pageNotFound': '未找到页面',
-  'common.notification.unread': '通知，{count} 条未读',
-  'common.notification.none': '通知，无未读',
 
   // ---------- 菜单分组 ----------
   'menu.group.device': '设备管理',

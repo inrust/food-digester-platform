@@ -58,7 +58,7 @@ test('CMP-35/37 platform users expose full values and the searchable matrix stay
   expect(await layoutViolations(page)).toEqual([]);
 });
 
-test('CMP-38 both entries distinguish published notifications, acknowledged snapshots and unknown device application', async ({
+test('CMP-38 independent details distinguish published notifications, acknowledged snapshots and unknown device application', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 800 });
@@ -109,7 +109,10 @@ test('CMP-38 both entries distinguish published notifications, acknowledged snap
 
   for (const path of ['/device-users', '/settings']) {
     await page.goto(path);
-    if (path === '/settings') await page.getByTestId('tab-device-users').click();
+    if (path === '/settings') {
+      await page.getByTestId('settings-device-users-link').click();
+      await expect(page).toHaveURL(/\/device-users$/);
+    }
     await page.getByTestId('device-user-detail-cmp-device-user').click();
     const detail = page.getByTestId('device-user-detail');
     await expect(detail.getByRole('region', { name: 'Account information' })).toContainText(longValue);

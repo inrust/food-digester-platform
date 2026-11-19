@@ -17,7 +17,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'zhang@example.com', roles: [role], customerId };
 }
 
-function renderShell(options: { path?: string; role?: Role; notificationCount?: number } = {}) {
+function renderShell(options: { path?: string; role?: Role } = {}) {
   const navigated: string[] = [];
   let loggedOut = 0;
   const utils = render(
@@ -25,7 +25,6 @@ function renderShell(options: { path?: string; role?: Role; notificationCount?: 
       <AppShell
         path={options.path ?? '/dashboard'}
         session={sessionOf(options.role ?? 'PlatformSuperAdmin')}
-        {...(options.notificationCount !== undefined ? { notificationCount: options.notificationCount } : {})}
         onNavigate={(path) => navigated.push(path)}
         onLogout={() => {
           loggedOut += 1;
@@ -128,11 +127,12 @@ test('子页面面包屑：分组 → 父菜单（可点回链）→ 当前页',
   assert.deepEqual(navigated, ['/contracts']);
 });
 
-test('通知徽标与用户区：未读数徽标、DEC-012 角色显示名、登出', async () => {
+test('顶部隐藏未接入的通知，告警入口与用户区继续可用', async () => {
   const user = userEvent.setup();
-  const { isLoggedOut } = renderShell({ role: 'PlatformOperator', notificationCount: 3 });
-  assert.equal(screen.getByTestId('notification-badge').textContent, '3');
-  assert.equal(screen.getByTestId('notification-button').getAttribute('aria-label'), '通知，3 条未读');
+  const { isLoggedOut } = renderShell({ role: 'PlatformOperator' });
+  assert.equal(screen.queryByTestId('notification-badge'), null);
+  assert.equal(screen.queryByTestId('notification-button'), null);
+  assert.ok(screen.getByTestId('menu-item-/alarms'));
   assert.equal(screen.getByTestId('role-tag').textContent, '设备操作员');
   assert.ok(screen.getByText('zhang@example.com'));
   await user.click(screen.getByRole('button', { name: '登出' }));
@@ -144,11 +144,25 @@ test('用户时区：顶部栏选择后持久化偏好', async () => {
   const user = userEvent.setup();
   renderShell();
   const selector = screen.getByLabelText('显示时区') as HTMLSelectElement;
+  assert.deepEqual(
+    [...selector.options].map((option) => option.value),
+    ['Asia/Shanghai', 'UTC'],
+  );
   assert.equal(selector.value, 'Asia/Shanghai');
   await user.selectOptions(selector, 'UTC');
   assert.equal(selector.value, 'UTC');
   assert.equal(window.localStorage.getItem('fdp.admin.time-zone.v1'), 'UTC');
 });
+
+test.each(['Europe/London', 'America/New_York', 'Pacific/Auckland', 'invalid-zone'])(
+  '旧时区 %s 回退到上海并清除失效偏好',
+  (obsolete) => {
+    window.localStorage.setItem('fdp.admin.time-zone.v1', obsolete);
+    renderShell();
+    assert.equal((screen.getByTestId('time-zone-select') as HTMLSelectElement).value, 'Asia/Shanghai');
+    assert.equal(window.localStorage.getItem('fdp.admin.time-zone.v1'), null);
+  },
+);
 
 test('移动端抽屉（≤768px）：汉堡打开、遮罩关闭并回收焦点、Esc 关闭', async () => {
   const user = userEvent.setup();

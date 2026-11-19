@@ -905,7 +905,8 @@ export async function runNonActiveBrowser(ctx, output) {
                   row.reason = 'INVITE_FORM_ONLY_NO_EMAIL_SEND_OR_PLATFORM_USER_MUTATION';
                   break;
                 case 'settings.device-users': {
-                  await page.getByTestId('tab-device-users').click();
+                  await page.getByTestId('settings-device-users-link').click();
+                  await expect(page).toHaveURL(/\/device-users$/);
                   await page.getByTestId('device-user-keyword').fill(ctx.prefix);
                   await page.getByTestId('device-user-search').click();
                   await page.getByTestId('device-user-filter-reset').click();

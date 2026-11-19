@@ -1,12 +1,11 @@
 import { Icon } from '../components/Icon.js';
 import { Button } from '../components/ui.js';
 /**
- * FE-02 顶部栏：面包屑、通知徽标、用户区（角色显示名 + 登出）、移动端抽屉开关。
+ * FE-02 顶部栏：面包屑、显示时区、用户区（角色显示名 + 登出）、移动端抽屉开关。
  * FE-19：全部文案经 i18n 资源；用户区提供语言切换入口（en/zh-CN，localStorage 持久化）。
  */
 import { roleDisplayName } from '../menu/menu.js';
 import { SUPPORTED_TIME_ZONES, useUserTimeZone } from '../components/TimeText.js';
-import { NumberText } from '../components/LocaleValue.js';
 import { LANGUAGE_LABELS, LANGUAGE_OPTIONS, isLanguage, useI18n } from '../i18n/i18n.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 import { breadcrumbsFor } from './breadcrumb.js';
@@ -15,7 +14,6 @@ import type { Ref } from 'react';
 export interface TopbarProps {
   readonly path: string;
   readonly session: SessionSnapshot;
-  readonly notificationCount?: number;
   readonly onNavigate: (path: string) => void;
   readonly onLogout: () => void;
   /** 打开移动端抽屉（≤768px 可见，见 shell.css）。 */
@@ -24,15 +22,7 @@ export interface TopbarProps {
   readonly drawerButtonRef?: Ref<HTMLButtonElement>;
 }
 
-export function Topbar({
-  path,
-  session,
-  notificationCount = 0,
-  onNavigate,
-  onLogout,
-  onOpenDrawer,
-  drawerButtonRef,
-}: TopbarProps) {
+export function Topbar({ path, session, onNavigate, onLogout, onOpenDrawer, drawerButtonRef }: TopbarProps) {
   const crumbs = breadcrumbsFor(path);
   const primaryRole = session.roles[0];
   const { timeZone, setTimeZone } = useUserTimeZone();
@@ -106,24 +96,6 @@ export function Topbar({
             ))}
           </select>
         </label>
-        <Button
-          type="button"
-          className="notification-button"
-          aria-label={
-            notificationCount > 0
-              ? t('common.notification.unread', { count: notificationCount })
-              : t('common.notification.none')
-          }
-          data-testid="notification-button"
-        >
-          <Icon name="bell" />
-          {notificationCount > 0 ? (
-            <span className="notification-badge" data-testid="notification-badge">
-              <NumberText value={notificationCount} />
-            </span>
-          ) : null}
-        </Button>
-
         <div className="user-badge" data-testid="user-badge">
           <span className="user-avatar" aria-hidden="true">
             {session.username.slice(0, 1).toUpperCase()}

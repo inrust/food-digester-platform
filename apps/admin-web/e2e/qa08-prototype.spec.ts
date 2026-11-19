@@ -463,7 +463,8 @@ async function checkGroup(key: string, page: Page, q: Qa08, go: () => Promise<vo
       q.guards.noPlatformPassword = true;
       break;
     case 'settings.device-users':
-      await page.getByTestId('tab-device-users').click();
+      await page.getByTestId('settings-device-users-link').click();
+      await expect(page).toHaveURL(/\/device-users$/);
       await page.getByTestId('device-user-keyword').fill(f.prefix);
       await page.getByTestId('device-user-search').click();
       await expect

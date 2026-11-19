@@ -1,13 +1,13 @@
 import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
- * FE-16 用户角色和业务设置页（/settings）：平台用户、设备用户、业务设置三标签页。
+ * FE-16 用户角色和业务设置页（/settings）：平台用户、业务设置及设备用户导航。
  *
  * - 平台用户（BE-RBAC-01）：邀请（Cognito 临时凭证，表单无永久密码字段）、角色整体替换、
  *   Customer scope 变更、停用、受控重置；角色集封闭（DEC-012），高风险权限变更明确确认；
  *   界面显示名用“设备操作员”（不使用“运维人员”）；
  * - RBAC 权限矩阵只读展示（DEC-012：V1 固定，仅可分配已有角色）；
- * - 设备用户标签页嵌入 FE-09 DeviceUsersPage（含筛选/重置/创建/停用/分配）；
+ * - 设备用户入口按 device-user:read 跳转至 FE-09 独立页面；
  * - 业务设置（BE-SET-01）：封闭 key 集四项，乐观锁 version 更新（409 → 刷新恢复）；
  *   command.confirmation 确认方式 DEC-023 固定——只读不提供编辑；固定协议枚举/AWS 运维配置不可编辑；
  * - 自我提权/越权由服务端 403 拒绝并正确呈现；不管理 IAM/CloudWatch/Budget/生产账号。
@@ -20,8 +20,6 @@ import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import { PermissionMatrix } from './PermissionMatrix.js';
-import { DeviceUsersPage } from '../device-users/DeviceUsersPage.js';
-import type { DeviceUsersPageProps } from '../device-users/DeviceUsersPage.js';
 import type { InviteUserInput, UserListFilter } from './users-api.js';
 import {
   ROLE_OPTIONS,
@@ -59,17 +57,13 @@ export interface SettingsPageProps {
     readonly error?: unknown;
   };
   readonly onUpdateSetting: (key: SettingKey, value: unknown, version: number) => Promise<SettingView>;
-  /** 设备用户标签页内容（FE-09 页面嵌入）；null = 无 device-user:read。 */
-  readonly deviceUsers: DeviceUsersPageProps | null;
+  readonly onNavigate: (path: string) => void;
   readonly onRefresh: () => void;
 }
-type SettingsTab = 'platform-users' | 'device-users' | 'business-settings';
+type SettingsTab = 'platform-users' | 'business-settings';
 const TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
   get 'platform-users'() {
     return translate('page.192c9887b3e0');
-  },
-  get 'device-users'() {
-    return translate('page.7fc5eb892df6');
   },
   get 'business-settings'() {
     return translate('page.60735b2edd9f');
@@ -106,15 +100,14 @@ export function SettingsPage({
   onResetPassword,
   settings,
   onUpdateSetting,
-  deviceUsers,
+  onNavigate,
   onRefresh,
 }: SettingsPageProps) {
   const visibleTabs: readonly SettingsTab[] = [
     ...(canReadUsers(role) ? (['platform-users'] as const) : []),
-    ...(canReadDeviceUsers(role) ? (['device-users'] as const) : []),
     ...(canReadSettings(role) ? (['business-settings'] as const) : []),
   ];
-  const [tab, setTab] = useState<SettingsTab>(visibleTabs[0] ?? 'device-users');
+  const [tab, setTab] = useState<SettingsTab | null>(visibleTabs[0] ?? null);
   const [profile, setProfile] = useState<UserView | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteDraft, setInviteDraft] = useState<InviteDraft>({
@@ -250,6 +243,20 @@ export function SettingsPage({
             {TAB_LABELS[t]}
           </Button>
         ))}
+        {canReadDeviceUsers(role) ? (
+          <a
+            className="settings-device-users-link"
+            data-testid="settings-device-users-link"
+            href="/device-users"
+            onClick={(event) => {
+              if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              onNavigate('/device-users');
+            }}
+          >
+            {translate('page.7fc5eb892df6')}
+          </a>
+        ) : null}
       </nav>
 
       {notice !== null ? (
@@ -488,65 +495,91 @@ export function SettingsPage({
         </section>
       ) : null}
 
-      {tab === 'device-users' ? (
-        <section data-testid="device-users-tab" aria-label={translate('page.024ebe3ff3d1')}>
-          {deviceUsers !== null ? (
-            <DeviceUsersPage {...deviceUsers} />
-          ) : (
-            <p className="empty-state" data-testid="device-users-unavailable">
-              {translate('page.7ee40e932983')}
-            </p>
-          )}
-        </section>
-      ) : null}
-
       {tab === 'business-settings' ? (
-        <section data-testid="business-settings-tab" aria-label={translate('page.60735b2edd9f')}>
-          <p className="field-hint">{translate('page.dd437ec4e4ea')}</p>
-          {settings.error !== undefined ? <ErrorNotice error={settings.error} onRefresh={onRefresh} /> : null}
-          {settings.rows === null ? (
+        <section
+          className="detail-stack"
+          data-testid="business-settings-tab"
+          aria-label={translate('page.60735b2edd9f')}
+        >
+          {settings.error !== undefined ? (
+            <ErrorNotice error={settings.error} onRefresh={onRefresh} />
+          ) : settings.rows === null ? (
             <div role="status" data-testid="settings-loading">
               {translate('page.300ee3dee4dc')}
             </div>
+          ) : settings.rows.length === 0 ? (
+            <p className="empty-state">{translate('common.empty')}</p>
           ) : (
-            settings.rows.map((setting) => {
-              const readonly = SETTING_READONLY_KEYS.includes(setting.key);
-              return (
-                <div key={setting.key} className="setting-item" data-testid={`setting-${setting.key}`}>
-                  <h5>
-                    {SETTING_KEY_LABELS[setting.key]}
-                    <span className="setting-runtime" data-testid={`setting-runtime-${setting.key}`}>
-                      {RUNTIME_STATUS_LABELS[setting.runtimeStatus]}
-                      {setting.runtimeConsumer !== null
-                        ? translate('page.dda8021936a5') + ' ' + setting.runtimeConsumer + '\uFF09'
-                        : ''}
-                    </span>
-                  </h5>
-                  <p className="field-hint">
-                    v{setting.version} · {setting.updatedBy ?? '—'} · <TimeText iso={setting.updatedAt} />
-                  </p>
-                  <pre data-testid={`setting-value-${setting.key}`}>{JSON.stringify(setting.value, null, 2)}</pre>
-                  {readonly ? (
-                    <p className="field-hint" data-testid={`setting-readonly-${setting.key}`}>
-                      {translate('page.f2b79f39e053')}
+            <div className="detail-grid">
+              {settings.rows.map((setting) => {
+                const readonly = SETTING_READONLY_KEYS.includes(setting.key);
+                const consumer = setting.runtimeConsumer;
+                const activeConsumer = setting.runtimeStatus === 'ACTIVE' ? consumer : null;
+                const effect =
+                  setting.key === 'alarm.thresholds' && activeConsumer === 'FE-18'
+                    ? translate('settings.effect.FE-18')
+                    : setting.key === 'command.confirmation' && activeConsumer === 'BE-CMD-01'
+                      ? translate('settings.effect.BE-CMD-01')
+                      : setting.runtimeStatus === 'STORED_ONLY'
+                        ? translate('settings.effect.stored')
+                        : null;
+                return (
+                  <article key={setting.key} className="detail-card" data-testid={`setting-${setting.key}`}>
+                    <h4>{SETTING_KEY_LABELS[setting.key]}</h4>
+                    <code>{setting.key}</code>
+                    <p>{translate(`settings.purpose.${setting.key}`)}</p>
+                    <dl>
+                      <dt>{translate('settings.runtime')}</dt>
+                      <dd data-testid={`setting-runtime-${setting.key}`}>
+                        <span className="detail-status-badge" data-enabled={setting.runtimeStatus === 'ACTIVE'}>
+                          {RUNTIME_STATUS_LABELS[setting.runtimeStatus]}
+                        </span>
+                      </dd>
+                      <dt>{translate('settings.consumer')}</dt>
+                      <dd data-testid={`setting-consumer-${setting.key}`}>
+                        {consumer === 'FE-18' || consumer === 'BE-CMD-01'
+                          ? translate(`settings.consumer.${consumer}`)
+                          : (consumer ?? translate('settings.consumer.none'))}
+                      </dd>
+                      <dt>{translate('settings.editability')}</dt>
+                      <dd data-testid={`setting-access-${setting.key}`}>
+                        {readonly ? (
+                          <span data-testid={`setting-readonly-${setting.key}`}>{translate('page.f2b79f39e053')}</span>
+                        ) : (
+                          translate(writeSettings ? 'settings.editable' : 'settings.readOnlyForRole')
+                        )}
+                      </dd>
+                    </dl>
+                    {effect !== null ? <p className="field-hint">{effect}</p> : null}
+                    <p className="field-hint">
+                      v{setting.version} · {setting.updatedBy ?? '—'} · <TimeText iso={setting.updatedAt} />
                     </p>
-                  ) : (
-                    <Button
-                      type="button"
-                      data-testid={`setting-edit-${setting.key}`}
-                      disabled={!writeSettings || busy}
-                      {...(!writeSettings ? { title: translate('page.5a65ed446ce5') } : {})}
-                      onClick={() => {
-                        setActionError(null);
-                        setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) });
-                      }}
+                    <pre
+                      className="setting-value"
+                      tabIndex={0}
+                      role="region"
+                      aria-label={setting.key}
+                      data-testid={`setting-value-${setting.key}`}
                     >
-                      {translate('page.a7f814c0a40d')}
-                    </Button>
-                  )}
-                </div>
-              );
-            })
+                      {JSON.stringify(setting.value, null, 2)}
+                    </pre>
+                    {!readonly ? (
+                      <Button
+                        type="button"
+                        data-testid={`setting-edit-${setting.key}`}
+                        disabled={!writeSettings || busy}
+                        onClick={() => {
+                          setActionError(null);
+                          setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) });
+                        }}
+                      >
+                        {translate('page.a7f814c0a40d')}
+                      </Button>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
           )}
         </section>
       ) : null}

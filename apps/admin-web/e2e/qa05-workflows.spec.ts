@@ -32,10 +32,35 @@ const routes: [string, Role[]][] = [
 for (const role of ROLES)
   test(`QA05 role route and button matrix ${role}`, async ({ page, qa05 }) => {
     await seedSession(page, role);
+    const storedZone = {
+      PlatformSuperAdmin: 'Europe/London',
+      PlatformOperator: 'America/New_York',
+      Auditor: 'UTC',
+      CustomerAdmin: 'Pacific/Auckland',
+      CustomerViewer: 'invalid-zone',
+    }[role];
+    await page.addInitScript((value) => {
+      if (sessionStorage.getItem('cmp-t09-timezone-seeded')) return;
+      localStorage.setItem('fdp.admin.time-zone.v1', value);
+      sessionStorage.setItem('cmp-t09-timezone-seeded', 'true');
+    }, storedZone);
+    const deviceUserReads: string[] = [];
+    page.on('request', (request) => {
+      const path = new URL(request.url()).pathname;
+      if (request.method() === 'GET' && path === '/api/v1/admin/device-users') deviceUserReads.push(path);
+    });
     await page.route('**/api/v1/admin/**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
     await routeFe11To15Apis(page);
     await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard }));
     await page.goto('/dashboard');
+    const zones = page.getByTestId('time-zone-select');
+    await expect(zones.locator('option')).toHaveText(['Asia/Shanghai', 'UTC']);
+    await expect(zones).toHaveValue(storedZone === 'UTC' ? 'UTC' : 'Asia/Shanghai');
+    expect(await page.evaluate(() => localStorage.getItem('fdp.admin.time-zone.v1'))).toBe(
+      storedZone === 'UTC' ? 'UTC' : null,
+    );
+    await expect(page.getByTestId('notification-button')).toHaveCount(0);
+    await expect(page.getByTestId('notification-badge')).toHaveCount(0);
     for (const [path, allowed] of routes.filter(
       ([p]) =>
         !['/devices/manage', '/contracts/new', '/contracts/detail', '/ota/packages', '/ota/campaigns'].includes(p),
@@ -50,6 +75,29 @@ for (const role of ROLES)
         await expect(page.locator('body')).not.toContainText('该页面尚未接入当前管理后台组合根');
       } else await expect(page.getByRole('heading', { name: '403', exact: true })).toBeVisible();
       matrix.push({ path, allowed: allowed.includes(role) });
+    }
+    await page.goto('/media');
+    const captureTime = page.getByTestId('media-list-section').locator('time').first();
+    await zones.selectOption('Asia/Shanghai');
+    await expect(captureTime).toContainText('08:00:00');
+    await zones.selectOption('UTC');
+    await expect(captureTime).toContainText('00:00:00');
+    await page.reload();
+    await expect(zones).toHaveValue('UTC');
+    await expect(captureTime).toContainText('00:00:00');
+
+    if (role === 'PlatformSuperAdmin' || role === 'CustomerAdmin') {
+      const readsBeforeSettings = deviceUserReads.length;
+      await page.goto('/settings');
+      const deviceUsers = page.getByTestId('settings-device-users-link');
+      await expect(deviceUsers).toHaveAttribute('href', '/device-users');
+      await expect(page.getByTestId('device-users-page')).toHaveCount(0);
+      expect(deviceUserReads).toHaveLength(readsBeforeSettings);
+      if (role === 'CustomerAdmin') await expect(page.getByTestId('tab-business-settings')).toHaveCount(0);
+      await deviceUsers.click();
+      await expect(page).toHaveURL(/\/device-users$/);
+      await expect(page.getByTestId('device-user-create')).toBeEnabled();
+      await expect.poll(() => deviceUserReads.length).toBe(readsBeforeSettings + 1);
     }
     const buttons = [];
     for (const [path, id, allowed, hidden] of [
@@ -75,6 +123,7 @@ for (const role of ROLES)
     qa05.proof.role = role;
     qa05.proof.routeMatrix = matrix;
     qa05.proof.buttons = buttons;
+    qa05.proof.cmpT09TimeZones = true;
   });
 
 test('QA05 login SRP MFA error success logout without persisting password', async ({ page, qa05 }) => {
@@ -196,17 +245,22 @@ test('QA05 ESG cursor totals export snapshot timezone and empty state', async ({
     );
   });
   await page.goto('/esg/overview');
-  await page.getByTestId('time-zone-select').selectOption('America/New_York');
+  await page.getByTestId('time-zone-select').selectOption('UTC');
   await page.getByTestId('esg-from-date').fill('2026-10-01');
   await page.getByTestId('esg-to-date').fill('2026-10-01');
+  await page.getByTestId('esg-apply').click();
+  await expect
+    .poll(() => seen.some((q) => q['from'] === '2026-10-01T00:00:00.000Z' && q['to'] === '2026-10-01T23:59:59.999Z'))
+    .toBe(true);
+  await page.getByTestId('time-zone-select').selectOption('Asia/Shanghai');
   await page.getByTestId('esg-apply').click();
   await expect(page.getByTestId('esg-summary-table')).toContainText('30');
   await page.getByTestId('esg-export-csv').click();
   await expect(page.getByTestId('esg-export-download')).toBeVisible();
-  expect(exported).toMatchObject({ from: '2026-10-01T04:00:00.000Z', to: '2026-10-02T03:59:59.999Z' });
+  expect(exported).toMatchObject({ from: '2026-09-30T16:00:00.000Z', to: '2026-10-01T15:59:59.999Z' });
   expect(seen.some((q) => q['cursor'] === 'next' && q['from'] === exported!['from'])).toBe(true);
   await page.reload();
-  await expect(page.getByTestId('time-zone-select')).toHaveValue('America/New_York');
+  await expect(page.getByTestId('time-zone-select')).toHaveValue('Asia/Shanghai');
   empty = true;
   await page.reload();
   await expect(page.getByTestId('esg-empty')).toBeVisible();

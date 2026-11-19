@@ -264,6 +264,37 @@ describe('DEC-023 高风险确认凭证', () => {
     assert.equal(await prisma.deviceCommand.count({ where: { deviceId: tenant.deviceId } }), 0, '失败请求不落库');
   });
 
+  test('CMP-34 reads configured high-risk authentication TTL and future skew without changing the confirmation method', async () => {
+    const { deviceId, customerAdmin } = await plantTenant({});
+    const where = { key: 'command.confirmation' };
+    const saved = await prisma.businessSetting.findUniqueOrThrow({ where });
+    if (saved.value === null) throw new Error('Missing command confirmation fixture value');
+    await prisma.businessSetting.update({ where, data: { value: { ttlSec: 30, maxFutureSec: 5 } } });
+    const h = handlers();
+    const create = (offsetSeconds: number, highRisk = true) =>
+      h.createCommand(
+        req(
+          { ...customerAdmin, authenticatedAt: new Date(NOW.getTime() + offsetSeconds * 1000).toISOString() },
+          {
+            params: { deviceId },
+            body: bodyFor({ command: highRisk ? 'EMERGENCY_STOP' : 'STOP', highRisk }),
+          },
+        ),
+      );
+    try {
+      assert.equal((await create(-31)).status, 403);
+      assert.equal((await create(6)).status, 403);
+      assert.equal((await create(-30)).status, 201);
+      assert.equal((await create(5)).status, 201);
+      assert.equal((await create(-31, false)).status, 201);
+    } finally {
+      await prisma.businessSetting.update({
+        where,
+        data: { value: saved.value, updatedAt: saved.updatedAt },
+      });
+    }
+  });
+
   test('近期重新认证放行，并在 command.authorize 审计记录 DEC-023 与可信时间', async () => {
     const tenant = await plantTenant({});
     const res = await handlers().createCommand(

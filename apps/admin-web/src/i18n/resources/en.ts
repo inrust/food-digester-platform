@@ -75,6 +75,26 @@ export const EN: Readonly<Record<string, string>> = {
   'rbac.module.replay': 'Replay',
   'media.sort.ascending': 'Sort by capture time, ascending',
   'media.sort.descending': 'Sort by capture time, descending',
+  'settings.runtime': 'Runtime status',
+  'settings.consumer': 'Runtime consumer',
+  'settings.consumer.FE-18': 'Consumable status page (FE-18)',
+  'settings.consumer.BE-CMD-01': 'High-risk command service (BE-CMD-01)',
+  'settings.consumer.none': 'No runtime consumer yet',
+  'settings.editability': 'Edit access',
+  'settings.editable': 'Editable with a version check',
+  'settings.readOnlyForRole': 'Read-only for this role',
+  'settings.purpose.alarm.thresholds': 'Maintains alarm threshold configuration.',
+  'settings.purpose.command.confirmation':
+    'Sets the recent authentication window and allowed clock skew for high-risk commands.',
+  'settings.purpose.dictionary.displayNames':
+    'Stores display-name mappings for commands, topic types, and notification types. The console uses built-in labels.',
+  'settings.purpose.notification.business':
+    'Stores business notification event types and selected channels. Delivery is pending integration.',
+  'settings.effect.FE-18':
+    'The consumable status page uses warning and major from CONSUMABLE_REMAINING_PERCENT when it can read a valid setting. Otherwise it uses default bands. Other thresholds and critical have no runtime consumer yet.',
+  'settings.effect.BE-CMD-01':
+    'The service checks authentication time against ttlSec and maxFutureSec for high-risk commands. Confirmation text must match the command name. The protocol defines the confirmation method and the high-risk command catalog.',
+  'settings.effect.stored': 'Saving validates the value and records its version and audit event.',
   'evidence.title': 'Archived image',
   'evidence.open': 'View archived image',
   'evidence.close': 'Close image',
@@ -231,8 +251,6 @@ export const EN: Readonly<Record<string, string>> = {
   'common.breadcrumb': 'Breadcrumb',
   'common.mainMenu': 'Main menu',
   'common.pageNotFound': 'Page not found',
-  'common.notification.unread': 'Notifications, {count} unread',
-  'common.notification.none': 'Notifications, none unread',
 
   // ---------- Menu groups ----------
   'menu.group.device': 'Devices',

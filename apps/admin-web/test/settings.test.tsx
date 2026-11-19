@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * FE-16 用户角色和业务设置页测试：
- * - 三标签页按权限可见（SuperAdmin 全部；CustomerAdmin 仅设备用户）；
+ * - 用户和设置标签按权限可见，设备用户链接前往独立页面；
  * - 平台用户：邀请（无永久密码字段/提交体不含 password）、角色整体替换（高风险确认）、
  *   scope 变更、停用、受控重置（不接触密码）；
  * - RBAC 矩阵只读；DEC-012“设备操作员”显示名；
@@ -21,8 +21,6 @@ import { updateSetting } from '../src/pages/settings/settings-api.js';
 import type { InviteUserInput } from '../src/pages/settings/users-api.js';
 import { validateInvite, validateRoleAssign } from '../src/pages/settings/settings-state.js';
 import type { SettingView, UserView } from '../src/pages/settings/types.js';
-import type { DeviceUsersPageProps } from '../src/pages/device-users/DeviceUsersPage.js';
-import { EMPTY_DEVICE_USER_FILTER } from '../src/pages/device-users/DeviceUsersPage.js';
 
 afterEach(cleanup);
 
@@ -54,35 +52,6 @@ function makeSetting(overrides: Partial<SettingView> = {}): SettingView {
   };
 }
 
-const DEVICE_USERS_STUB: DeviceUsersPageProps = {
-  role: 'PlatformSuperAdmin',
-  customerOptions: [],
-  topologyOptions: [],
-  list: { rows: [] },
-  appliedFilter: EMPTY_DEVICE_USER_FILTER,
-  onApplyFilter: () => {},
-  onRefresh: () => {},
-  detail: { kind: 'none' },
-  onSelect: () => {},
-  onCloseDetail: () => {},
-  assignableDevices: [],
-  onCreate: async () => {
-    throw new Error('not used');
-  },
-  onUpdate: async () => {
-    throw new Error('not used');
-  },
-  onDisable: async () => {
-    throw new Error('not used');
-  },
-  onAssign: async () => {
-    throw new Error('not used');
-  },
-  onRevoke: async () => {
-    throw new Error('not used');
-  },
-};
-
 function renderPage(overrides: Partial<SettingsPageProps> = {}) {
   const calls = {
     invited: [] as InviteUserInput[],
@@ -93,6 +62,7 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
     settingUpdated: [] as { key: string; value: unknown; version: number }[],
     filterApplied: [] as unknown[],
     refreshed: 0,
+    navigated: [] as string[],
   };
   const props: SettingsPageProps = {
     role: 'PlatformSuperAdmin',
@@ -131,19 +101,24 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
         makeSetting(),
         makeSetting({
           key: 'command.confirmation',
-          value: { mode: 'confirmText' },
+          value: { ttlSec: 300, maxFutureSec: 60 },
           runtimeStatus: 'ACTIVE',
           runtimeConsumer: 'BE-CMD-01',
         }),
-        makeSetting({ key: 'dictionary.displayNames', value: {} }),
-        makeSetting({ key: 'notification.business', value: { enabled: true } }),
+        makeSetting({ key: 'dictionary.displayNames', value: {}, runtimeStatus: 'STORED_ONLY', runtimeConsumer: null }),
+        makeSetting({
+          key: 'notification.business',
+          value: { eventTypes: [], channels: [] },
+          runtimeStatus: 'STORED_ONLY',
+          runtimeConsumer: null,
+        }),
       ],
     },
     onUpdateSetting: async (key, value, version) => {
       calls.settingUpdated.push({ key, value, version });
       return makeSetting({ key, value, version: version + 1 });
     },
-    deviceUsers: DEVICE_USERS_STUB,
+    onNavigate: (path) => calls.navigated.push(path),
     onRefresh: () => {
       calls.refreshed += 1;
     },
@@ -155,25 +130,31 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
 
 // ---------- 标签页可见性 ----------
 
-test('标签页按权限可见：SuperAdmin 三个；CustomerAdmin 仅设备用户', () => {
+test('入口按权限可见：SuperAdmin 两个标签和链接；CustomerAdmin 仅链接', () => {
   const { unmount } = renderPage();
   assert.ok(screen.getByTestId('tab-platform-users'));
-  assert.ok(screen.getByTestId('tab-device-users'));
+  assert.ok(screen.getByTestId('settings-device-users-link'));
   assert.ok(screen.getByTestId('tab-business-settings'));
   unmount();
 
   renderPage({ role: 'CustomerAdmin' });
   assert.equal(screen.queryByTestId('tab-platform-users'), null);
-  assert.ok(screen.getByTestId('tab-device-users'));
+  assert.ok(screen.getByTestId('settings-device-users-link'));
   assert.equal(screen.queryByTestId('tab-business-settings'), null);
 });
 
-test('设备用户标签页嵌入 FE-09 页面（含筛选重置锚点）', async () => {
+test('设备用户按权限链接到独立工作台，设置页没有嵌入列表', async () => {
   const user = userEvent.setup();
-  renderPage();
-  await user.click(screen.getByTestId('tab-device-users'));
-  assert.ok(screen.getByTestId('device-users-page'));
-  assert.ok(screen.getByTestId('device-user-filter-reset'));
+  const { calls, unmount } = renderPage();
+  const link = screen.getByTestId('settings-device-users-link');
+  assert.equal(link.getAttribute('href'), '/device-users');
+  await user.click(link);
+  assert.deepEqual(calls.navigated, ['/device-users']);
+  assert.equal(screen.queryByTestId('device-users-page'), null);
+  unmount();
+
+  renderPage({ role: 'PlatformOperator' });
+  assert.equal(screen.queryByTestId('settings-device-users-link'), null);
 });
 
 // ---------- 平台用户 ----------
@@ -345,6 +326,18 @@ test('业务设置：封闭 key 集四项渲染；command.confirmation 只读无
   // FE-18 已接入 alarm.thresholds；命令确认策略仍按 DEC-023 生效。
   assert.ok(screen.getByTestId('setting-runtime-alarm.thresholds').textContent?.includes('已生效'));
   assert.ok(screen.getByTestId('setting-runtime-command.confirmation').textContent?.includes('已生效'));
+  assert.match(
+    screen.getByTestId('setting-alarm.thresholds').textContent ?? '',
+    /CONSUMABLE_REMAINING_PERCENT.*warning.*major/,
+  );
+  assert.match(screen.getByTestId('setting-consumer-alarm.thresholds').textContent ?? '', /FE-18/);
+  assert.match(screen.getByTestId('setting-consumer-command.confirmation').textContent ?? '', /BE-CMD-01/);
+  assert.match(screen.getByTestId('setting-command.confirmation').textContent ?? '', /ttlSec.*maxFutureSec/);
+  for (const key of ['dictionary.displayNames', 'notification.business']) {
+    assert.match(screen.getByTestId(`setting-runtime-${key}`).textContent ?? '', /仅存储/);
+    assert.match(screen.getByTestId(`setting-consumer-${key}`).textContent ?? '', /尚无运行时消费方/);
+    assert.match(screen.getByTestId(`setting-access-${key}`).textContent ?? '', /可编辑/);
+  }
 });
 
 test('设置编辑：非法 JSON 禁用提交；合法提交携 version 乐观锁', async () => {

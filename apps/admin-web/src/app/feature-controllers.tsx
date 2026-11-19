@@ -558,7 +558,7 @@ export function ConfigurationsController({
     />
   );
 }
-export function useDeviceUsersPageProps({
+function useDeviceUsersPageProps({
   api,
   session,
 }: {

@@ -220,7 +220,9 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <AuditLogsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'settings':
-      page = <SettingsController key={sessionScope} api={services.api} session={session} />;
+      page = (
+        <SettingsController key={sessionScope} api={services.api} session={session} onNavigate={navigateWithinApp} />
+      );
       break;
     case 'contract-modify':
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
