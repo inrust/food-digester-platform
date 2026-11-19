@@ -11,6 +11,7 @@ export const REQUIRED_OPERATIONS = [
   'createMediaUploadSession',
   'listMedia',
   'createMediaDownloadUrl',
+  'getOwnAccountProfile',
   'listUsers',
   'inviteUser',
   'assignUserRoles',

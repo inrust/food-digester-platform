@@ -33,6 +33,7 @@ export const REQUIRED_ADMIN_BUSINESS_OPERATIONS = [
   'createConfiguration',
   'listConfigurations',
   'getConfiguration',
+  'listEffectiveConfigurationDevices',
   'createConfigurationVersion',
   'publishConfigurationVersion',
   'getConfigurationVersion',

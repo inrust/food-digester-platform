@@ -103,12 +103,12 @@ function fixture() {
   };
 }
 
-test('完整的 15 API、角色、Cognito、并发、S3、Dashboard、审计与清理回执通过', () => {
-  assert.equal(REQUIRED_OPERATIONS.length, 15);
+test('完整的 16 API、角色、Cognito、并发、S3、Dashboard、审计与清理回执通过', () => {
+  assert.equal(REQUIRED_OPERATIONS.length, 16);
   assert.deepEqual(validateEvidence(fixture()), []);
 });
 
-test('15 个 operationId 与六份正式 OpenAPI 精确一致', () => {
+test('16 个 operationId 与六份正式 OpenAPI 精确一致', () => {
   const files = [
     'device-media-api.json',
     'admin-media-api.json',
@@ -131,8 +131,10 @@ test('15 个 operationId 与六份正式 OpenAPI 精确一致', () => {
 
 test('API、角色、租户或安全/并发探针缺口均失败关闭', () => {
   const missing = fixture();
-  missing.probes.apiOperations.pop();
-  assert.ok(validateEvidence(missing).some((error) => error.includes('15')));
+  missing.probes.apiOperations = missing.probes.apiOperations.filter(
+    (probe) => probe.operationId !== 'getOwnAccountProfile',
+  );
+  assert.ok(validateEvidence(missing).some((error) => error.includes('16')));
   const role = fixture();
   role.probes.rbac.roles.pop();
   assert.ok(validateEvidence(role).some((error) => error.includes('5')));

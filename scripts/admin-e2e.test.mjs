@@ -88,7 +88,7 @@ test('serial and parallel repeated browser receipts are validated', () => {
   for (const repeat of [1, 2]) {
     const f = fixture(repeat);
     const summary = summarizePhase(f.report, f.rows, repeat);
-    assert.equal(summary.testCount, 48 * repeat);
+    assert.equal(summary.testCount, 73 * repeat);
     assert.equal(summary.buttonAssertions, 33 * repeat);
   }
 });
@@ -217,7 +217,7 @@ test('manifest exactly matches independent Playwright discovery', () => {
       env: { ...process.env, QA05_PHASE: 'serial' },
     }),
   );
-  assert.equal(validateDiscovery(report).distinctCases, 48);
+  assert.equal(validateDiscovery(report).distinctCases, 73);
 });
 for (const [name, mutate] of [
   ['missing case', (specs) => specs.pop()],
@@ -247,20 +247,22 @@ for (const title of Object.keys(PROOFS))
     delete f.rows.find((row) => row.title === title).proof[PROOFS[title][0]];
     assert.throws(() => summarizePhase(f.report, f.rows, 1), /MISSING_WORKFLOW_PROOF/);
   });
-test('serial and repeated phases require all 144 independent prefixes', () => {
+test('serial and repeated phases require all 219 independent prefixes', () => {
   const a = fixture();
   const b = fixture(2);
   b.rows.forEach((row, i) => {
     row.prefix = `QA05-${(i + 1000).toString(16).padStart(12, '0').toUpperCase()}`;
   });
   const phases = [summarizePhase(a.report, a.rows, 1), summarizePhase(b.report, b.rows, 2)];
-  assert.equal(validateCrossPhaseIsolation(phases), 144);
+  assert.equal(validateCrossPhaseIsolation(phases), 219);
   phases[1].tests[0].prefix = phases[0].tests[0].prefix;
   assert.throws(() => validateCrossPhaseIsolation(phases), /CROSS_PHASE_DATA_COLLISION/);
 });
 test('phase budget accounts for startup, executions and worker slots, with a finite ceiling', () => {
-  assert.equal(browserPhaseTimeoutMs(1, 1), 840000);
-  assert.equal(browserPhaseTimeoutMs(2, 2), 840000);
+  assert.equal(browserPhaseTimeoutMs(1, 2), 675000);
+  assert.equal(browserPhaseTimeoutMs(2, 4), 675000);
+  assert.equal(browserPhaseTimeoutMs(1, 1), 900000);
+  assert.equal(browserPhaseTimeoutMs(2, 2), 900000);
   assert.equal(browserPhaseTimeoutMs(2, 1), 900000);
   assert.equal(browserPhaseTimeoutMs(100, 2), 900000);
 });
