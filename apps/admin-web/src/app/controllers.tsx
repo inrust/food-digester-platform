@@ -1,6 +1,6 @@
 import { translate } from '../i18n/i18n.js';
 import { hasPermission } from '@fdp/auth/browser';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '../api/http-client.js';
 import type { ToastQueue } from '../components/Toast.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
@@ -265,11 +265,22 @@ export function DeviceGroupsController({
   );
   const onboarding = useCursorController<OnboardingRequestView>(onboardingLoader);
   const [detail, setDetail] = useState<DetailState>({ kind: 'none' });
+  const selected = useRef<{ requestId: string } | null>(null);
+  const closeDetail = () => {
+    selected.current = null;
+    setDetail({ kind: 'none' });
+  };
   const select = (requestId: string) => {
+    const selection = { requestId };
+    selected.current = selection;
     setDetail({ kind: 'loading' });
     void fetchOnboardingRequest(api, requestId).then(
-      (request) => setDetail({ kind: 'ready', request }),
-      (error: unknown) => setDetail({ kind: 'error', error }),
+      (request) => {
+        if (selected.current === selection) setDetail({ kind: 'ready', request });
+      },
+      (error: unknown) => {
+        if (selected.current === selection) setDetail({ kind: 'error', error, requestId });
+      },
     );
   };
   const options = useMemo(() => {
@@ -326,10 +337,10 @@ export function DeviceGroupsController({
         onFilterStatus: (next) => {
           setStatus(next);
           onboarding.reset();
-          setDetail({ kind: 'none' });
+          closeDetail();
         },
         list: {
-          rows: onboarding.rows,
+          rows: onboarding.rows?.filter((request) => request.status === status) ?? null,
           loading: onboarding.loading,
           error: onboarding.error,
           nextCursor: onboarding.nextCursor,
@@ -342,7 +353,7 @@ export function DeviceGroupsController({
         onRefresh: onboarding.refresh,
         detail,
         onSelect: select,
-        onCloseDetail: () => setDetail({ kind: 'none' }),
+        onCloseDetail: closeDetail,
         canReview: can(session, 'onboarding:approve'),
         onApprove: async (request) => {
           const result = await approveOnboardingRequest(api, request.requestId, request.version);
@@ -351,6 +362,8 @@ export function DeviceGroupsController({
         },
         onReject: async (request, reason) => {
           const result = await rejectOnboardingRequest(api, request.requestId, request.version, reason);
+          if (selected.current?.requestId === request.requestId) closeDetail();
+          onboarding.refresh();
           success(toasts, translate('ui.b419c31e7173'));
           return result;
         },

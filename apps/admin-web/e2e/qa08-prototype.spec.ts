@@ -232,8 +232,11 @@ async function checkGroup(key: string, page: Page, q: Qa08, go: () => Promise<vo
       for (const action of ['approve-button', 'reject-button']) {
         await page.getByTestId(action).click();
         await expect(page.getByTestId('confirm-dialog')).toBeVisible();
-        await close(page);
+        await page.keyboard.press('Escape');
+        await expect(page.getByTestId('confirm-dialog')).toHaveCount(0);
+        await expect(page.getByTestId('onboarding-detail-modal')).toBeVisible();
       }
+      await close(page);
       break;
     case 'device-manage.configuration':
       for (const button of ['goto-current-config', 'goto-publish-config']) {

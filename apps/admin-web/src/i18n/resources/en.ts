@@ -125,6 +125,8 @@ export const EN: Readonly<Record<string, string>> = {
   'common.dataTime': 'Data as of: ',
   'common.cancel': 'Cancel',
   'common.close': 'Close',
+  'onboarding.detail.retry': 'Retry loading details',
+  'onboarding.reject.retry': 'Retry rejection',
   'common.confirm': 'Confirm',
   'common.reason': 'Reason',
   'common.reasonHint': 'Required; recorded in the audit log',

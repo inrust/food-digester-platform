@@ -172,26 +172,30 @@ test('Customer scope 与 Dashboard 离线/无 entitlement 动作在真实浏览�
   await expect(page.locator('body')).not.toContainText('cust-b');
 });
 
+const onboardingRequestFixture = {
+  requestId: 'onb-1',
+  serialNumber: 'SN-1',
+  submittedBy: 'DEVICE:SN-1',
+  model: 'FD-100',
+  hardwareVersion: 'HW-1',
+  manufacturer: 'BioNexa',
+  manufactureDate: '2026-09-01',
+  status: 'PENDING',
+  rejectReason: null,
+  reviewedBy: null,
+  reviewedAt: null,
+  version: 1,
+  createdAt: '2026-09-10T00:00:00Z',
+  certificateProvisioningStatus: 'NOT_STARTED',
+};
+
 test('Onboarding 审批双击只提交一次，展示录入来源和证书状态', async ({ page }) => {
   await seedSession(page, 'PlatformSuperAdmin');
-  const request = {
-    requestId: 'onb-1',
-    serialNumber: 'SN-1',
-    submittedBy: 'DEVICE:SN-1',
-    model: 'FD-100',
-    hardwareVersion: 'HW-1',
-    manufacturer: 'BioNexa',
-    manufactureDate: '2026-09-01',
-    status: 'PENDING',
-    rejectReason: null,
-    reviewedBy: null,
-    reviewedAt: null,
-    version: 1,
-    createdAt: '2026-09-10T00:00:00Z',
-    certificateProvisioningStatus: 'NOT_STARTED',
-  };
+  const request = onboardingRequestFixture;
   let approvals = 0;
   await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/customers**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/sites**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
   await page.route('**/api/v1/admin/onboarding/requests**', async (route) => {
     const url = route.request().url();
     if (url.endsWith('/approve')) {
@@ -215,6 +219,88 @@ test('Onboarding 审批双击只提交一次，展示录入来源和证书状态
     button.click();
   });
   await expect.poll(() => approvals).toBe(1);
+  await expect(page).toHaveURL(/\/devices\/manage\?serialNumber=SN-1$/);
+});
+
+test('CMP-11/12 详情加载和拒绝可重试，提交后从已拒绝标签读回', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  const request = onboardingRequestFixture;
+  let current: Omit<typeof request, 'rejectReason'> & { rejectReason: string | null } = request;
+  let releaseRead!: () => void;
+  const initialRead = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  let detailReads = 0;
+  let pendingReads = 0;
+  const writes: { ifMatch: string | undefined; reason: string }[] = [];
+
+  await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/onboarding/requests**', async (route) => {
+    const query = new URL(route.request().url());
+    if (query.pathname.endsWith('/reject')) {
+      const { reason } = route.request().postDataJSON() as { reason: string };
+      writes.push({ ifMatch: route.request().headers()['if-match'], reason });
+      if (writes.length === 1) {
+        return json(route, { error: { code: 'UNAVAILABLE', message: 'Retry review', requestId: 'req-cmp12' } }, 503);
+      }
+      current = { ...current, status: 'REJECTED', version: 2, rejectReason: reason };
+      return json(route, { data: current });
+    }
+    const tab = query.searchParams.get('status');
+    if (tab !== null) {
+      if (tab === 'PENDING') pendingReads += 1;
+      return json(route, { data: current.status === tab ? [current] : [], meta: { nextCursor: null } });
+    }
+    if (++detailReads === 1) {
+      await initialRead;
+      return json(route, { error: { code: 'UNAVAILABLE', message: 'Retry details', requestId: 'req-cmp11' } }, 503);
+    }
+    return json(route, { data: current });
+  });
+
+  await page.goto('/devices/groups');
+  const trigger = page.getByTestId('detail-onb-1');
+  await trigger.click();
+  const detail = page.getByTestId('onboarding-detail-modal');
+  const confirmation = page.getByTestId('confirm-dialog');
+  await expect(detail.getByTestId('detail-loading')).toBeVisible();
+  await expect(detail.getByRole('button', { name: '关闭' })).toBeFocused();
+  releaseRead();
+  await expect(detail.getByRole('alert')).toContainText('req-cmp11');
+  await detail.getByRole('button', { name: '重新加载详情' }).click();
+  await expect(detail.getByTestId('detail-status')).toHaveText('待审批');
+
+  const reject = detail.getByTestId('reject-button');
+  await reject.click();
+  await page.keyboard.press('Escape');
+  await expect(confirmation).toHaveCount(0);
+  await expect(detail).toBeVisible();
+  await expect(reject).toBeFocused();
+  expect(writes).toEqual([]);
+
+  await reject.click();
+  await expect(confirmation.getByRole('button', { name: '确认拒绝' })).toBeDisabled();
+  const reason = '序列号与登记资料不符';
+  await confirmation.getByLabel('拒绝原因').fill(reason);
+  await confirmation.getByRole('button', { name: '确认拒绝' }).click();
+  await expect(detail.getByRole('alert')).toContainText('req-cmp12');
+  await detail.getByRole('button', { name: '重试拒绝' }).click();
+  await confirmation.getByLabel('拒绝原因').fill(reason);
+  await confirmation.getByRole('button', { name: '确认拒绝' }).click();
+  await expect(detail).toHaveCount(0);
+  await expect(trigger).toHaveCount(0);
+  expect(pendingReads).toBe(2);
+  expect(writes).toEqual([
+    { ifMatch: '1', reason },
+    { ifMatch: '1', reason },
+  ]);
+
+  await page.getByTestId('tab-REJECTED').click();
+  await expect(page.getByTestId('status-onb-1')).toHaveText('已拒绝');
+  await trigger.click();
+  await expect(detail.getByTestId('detail-status')).toHaveText('已拒绝');
+  await expect(detail.getByTestId('detail-reject-reason')).toHaveText(reason);
+  await expect(reject).toHaveCount(0);
 });
 
 test('Customer/Site CRUD 关键路径：创建、非法时区、关联停用提示与 409', async ({ page }) => {

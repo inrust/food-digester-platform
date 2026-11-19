@@ -13,7 +13,8 @@ import { translate } from '../../i18n/i18n.js';
 import { useRef, useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
-import { ErrorNotice } from '../../components/ErrorNotice.js';
+import { classifyError, ErrorNotice } from '../../components/ErrorNotice.js';
+import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import { isReviewable, ONBOARDING_STATUS_LABELS } from './onboarding-state.js';
 import type { OnboardingRequestView, OnboardingStatus } from './types.js';
@@ -27,6 +28,7 @@ export type DetailState =
   | {
       readonly kind: 'error';
       readonly error: unknown;
+      readonly requestId: string;
     }
   | {
       readonly kind: 'ready';
@@ -53,17 +55,12 @@ export interface OnboardingReviewPanelProps {
   /** 仅 PlatformSuperAdmin 为 true（前端隐藏按钮不替代后端授权，BE-ONB-02 强制 onboarding:approve）。 */
   readonly canReview: boolean;
   readonly onApprove: (request: OnboardingRequestView) => Promise<OnboardingRequestView>;
+  /** 控制器在成功时关闭匹配的详情并刷新列表。 */
   readonly onReject: (request: OnboardingRequestView, reason: string) => Promise<OnboardingRequestView>;
   /** 批准成功后跳转设备详情。 */
   readonly onNavigate: (path: string) => void;
 }
-type PendingAction =
-  | {
-      kind: 'approve';
-    }
-  | {
-      kind: 'reject';
-    };
+type ReviewAction = 'approve' | 'reject';
 const STATUS_TABS: readonly OnboardingStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'TIMED_OUT'];
 export function OnboardingReviewPanel({
   activeStatus,
@@ -80,28 +77,34 @@ export function OnboardingReviewPanel({
   onReject,
   onNavigate,
 }: OnboardingReviewPanelProps) {
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
-  const [actionError, setActionError] = useState<unknown>(null);
+  const [confirmation, setConfirmation] = useState<{ action: ReviewAction; detail: DetailState } | null>(null);
+  const [actionFailure, setActionFailure] = useState<{
+    action: ReviewAction;
+    detail: DetailState;
+    error: unknown;
+  } | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
   const request = detail.kind === 'ready' ? detail.request : null;
-  const runAction = async (action: PendingAction, reason: string) => {
+  const pendingAction = confirmation?.detail === detail ? confirmation.action : null;
+  const failure = actionFailure?.detail === detail ? actionFailure : null;
+  const versionConflict = failure !== null && classifyError(failure.error).variant === 'version-conflict';
+  const runAction = async (action: ReviewAction, reason: string) => {
     // 防重复点击：在途请求直接忽略（后端 If-Match 兜底）
-    if (inFlight.current || request === null) return;
+    if (inFlight.current || request === null || !canReview || !isReviewable(request.status) || versionConflict) return;
     inFlight.current = true;
     setBusy(true);
-    setPendingAction(null);
-    setActionError(null);
+    setConfirmation(null);
+    setActionFailure(null);
     try {
-      if (action.kind === 'approve') {
+      if (action === 'approve') {
         const approved = await onApprove(request);
         onNavigate(`/devices/manage?serialNumber=${encodeURIComponent(approved.serialNumber)}`);
       } else {
         await onReject(request, reason);
-        onRefresh();
       }
     } catch (err) {
-      setActionError(err);
+      setActionFailure({ action, detail, error: err });
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -164,84 +167,96 @@ export function OnboardingReviewPanel({
         emptyText={translate('page.d7aaf21534d7')}
       />
 
-      {detail.kind === 'loading' ? (
-        <div role="status" data-testid="detail-loading">
-          {translate('page.300ee3dee4dc')}
-        </div>
-      ) : null}
-      {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
+      <Modal
+        open={detail.kind !== 'none'}
+        title={translate('page.647fd881044d')}
+        testid="onboarding-detail-modal"
+        onClose={onCloseDetail}
+      >
+        {detail.kind === 'loading' ? (
+          <div role="status" data-testid="detail-loading">
+            {translate('page.300ee3dee4dc')}
+          </div>
+        ) : null}
+        {detail.kind === 'error' ? (
+          <>
+            <ErrorNotice error={detail.error} />
+            <div className="dialog-actions">
+              <Button type="button" onClick={() => onSelect(detail.requestId)}>
+                {translate('onboarding.detail.retry')}
+              </Button>
+            </div>
+          </>
+        ) : null}
+        {request !== null ? (
+          <div className="request-detail" data-testid="request-detail">
+            <h4>{translate('page.1075726d7859')}</h4>
+            <dl>
+              <dt>{translate('page.02a7858abc0f')}</dt>
+              <dd>{request.serialNumber}</dd>
+              <dt>{translate('page.0132ce7298ec')}</dt>
+              <dd>{request.model}</dd>
+              <dt>{translate('page.ebc803567778')}</dt>
+              <dd>{request.hardwareVersion}</dd>
+              <dt>{translate('page.0c131e3964eb')}</dt>
+              <dd>{request.manufacturer}</dd>
+              <dt>{translate('page.8579e19406d9')}</dt>
+              <dd>{request.manufactureDate}</dd>
+            </dl>
+            <h4>{translate('page.0822b2ec02ac')}</h4>
+            <dl>
+              <dt>{translate('page.e85ad6ea52fd')}</dt>
+              <dd>
+                <TimeText iso={request.createdAt} />
+              </dd>
+              <dt>{translate('page.09dd3737f0c0')}</dt>
+              <dd data-testid="detail-submitted-by">{request.submittedBy}</dd>
+              {request.publicKeyFingerprint ? (
+                <>
+                  <dt>{translate('page.d35c11f5fa20')}</dt>
+                  <dd data-testid="detail-csr-fingerprint">{request.publicKeyFingerprint}</dd>
+                </>
+              ) : null}
+              <dt>{translate('page.fe8993b21fdb')}</dt>
+              <dd data-testid="detail-certificate-status">{request.certificateProvisioningStatus}</dd>
+              <dt>{translate('page.62e951a692ff')}</dt>
+              <dd data-testid="detail-status">{ONBOARDING_STATUS_LABELS[request.status]}</dd>
+              {(request.status === 'REJECTED' || request.status === 'TIMED_OUT') && request.rejectReason !== null ? (
+                <>
+                  <dt>
+                    {request.status === 'TIMED_OUT' ? translate('page.ad7273034ec1') : translate('page.30cf083a31c8')}
+                  </dt>
+                  <dd data-testid="detail-reject-reason">{request.rejectReason}</dd>
+                </>
+              ) : null}
+              {request.reviewedBy !== null ? (
+                <>
+                  <dt>{translate('page.9b446de32478')}</dt>
+                  <dd>{request.reviewedBy}</dd>
+                </>
+              ) : null}
+              {request.reviewedAt !== null ? (
+                <>
+                  <dt>{translate('page.8df1c00436b1')}</dt>
+                  <dd>
+                    <TimeText iso={request.reviewedAt} />
+                  </dd>
+                </>
+              ) : null}
+            </dl>
 
-      {request !== null ? (
-        <aside className="request-detail" data-testid="request-detail" aria-label={translate('page.647fd881044d')}>
-          <h4>{translate('page.1075726d7859')}</h4>
-          <dl>
-            <dt>{translate('page.02a7858abc0f')}</dt>
-            <dd>{request.serialNumber}</dd>
-            <dt>{translate('page.0132ce7298ec')}</dt>
-            <dd>{request.model}</dd>
-            <dt>{translate('page.ebc803567778')}</dt>
-            <dd>{request.hardwareVersion}</dd>
-            <dt>{translate('page.0c131e3964eb')}</dt>
-            <dd>{request.manufacturer}</dd>
-            <dt>{translate('page.8579e19406d9')}</dt>
-            <dd>{request.manufactureDate}</dd>
-          </dl>
-          <h4>{translate('page.0822b2ec02ac')}</h4>
-          <dl>
-            <dt>{translate('page.e85ad6ea52fd')}</dt>
-            <dd>
-              <TimeText iso={request.createdAt} />
-            </dd>
-            <dt>{translate('page.09dd3737f0c0')}</dt>
-            <dd data-testid="detail-submitted-by">{request.submittedBy}</dd>
-            {request.publicKeyFingerprint ? (
-              <>
-                <dt>{translate('page.d35c11f5fa20')}</dt>
-                <dd data-testid="detail-csr-fingerprint">{request.publicKeyFingerprint}</dd>
-              </>
+            {failure !== null ? (
+              <ErrorNotice error={failure.error} onRefresh={() => onSelect(request.requestId)} />
             ) : null}
-            <dt>{translate('page.fe8993b21fdb')}</dt>
-            <dd data-testid="detail-certificate-status">{request.certificateProvisioningStatus}</dd>
-            <dt>{translate('page.62e951a692ff')}</dt>
-            <dd data-testid="detail-status">{ONBOARDING_STATUS_LABELS[request.status]}</dd>
-            {(request.status === 'REJECTED' || request.status === 'TIMED_OUT') && request.rejectReason !== null ? (
-              <>
-                <dt>
-                  {request.status === 'TIMED_OUT' ? translate('page.ad7273034ec1') : translate('page.30cf083a31c8')}
-                </dt>
-                <dd data-testid="detail-reject-reason">{request.rejectReason}</dd>
-              </>
-            ) : null}
-            {request.reviewedBy !== null ? (
-              <>
-                <dt>{translate('page.9b446de32478')}</dt>
-                <dd>{request.reviewedBy}</dd>
-              </>
-            ) : null}
-            {request.reviewedAt !== null ? (
-              <>
-                <dt>{translate('page.8df1c00436b1')}</dt>
-                <dd>
-                  <TimeText iso={request.reviewedAt} />
-                </dd>
-              </>
-            ) : null}
-          </dl>
 
-          {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
-
-          <div className="detail-actions">
-            <Button type="button" onClick={onCloseDetail}>
-              {translate('page.6c14bd7f6f9e')}
-            </Button>
             {canReview && isReviewable(request.status) ? (
-              <>
+              <div className="dialog-actions">
                 <Button
                   type="button"
                   className="primary-button"
                   data-testid="approve-button"
-                  disabled={busy}
-                  onClick={() => setPendingAction({ kind: 'approve' })}
+                  disabled={busy || versionConflict}
+                  onClick={() => setConfirmation({ action: 'approve', detail })}
                 >
                   {translate('page.62e26d21413f')}
                 </Button>
@@ -249,19 +264,19 @@ export function OnboardingReviewPanel({
                   type="button"
                   className="danger-button"
                   data-testid="reject-button"
-                  disabled={busy}
-                  onClick={() => setPendingAction({ kind: 'reject' })}
+                  disabled={busy || versionConflict}
+                  onClick={() => setConfirmation({ action: 'reject', detail })}
                 >
-                  {translate('page.03e210a66d07')}
+                  {translate(failure?.action === 'reject' ? 'onboarding.reject.retry' : 'page.03e210a66d07')}
                 </Button>
-              </>
+              </div>
             ) : null}
           </div>
-        </aside>
-      ) : null}
+        ) : null}
+      </Modal>
 
       <ConfirmDialog
-        open={pendingAction?.kind === 'approve'}
+        open={pendingAction === 'approve'}
         title={translate('page.2208b8361b84')}
         {...(request !== null
           ? {
@@ -269,18 +284,18 @@ export function OnboardingReviewPanel({
             }
           : {})}
         confirmText={translate('page.14399a781b56')}
-        onConfirm={() => void runAction({ kind: 'approve' }, '')}
-        onCancel={() => setPendingAction(null)}
+        onConfirm={() => void runAction('approve', '')}
+        onCancel={() => setConfirmation(null)}
       />
       <ConfirmDialog
-        open={pendingAction?.kind === 'reject'}
+        open={pendingAction === 'reject'}
         title={translate('page.01c92b795c11')}
         danger
         requireReason
         reasonLabel={translate('page.30cf083a31c8')}
         confirmText={translate('page.a25b138fcd8a')}
-        onConfirm={(reason) => void runAction({ kind: 'reject' }, reason)}
-        onCancel={() => setPendingAction(null)}
+        onConfirm={(reason) => void runAction('reject', reason)}
+        onCancel={() => setConfirmation(null)}
       />
     </section>
   );

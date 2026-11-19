@@ -118,6 +118,8 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'common.dataTime': '数据时间：',
   'common.cancel': '取消',
   'common.close': '关闭',
+  'onboarding.detail.retry': '重新加载详情',
+  'onboarding.reject.retry': '重试拒绝',
   'common.confirm': '确认',
   'common.reason': '操作原因',
   'common.reasonHint': '必填，将写入审计记录',

@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError } from '../src/api/errors.js';
+import type { ApiClient } from '../src/api/http-client.js';
+import { DeviceGroupsController } from '../src/app/controllers.js';
 import { OnboardingReviewPanel } from '../src/pages/onboarding/OnboardingReviewPanel.js';
 import type { OnboardingReviewPanelProps } from '../src/pages/onboarding/OnboardingReviewPanel.js';
 import { isReviewable } from '../src/pages/onboarding/onboarding-state.js';
@@ -35,16 +37,13 @@ function renderPanel(overrides: Partial<OnboardingReviewPanelProps> = {}) {
     approved: [] as OnboardingRequestView[],
     rejected: [] as { request: OnboardingRequestView; reason: string }[],
     navigated: [] as string[],
-    refreshed: [] as null[],
   };
   const props: OnboardingReviewPanelProps = {
     activeStatus: 'PENDING',
     onFilterStatus: () => {},
     list: { rows: [makeRequest()], nextCursor: null },
     onLoadMore: () => {},
-    onRefresh: () => {
-      calls.refreshed.push(null);
-    },
+    onRefresh: () => {},
     detail: { kind: 'ready', request: makeRequest() },
     onSelect: () => {},
     onCloseDetail: () => {},
@@ -148,7 +147,7 @@ test('批准：确认后提交并跳转设备详情（携带序列号，不伪�
   assert.deepEqual(calls.navigated, ['/devices/manage?serialNumber=SN-2026-001']);
 });
 
-test('拒绝：原因必填；提交后刷新列表', async () => {
+test('CMP-12 拒绝提交包含必填原因和当前版本', async () => {
   const user = userEvent.setup();
   const calls = renderPanel();
   await user.click(screen.getByTestId('reject-button'));
@@ -160,7 +159,56 @@ test('拒绝：原因必填；提交后刷新列表', async () => {
     assert.equal(calls.rejected.length, 1);
   });
   assert.equal(calls.rejected[0]?.reason, '序列号与库存不符');
-  assert.equal(calls.refreshed.length, 1);
+  assert.equal(calls.rejected[0]?.request.version, 1);
+});
+
+test('CMP-11 后选详情、切换标签和关闭会使旧查询结果失效', async () => {
+  const user = userEvent.setup();
+  const first = makeRequest();
+  const second = makeRequest({ requestId: 'req-2', serialNumber: 'SN-2026-002' });
+  const delayed: ((response: { data: OnboardingRequestView }) => void)[] = [];
+  const api: ApiClient = {
+    request: async <T,>(path: string) => {
+      if (path.includes('status=PENDING')) return { data: [first, second], meta: { nextCursor: null } } as T;
+      if (path.endsWith('/req-2')) return { data: second } as T;
+      if (path.endsWith('/req-1')) {
+        return (await new Promise<{ data: OnboardingRequestView }>((resolve) => delayed.push(resolve))) as T;
+      }
+      return { data: [], meta: { nextCursor: null } } as T;
+    },
+  };
+  render(
+    <DeviceGroupsController
+      api={api}
+      session={{ username: 'fixture', roles: ['PlatformSuperAdmin'], customerId: null }}
+      toasts={{ toasts: [], push: () => 0, dismiss: () => {} }}
+      onNavigate={() => {}}
+    />,
+  );
+  const modal = () => within(screen.getByTestId('onboarding-detail-modal'));
+  await user.click(await screen.findByTestId('detail-req-1'));
+  assert.ok(modal().getByTestId('detail-loading'));
+  // 直接分发后一个选择，验证重叠回调。真实弹窗会隔离背景按钮。
+  fireEvent.click(screen.getByTestId('detail-req-2'));
+  assert.ok((await modal().findByTestId('request-detail')).textContent?.includes(second.serialNumber));
+  await act(async () => delayed.shift()?.({ data: first }));
+  assert.ok(modal().getByTestId('request-detail').textContent?.includes(second.serialNumber));
+  await user.keyboard('{Escape}');
+
+  await user.click(screen.getByTestId('detail-req-1'));
+  fireEvent.click(screen.getByTestId('tab-APPROVED'));
+  await act(async () => delayed.shift()?.({ data: first }));
+  assert.equal(screen.getByTestId('tab-APPROVED').getAttribute('aria-selected'), 'true');
+  assert.equal(screen.queryByTestId('onboarding-detail-modal'), null);
+
+  await user.click(screen.getByTestId('tab-PENDING'));
+  const trigger = await screen.findByTestId('detail-req-1');
+  await user.click(trigger);
+  await user.click(modal().getByRole('button', { name: '关闭' }));
+  assert.equal(document.activeElement, trigger);
+  await act(async () => delayed.shift()?.({ data: first }));
+  assert.equal(screen.queryByTestId('onboarding-detail-modal'), null);
+  assert.deepEqual(delayed, []);
 });
 
 test('重复点击不会重复审批：在途期间后续提交被忽略', async () => {
