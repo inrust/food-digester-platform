@@ -781,36 +781,39 @@ export function AuditLogsController({ api, session }: { readonly api: ApiClient;
   const [filter, setFilter] = useState<AuditLogListFilter>({});
   const [logs, setLogs] = useState<AuditLogListState>({ rows: null, loading: true });
   const [detail, setDetail] = useState<AuditDetailState>({ kind: 'none' });
+  const listRequest = useRef(0);
   const detailRequest = useRef(0);
   const load = useCallback(
-    async (next = filter) => {
-      setLogs({ rows: null, loading: true });
+    async (next: AuditLogListFilter, cursor?: string) => {
+      const request = ++listRequest.current;
+      if (cursor === undefined) setLogs({ rows: null, loading: true });
+      else setLogs((old) => ({ ...old, loading: true, nextCursor: null }));
       try {
-        const page = await listAuditLogs(api, next);
-        setLogs({ rows: page.rows, nextCursor: page.nextCursor });
+        const page = await listAuditLogs(api, next, cursor);
+        if (request !== listRequest.current) return;
+        setLogs((old) => ({
+          rows: cursor === undefined ? page.rows : [...(old.rows ?? []), ...page.rows],
+          nextCursor: page.nextCursor,
+        }));
       } catch (error) {
-        setLogs({ rows: [], error });
+        if (request === listRequest.current) setLogs({ rows: [], error });
       }
     },
-    [api, filter],
+    [api],
   );
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load(filter);
+    return () => {
+      listRequest.current += 1;
+    };
+  }, [filter, load]);
   return (
     <AuditLogsPage
       role={roleOf(session)}
       logs={logs}
       filter={filter}
-      onApplyFilter={(next) => {
-        setFilter(next);
-        void load(next);
-      }}
-      onLoadMore={(cursor) =>
-        void listAuditLogs(api, filter, cursor).then((page) =>
-          setLogs((old) => ({ rows: [...(old.rows ?? []), ...page.rows], nextCursor: page.nextCursor })),
-        )
-      }
+      onApplyFilter={setFilter}
+      onLoadMore={(cursor) => void load(filter, cursor)}
       detail={detail}
       onSelectLog={(id) => {
         const request = ++detailRequest.current;
@@ -828,7 +831,7 @@ export function AuditLogsController({ api, session }: { readonly api: ApiClient;
         detailRequest.current += 1;
         setDetail({ kind: 'none' });
       }}
-      onRefresh={() => void load()}
+      onRefresh={() => void load(filter)}
     />
   );
 }

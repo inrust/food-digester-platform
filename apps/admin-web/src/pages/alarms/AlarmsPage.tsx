@@ -28,6 +28,9 @@ import {
   ALARM_STATUS_OPTIONS,
   ALARM_TABS,
   ALARM_TAB_LABELS,
+  EMPTY_ALARM_FILTER,
+  EMPTY_EVENT_FILTER,
+  EMPTY_TAMPER_FILTER,
   gateAlarmAction,
   urlStateToSearch,
 } from './alarm-state.js';
@@ -152,6 +155,22 @@ export function AlarmsPage({
     else if (tab === 'event') onApplyUrlState({ ...urlState, event: draftEvent });
     else onApplyUrlState({ ...urlState, tamper: draftTamper });
   };
+  const resetFilter = () => {
+    const customerId = isCustomerRole ? urlState[tab].customerId : null;
+    if (tab === 'alarm') {
+      const alarm = { ...EMPTY_ALARM_FILTER, customerId };
+      setDraftAlarm(alarm);
+      onApplyUrlState({ ...urlState, alarm });
+    } else if (tab === 'event') {
+      const event = { ...EMPTY_EVENT_FILTER, customerId };
+      setDraftEvent(event);
+      onApplyUrlState({ ...urlState, event });
+    } else {
+      const tamper = { ...EMPTY_TAMPER_FILTER, customerId };
+      setDraftTamper(tamper);
+      onApplyUrlState({ ...urlState, tamper });
+    }
+  };
   const closeDetail = () => {
     onCloseAlarmDetail();
     detailTrigger.current?.focus();
@@ -186,9 +205,14 @@ export function AlarmsPage({
       <FilterBar
         testId="alarm-filter-bar"
         actions={
-          <Button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
-            {translate('page.dcce9a144a40')}
-          </Button>
+          <>
+            <Button type="button" className="primary-button" data-testid="filter-search" onClick={applyFilter}>
+              {translate('page.dcce9a144a40')}
+            </Button>
+            <Button type="button" data-testid="filter-reset" onClick={resetFilter}>
+              {translate('page.3d81345303ab')}
+            </Button>
+          </>
         }
       >
         {!isCustomerRole ? (

@@ -94,6 +94,10 @@ export function AuditLogsPage({
       to: toUtc,
     });
   };
+  const resetFilter = () => {
+    setDraft(EMPTY_DRAFT);
+    onApplyFilter({});
+  };
   const readyDetail = detail.kind === 'ready' ? detail.detail : null;
   return (
     <div className="audit-logs-page" data-testid="audit-logs-page">
@@ -105,15 +109,20 @@ export function AuditLogsPage({
       <section data-testid="audit-filter" aria-label={translate('page.dcce9a144a40')}>
         <FilterBar
           actions={
-            <Button
-              type="button"
-              className="primary-button"
-              data-testid="audit-filter-search"
-              disabled={fromInvalid || toInvalid || rangeInvalid}
-              onClick={applyFilter}
-            >
-              {translate('page.dcce9a144a40')}
-            </Button>
+            <>
+              <Button
+                type="button"
+                className="primary-button"
+                data-testid="audit-filter-search"
+                disabled={fromInvalid || toInvalid || rangeInvalid}
+                onClick={applyFilter}
+              >
+                {translate('page.dcce9a144a40')}
+              </Button>
+              <Button type="button" data-testid="audit-filter-reset" onClick={resetFilter}>
+                {translate('page.3d81345303ab')}
+              </Button>
+            </>
           }
         >
           <div className="filter-field">

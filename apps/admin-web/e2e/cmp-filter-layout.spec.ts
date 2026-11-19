@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { test } from './qa05-fixture.js';
-import { json, layoutViolations, p0Device, routeFe11To15Apis, seedSession } from './qa05-api-fixtures.js';
+import { json, layoutViolations, p0Alarm, p0Device, routeFe11To15Apis, seedSession } from './qa05-api-fixtures.js';
 
 async function mockFilters(page: Page) {
   await routeFe11To15Apis(page);
@@ -99,6 +99,17 @@ for (const language of ['zh-CN', 'en']) {
     const tamper = filteredRequest(page, 'tamper-events', { severity: 'CRITICAL' });
     await page.getByTestId('filter-search').click();
     await tamper;
+    await page.getByTestId('filter-customer').selectOption('cust-a');
+    const platformScope = filteredRequest(page, 'tamper-events', { customerId: 'cust-a', severity: 'CRITICAL' });
+    await page.getByTestId('filter-search').click();
+    await platformScope;
+    const resetTamper = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return url.pathname === '/api/v1/admin/tamper-events' && url.search === '';
+    });
+    await page.getByTestId('filter-reset').click();
+    await resetTamper;
+    await expect(page.getByTestId('filter-customer')).toHaveValue('');
 
     await page.goto('/media');
     await page.getByTestId('media-filter-device').fill(longId);
@@ -157,6 +168,186 @@ for (const language of ['zh-CN', 'en']) {
     await expect(quick.locator(`[id="${reasonId}"]`)).toBeVisible();
     await expect(quick.getByTestId('quick-factoryReset')).toBeDisabled();
     expect(await layoutViolations(page)).toEqual([]);
+  });
+}
+
+for (const language of ['zh-CN', 'en']) {
+  const resetLabel = language === 'en' ? 'Reset' : '重置';
+  const nextLabel = language === 'en' ? 'Next' : '下一页';
+  const longId = (language === 'en' ? 'long-reference-' : '很长的引用编号').repeat(8);
+  const tabs = { alarm: 'alarms', event: 'events', tamper: 'tamper-events' } as const;
+
+  test(`CMP-20 resets each tab to its scoped first page in ${language}`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await seedSession(page, 'CustomerAdmin', { customerId: 'cust-a' });
+    await page.addInitScript((locale) => window.localStorage.setItem('fdp.admin.lang.v1', locale), language);
+    await mockFilters(page);
+    for (const [tab, endpoint] of Object.entries(tabs)) {
+      const received: Record<string, string>[] = [];
+      await page.route(`**/api/v1/admin/${endpoint}**`, (route) => {
+        const url = new URL(route.request().url());
+        const query = Object.fromEntries(url.searchParams);
+        received.push(query);
+        const position = query['cursor'] ? 'second' : 'first';
+        return json(route, {
+          data: [
+            {
+              ...p0Alarm,
+              alarmId: position,
+              eventId: position,
+              tamperEventId: position,
+              occurredAt: p0Alarm.detectedTime,
+              deviceId: `device-${position}`,
+            },
+          ],
+          meta: { nextCursor: query['cursor'] ? null : 'alarm-next' },
+        });
+      });
+      await page.goto(`/alarms?tab=${tab}`);
+      const layout = page.getByTestId('alarm-filter-bar');
+      const reset = layout.getByRole('button', { name: resetLabel, exact: true });
+      const table = page.getByTestId('cursor-table');
+      const next = table.getByRole('button', { name: nextLabel, exact: true });
+      const from = '2026-09-01T00:00:00Z';
+      const to = '2026-09-11T00:00:00Z';
+      const fixed = { customerId: 'cust-a' };
+      const active = {
+        ...fixed,
+        siteId: p0Device.site.id,
+        deviceId: p0Device.id,
+        from,
+        to,
+        ...(tab === 'alarm' ? { status: 'ACTIVE' } : { eventType: longId }),
+        ...(tab === 'event' ? {} : { severity: 'CRITICAL' }),
+      };
+      await expect(reset).toHaveCount(1);
+      await expect(layout.getByTestId('filter-customer')).toHaveCount(0);
+      await layout.getByTestId('filter-site').selectOption(p0Device.site.id);
+      await layout.getByTestId('filter-device').selectOption(p0Device.id);
+      await layout.getByTestId('filter-from').fill(from);
+      await layout.getByTestId('filter-to').fill(to);
+      if (tab === 'alarm') await layout.getByTestId('filter-status').selectOption('ACTIVE');
+      else await layout.getByTestId('filter-event-type').fill(longId);
+      if (tab !== 'event') await layout.getByTestId('filter-severity').selectOption('CRITICAL');
+      await verifyControls(page, layout);
+      await layout.getByTestId('filter-search').click();
+      await expect.poll(() => received.at(-1)).toEqual(active);
+      await expect(table).toHaveAttribute('aria-busy', 'false');
+      await next.click();
+      await expect.poll(() => received.at(-1)).toEqual({ ...active, cursor: 'alarm-next' });
+      await expect(table.getByText('device-second')).toBeVisible();
+
+      await reset.click();
+      await expect.poll(() => received.at(-1)).toEqual(fixed);
+      await expect(table.getByText('device-first')).toBeVisible();
+      await expect(table.getByText('device-second')).toHaveCount(0);
+      await expect(page).toHaveURL(new RegExp(`/alarms\\?tab=${tab}&customerId=cust-a$`));
+      await expect(page.getByTestId(`tab-${tab}`)).toHaveAttribute('aria-selected', 'true');
+      for (const field of await layout.locator('input, select').all()) await expect(field).toHaveValue('');
+
+      // The reset still fetches page one if the applied URL is already at its defaults.
+      await next.click();
+      await expect(table.getByText('device-second')).toBeVisible();
+      await layout.getByTestId('filter-to').fill(to);
+      await reset.focus();
+      await reset.press('Enter');
+      await expect(table.getByText('device-first')).toBeVisible();
+      await expect.poll(() => received.at(-1)).toEqual(fixed);
+      await expect(layout.getByTestId('filter-to')).toHaveValue('');
+    }
+  });
+
+  test(`CMP-43 resets all audit filters and rejects stale pages in ${language}`, async ({ page }) => {
+    await seedSession(page, 'Auditor');
+    await page.addInitScript((locale) => {
+      window.localStorage.setItem('fdp.admin.lang.v1', locale);
+      window.localStorage.setItem('fdp.admin.time-zone.v1', 'Asia/Shanghai');
+    }, language);
+    await mockFilters(page);
+    const received: Record<string, string>[] = [];
+    let releasePendingPage!: () => void;
+    const pendingPage = new Promise<void>((resolve) => {
+      releasePendingPage = resolve;
+    });
+    await page.route('**/api/v1/admin/audit-logs**', async (route) => {
+      const query = Object.fromEntries(new URL(route.request().url()).searchParams);
+      received.push(query);
+      if (query['cursor'] === 'audit-pending') await pendingPage;
+      const auditId = query['cursor'] ?? 'first-audit';
+      await json(route, {
+        data: [
+          {
+            auditId,
+            actorId: 'operator-1',
+            actorRole: 'PlatformOperator',
+            customerId: 'cust-a',
+            objectType: 'Device',
+            objectId: auditId,
+            action: 'COMMAND_CREATED',
+            result: 'SUCCESS',
+            createdAt: '2026-09-10T00:00:00Z',
+          },
+        ],
+        meta: { nextCursor: query['cursor'] ? 'audit-pending' : 'audit-second' },
+      });
+    });
+    await page.goto('/audit-logs');
+    const layout = page.getByTestId('audit-filter');
+    const reset = layout.getByRole('button', { name: resetLabel, exact: true });
+    const search = layout.getByTestId('audit-filter-search');
+    const active = {
+      actorId: longId,
+      customerId: 'cust-a',
+      objectType: 'Device',
+      objectId: longId,
+      action: 'COMMAND_CREATED',
+      result: 'SUCCESS',
+      from: '2026-09-09T16:00:00.000Z',
+      to: '2026-09-11T16:00:00.000Z',
+    };
+    await layout.getByTestId('audit-filter-actor').fill(active.actorId);
+    await layout.getByTestId('audit-filter-customer').fill(active.customerId);
+    await layout.getByTestId('audit-filter-object-type').fill(active.objectType);
+    await layout.getByTestId('audit-filter-object-id').fill(active.objectId);
+    await layout.getByTestId('audit-filter-action').fill(active.action);
+    await layout.getByTestId('audit-filter-result').selectOption(active.result);
+    await layout.getByTestId('audit-filter-from').fill('2026-09-10T00:00');
+    await layout.getByTestId('audit-filter-to').fill('2026-09-12T00:00');
+    await verifyControls(page, layout.locator('.filter-bar--stacked'));
+    await expect(reset).toHaveCount(1);
+    await search.click();
+    await expect.poll(() => received.at(-1)).toEqual(active);
+    const table = page.getByTestId('cursor-table');
+    const next = table.getByRole('button', { name: nextLabel, exact: true });
+    await next.click();
+    await expect(table.getByTestId('audit-detail-audit-second')).toBeVisible();
+    await expect.poll(() => received.at(-1)).toEqual({ ...active, cursor: 'audit-second' });
+    try {
+      await next.click();
+      await expect.poll(() => received.at(-1)).toEqual({ ...active, cursor: 'audit-pending' });
+      await layout.getByTestId('audit-filter-to').fill('2026-09-08T00:00');
+      await expect(search).toBeDisabled();
+      await expect(layout.getByTestId('audit-filter-time-error')).toBeVisible();
+      await reset.focus();
+      await reset.press('Enter');
+      await expect.poll(() => received.at(-1)).toEqual({});
+      await expect(table.getByTestId('audit-detail-first-audit')).toBeVisible();
+      await expect(table.getByTestId('audit-detail-audit-second')).toHaveCount(0);
+      await expect(search).toBeEnabled();
+      await expect(layout.getByTestId('audit-filter-time-error')).toHaveCount(0);
+      for (const field of await layout.locator('input, select').all()) await expect(field).toHaveValue('');
+      const late = page.waitForResponse(
+        (result) => new URL(result.url()).searchParams.get('cursor') === 'audit-pending',
+      );
+      releasePendingPage();
+      await (await late).finished();
+      await page.evaluate(
+        () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+      );
+      await expect(table.getByTestId('audit-detail-audit-pending')).toHaveCount(0);
+    } finally {
+      releasePendingPage();
+    }
   });
 }
 

@@ -846,7 +846,14 @@ function AlarmsInstance({
       active = false;
     };
   }, [api, session.customerId]);
-  const apply = (next: AlarmPageUrlState) => onNavigate(`/alarms${urlStateToSearch(next)}`);
+  const apply = (next: AlarmPageUrlState) => {
+    const nextSearch = urlStateToSearch(next);
+    if (nextSearch === urlStateToSearch(urlState)) {
+      void load(next.tab);
+    } else {
+      onNavigate(`/alarms${nextSearch}`);
+    }
+  };
   const refresh = () => {
     void load(urlState.tab);
     if (selected.current !== null) void loadDetail(selected.current);
