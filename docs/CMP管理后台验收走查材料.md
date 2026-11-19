@@ -9,7 +9,7 @@
 | 完整验证追验 | 候选 `353d2deb` 的完整 `pnpm verify` 在 `test:scripts` 失败。仅修改验收脚本的修复候选 [`fc1793dc`](https://github.com/inrust/food-digester-platform/commit/fc1793dca6359d5dc16d7f8c6e8e84fcf8520dc5) 完整 `pnpm verify` 通过。 [追验回执](audit/evidence/cmp-t12-353d2deb/target-preflight.json) |
 | 目标环境 | 原候选 `fc1793dc` 的共享测试环境四项版本证据已对齐。原候选 44 项验收索引为 10 项 PASS、1 项 FAIL、33 项 NOT_RUN，其中 31 项有部分实测记录。P1 首批为 5 项 PASS、0 项 FAIL、10 项 NOT_RUN，其中 9 项有部分实测记录。 [目标实测回执](audit/evidence/cmp-t12-353d2deb/target-execution-fc1793dc.json) |
 | CMP-23 跟进 | [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76) 已独立完成全量验证、发布和同 SHA 绑定。CMP-23 `PASS`，发布阻塞 `RESOLVED`。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json) |
-| 发布结论 | `OPEN`。修复的两个发布阻塞均已解除。其余样本及项目方签收为 OPEN。累计 40 项 PASS、0 项 FAIL、4 项 NOT_RUN。15 项 P1 保留 `07a385f4` 的验收证明，当前候选只对变更路径补验。 [本轮复验](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) |
+| 发布结论 | `OPEN`。累计 42 项 PASS、0 项 FAIL、2 项 NOT_RUN。CMP-07 和 CMP-10 本轮通过。CMP-02 的真实零台和 CMP-34 的真实耗材阈值链路是剩余签收事项。 [本轮补验](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json) |
 
 [开发计划](CMP管理后台前端改进开发计划.md) · [执行顺序](CMP管理后台前端改进执行顺序与提示词.md) · [候选版本和检查回执](audit/evidence/cmp-t12-353d2deb/local-receipt.json)
 
@@ -60,15 +60,15 @@
 | 编号 | 走查步骤与预期 | 本地结果与证据 | 目标 |
 | --- | --- | --- | --- |
 | CMP-01 | 用长显示名账号登录。确认顶部截断。用 Enter 打开账号详情，核对完整名称、业务 ID、Cognito 用户名和 sub，按 Esc 回到入口。无业务名称的账号依次回退到已验证邮箱或用户名。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-account-dashboard.spec.ts#L7) · [本人资料和越权参数](../apps/cloud-api/test/admin-user.test.ts#L329) | `PASS` · 专用客户业务 displayName、业务 userId、Cognito 登录标识和键盘入口均读回。窄屏截断并提供完整文本。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L235) |
-| CMP-02 | 用平台和客户账号打开概览。分别用 0、2、13 台数据看总数与预览，最多显示 10 台并保持 ID 升序。打开设备列表，客户账号保持本客户范围。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-account-dashboard.spec.ts) · [服务端范围和顺序](../apps/cloud-api/test/admin-dashboard.test.ts#L396) | `NOT_RUN` · 部分实测 · 两组客户和平台的固定范围、预览上限与排序已查。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L266) |
+| CMP-02 | 用平台和客户账号打开概览。分别用 0、2、13 台数据看总数与预览，最多显示 10 台并保持 ID 升序。打开设备列表，客户账号保持本客户范围。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-account-dashboard.spec.ts) · [服务端范围和顺序](../apps/cloud-api/test/admin-dashboard.test.ts#L396) | `NOT_RUN` · 部分实测 · 真实平台 12 台按 ID 升序仅显示前 10 台，客户 A 为 3 台、B 为 2 台，设备列表保持自身范围。候选浏览器的中英文零台合成响应均显示空态和设备列表入口。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L922) |
 | CMP-03 | 登录后检查顶部，通知铃铛与徽标隐藏。用有权限角色从现有菜单进入告警页。 | `PASS_LOCAL` [壳层断言](../apps/admin-web/test/shell.test.tsx#L130) · [五角色浏览器](../apps/admin-web/e2e/qa05-workflows.spec.ts#L33) | `PASS` · 实际顶部栏没有通知铃入口。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L315) |
 | CMP-04 | 以旧 London/纽约偏好打开页面，回退到上海。切换上海与 UTC，核对同一时间在媒体页的显示，重新登录核对默认上海。 | `PASS_LOCAL` [五角色时区](../apps/admin-web/e2e/qa05-workflows.spec.ts#L33) · [登录和重置](../apps/admin-web/e2e/qa05-workflows.spec.ts#L129) | `PASS` · 实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L381) |
 | CMP-05 | 在查看设备页从授权列表分别选择有区域标签、缺标签及无站点设备。选中前应用禁用，选中后可查询。失败可重试。客户账号仅见本客户可用设备。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-device-query.spec.ts#L6) · [无站点路径](../apps/admin-web/test/device-view.test.tsx#L142) | `PASS` · 客户访问失败重试、租户路径和无地区标签的平台直接查询均通过。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L447) |
 | CMP-06 | 操作设备先查询 A，再把选择改成 B。确认 B 前禁发命令，延迟 A 响应后仍以完成查询的 B 为目标。核对请求路径中的设备 ID。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-device-query.spec.ts#L71) | `PASS` · 真实迟到和重试不会恢复旧目标，真实命令只下发到已应用纯模拟设备。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L502) |
-| CMP-07 | 打开操作设备的快捷操作，逐分类检查动作。禁用动作可读到原因。高风险动作复验确认及设备状态限制。 | `PASS_LOCAL` [快捷操作分组](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L145) · [命令门控](../apps/admin-web/test/device-operate.test.tsx#L223) | `NOT_RUN` · 部分实测 · 无目标与已应用目标的快捷分类和禁用说明已查，真实高风险命令门控见 CMP-06。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L566) |
+| CMP-07 | 打开操作设备的快捷操作，逐分类检查动作。禁用动作可读到原因。高风险动作复验确认及设备状态限制。 | `PASS_LOCAL` [快捷操作分组](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L145) · [命令门控](../apps/admin-web/test/device-operate.test.tsx#L223) | `PASS` · 中英文分别实测离线有授权、在线运行有授权、在线运行无 REMOTE_CONTROL。两类禁用理由均与按钮关联。高风险加热需输入准确确认文本，Escape 退出，实际命令 POST 为 0。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L974) |
 | CMP-08 | 在窄屏切换中英文，选择长命令名并应用命令状态筛选。下拉与筛选按钮均可达，实际过滤值正确。 | `PASS_LOCAL` [双语重叠回归](../apps/admin-web/e2e/cmp-device-query.spec.ts#L162) | `PASS` · 375/768/1440 显示无重叠，长命令标签实际提交到查询。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L591) |
 | CMP-09 | 设备群叠加站点、关键字和状态，翻页后执行单一重置。回到第一页，清空可编辑条件并保留固定客户范围。 | `PASS_LOCAL` [筛选、游标和重置](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L163) | `PASS` · 客户组筛选、真正第二页、单一重置及固定租户均通过。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L639) |
-| CMP-10 | 从设备群打开设备详情，按区检查四轴状态、生命周期、配置、OTA、备注、证书和分配历史。审计角色入口按权限呈现。 | `PASS_LOCAL` [设备详情与权限](../apps/admin-web/e2e/cmp-detail-layout.spec.ts#L210) · [长值](../apps/admin-web/e2e/admin-web.spec.ts#L1287) | `NOT_RUN` · 部分实测 · 目标详情失败后恢复，真实长备注、证书和分配历史已核对。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L730) |
+| CMP-10 | 从设备群打开设备详情，按区检查四轴状态、生命周期、配置、OTA、备注、证书和分配历史。审计角色入口按权限呈现。 | `PASS_LOCAL` [设备详情与权限](../apps/admin-web/e2e/cmp-detail-layout.spec.ts#L210) · [长值](../apps/admin-web/e2e/admin-web.spec.ts#L1287) | `PASS` · 专用模拟设备的真实详情在异步签发前返回 certificate=null，分配历史为空，两个页面空态均可见。审计员从设备群进入同一设备，编辑和轮换禁用。客户直达被拒。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L1005) |
 | CMP-11 | 点待审批记录即打开弹窗，依次检查加载、失败、重试与详情。快速切换记录或标签，关闭后等迟到响应，旧详情保持关闭。审批确认可独立退出。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/admin-web.spec.ts#L226) · [迟到响应](../apps/admin-web/test/onboarding.test.tsx#L165) | `PASS` · 审批详情连接失败可重试，嵌套确认独立关闭，带版本批准并按设备序列号导航。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L807) |
 | CMP-12 | 拒绝待审批记录，核对原因与版本。失败留在详情并可重试。成功关闭并从待审批移除，切换已拒绝标签核对新状态。另验批准后的跳转。 | `PASS_LOCAL` [拒绝读回](../apps/admin-web/e2e/admin-web.spec.ts#L226) · [原因、版本和批准](../apps/admin-web/test/onboarding.test.tsx#L138) | `PASS` · 中止的首次拒绝保留详情和重试入口。实际重试带原因与当前版本，关闭后移出待审批，在已拒绝标签读回。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L853) |
 | CMP-13 | 打开配置列表，在中英文窄窗口确认有权限时「新建配置」在工具栏最左侧，查询和重置成组。 | `PASS_LOCAL` [工具栏位置](../apps/admin-web/e2e/cmp-filter-layout.spec.ts#L131) | `PASS` · 新建配置位于工具栏第一个操作，Escape 恢复焦点。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L898) |
@@ -92,7 +92,7 @@
 | CMP-31 | 用五种角色检查「授权管理」菜单和直达路径。获授权角色可跨设备查询和按权限写入，审计角色只读。 | `PASS_LOCAL` [角色路由与按钮](../apps/admin-web/e2e/qa05-workflows.spec.ts#L33) · [授权服务与审计](../apps/cloud-api/test/admin-license.test.ts) | `PASS` · 按现有状态机使用专用即将到期授权。审计员真实拒写，平台操作员实际续期并产生新版本。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L2590) |
 | CMP-32 | 在独立 License 详情核对设备、有效期、Entitlement、状态历史与操作区。试无权限角色、到期记录与写入后的读回。 | `PASS_LOCAL` [License 详情与权限](../apps/admin-web/test/licenses.test.tsx) | `PASS` · 仅对额外专用模拟器的 License 模拟评估时间，状态过期及历史实际读回。详情展示独立区域，跨租户拒绝。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L2690) |
 | CMP-33 | 在业务设置编辑输入无效 JSON 后取消。重开读回原值，零写。提交合法值携版本，冲突可刷新回源。 | `PASS_LOCAL` [取消、版本与冲突](../apps/admin-web/e2e/admin-web.spec.ts#L1035) · [后端冲突](../apps/cloud-api/test/admin-settings.test.ts#L159) | `PASS` · 同值保存、实际请求体版本冲突、非法输入与关闭返回均通过。审计记录一次测试导致的同值版本递增。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L2772) |
-| CMP-34 | 看四项设置的用途、消费方、运行时状态和可编辑性。核对耗材告警阈值、命令认证时间窗以及两个仅存储项。 | `PASS_LOCAL` [FE-18 消费范围](../apps/admin-web/e2e/cmp-settings-runtime.spec.ts#L5) · [BE-CMD-01 时间窗](../apps/cloud-api/test/admin-command.test.ts#L267) | `NOT_RUN` · 部分实测 · 四项真实设置的状态与消费方已核对，共享设置缺耗材专用阈值。 实际 Cognito TTL 到期前后均验证退役与重新认证拒绝。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L2863) |
+| CMP-34 | 看四项设置的用途、消费方、运行时状态和可编辑性。核对耗材告警阈值、命令认证时间窗以及两个仅存储项。 | `PASS_LOCAL` [FE-18 消费范围](../apps/admin-web/e2e/cmp-settings-runtime.spec.ts#L5) · [BE-CMD-01 时间窗](../apps/cloud-api/test/admin-command.test.ts#L267) | `NOT_RUN` · 部分实测 · 真实设置四项用途、消费方和编辑权限已核对。受控设备真实耗材显示 unknown（未上报），且无百分比条。候选浏览器合成 9% 和 20% 验证默认分档及自定义 warning/major 分档。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L1250) |
 | CMP-35 | 打开平台用户表格，检查长邮箱、显示名和客户 ID 的完整值查看方式，窄屏仍能访问操作列。 | `PASS_LOCAL` [长值和行内入口](../apps/admin-web/e2e/cmp-business-detail-layout.spec.ts#L8) | `PASS` · 窄屏专用长业务用户表格可到达操作列，键盘打开后能读取完整显示名、地址及客户范围。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3021) |
 | CMP-36 | 改角色后打开二次确认。Esc 关闭最上层，取消或关闭原表单不写入，焦点回原行。重开读回原角色，再确认一次写入。 | `PASS_LOCAL` [嵌套焦点及零写](../apps/admin-web/e2e/admin-web.spec.ts#L994) · [角色服务权限](../apps/cloud-api/test/admin-user.test.ts) | `PASS` · 专用业务用户的嵌套键盘、关闭、取消零写及真实权限写入和审计全部通过，已恢复为只读。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3043) |
 | CMP-37 | 打开只读权限矩阵，按模块和权限找角色。逐列对照共享角色授权，确认无编辑入口。 | `PASS_LOCAL` [浏览器](../apps/admin-web/e2e/cmp-business-detail-layout.spec.ts#L8) · [共享定义断言](../apps/admin-web/test/settings.test.tsx#L273) | `PASS` · 实际矩阵查找读权限、按角色过滤且只读，五角色值符合共享 RBAC。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3123) |
@@ -134,6 +134,10 @@
 
 中英文 375 像素下复验告警三标签及审计日志。采用两组受控租户和真实 API 游标。对与本次改动相邻的 CMP-23 另跑媒体旧客户端、同采集时间双向分页和租户边界冒烟，原 `07a385f4` 的完整通过回执继续保留。未重跑的验收项在索引注明原证据 SHA。 [本轮逐项回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json) · [CMP-23 完整历史回执](audit/evidence/cmp-t12-353d2deb/target-cmp23-follow-up-07a385f4.json)
 
+### `d1afec5e` 剩余样本补验
+
+共享测试前后两次读回均为候选前端 172、管理 API、契约和 Migration Runner。CMP-07 离线与在线权限组合、CMP-10 的证书及分配历史空态均通过真实接口和浏览器验证。其余结果区分真实回包、候选浏览器合成响应和本地回归。已通过的 40 项原结论及已有失败历史继续保留。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json) · [重置与媒体续验](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json)
+
 ## 4. 发布待办与回退版本
 
 | 状态 | 待办与放行条件 |
@@ -143,9 +147,11 @@
 | `RESOLVED` · CMP-43 | 审计员在中英文窄屏从真实第二页重置。可编辑客户、筛选字段、日期错误、累积结果和游标均清理，页面重新获取第一页。两个客户会话的 API 返回 403，客户管理员直达也被路由权限拒绝。 [修复回执](audit/evidence/cmp-t12-353d2deb/target-reset-follow-up-d1afec5e.json#L1633) |
 | `RESOLVED` · CMP-21、CMP-44 | 告警图片从详情读回并验证签发及隔离。审计脱敏由真实 API 和浏览器确认，前后值滚动用界面投影覆盖，嵌套键由本地回归覆盖。 [告警回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L1645) · [审计回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3518) |
 | `RESOLVED` · CMP-36 | 专用业务用户角色嵌套确认、实际写入和审计读回通过，角色已恢复为只读。 [本轮回执](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json#L3043) |
-| `OPEN` · 剩余样本 | CMP-02 的 0 台与超过 10 台，CMP-07 的设备状态和授权组合，CMP-10 的无证书及无分配历史，CMP-34 的真实耗材阈值输入仍待覆盖。 [逐项缺口](audit/evidence/cmp-t12-353d2deb/target-completion-07a385f4.json) |
+| `RESOLVED` · CMP-07、CMP-10 | 真实设备状态和授权组合、证书及空分配历史已补测。 [快捷操作](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L974) · [设备详情](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L1005) |
+| `NOT_RUN` · CMP-02 真实零台 | 批准可用的空测试租户并在同 SHA 或经复核的新候选上验证真实零台 API、概览空态和列表范围。也可由项目方明确签收浏览器合成替代的范围。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L922) |
+| `NOT_RUN` · CMP-34 全链路 | 补齐可信耗材采集与投影输入，批准共享测试中自定义阈值、真实读数和恢复方案，现场复验阈值分档。也可由项目方按当前已交付的范围明确签收合成分档，并将采集对接列为后续。 [补验回执](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json#L1250) |
 | `OPEN` · D5 可信回执 | 两台专用同型号模拟设备与真实 mTLS Sync 均验证了云端生效版本。缺少匹配的可信应用回执时，设备实际应用版本按契约显示未知。当前样本的设备侧实际应用仍为未知。 |
-| `OPEN` · 项目方签收 | 走查材料与脱敏证据已登记。签收、剩余目标验收和回退执行保留各自的结果。 |
+| `OPEN` · 项目方签收 | 在确认候选 SHA 和本回执后，登记签收人、日期以及两项未执行路径的补验结果或书面接受范围。 [签收条件](audit/evidence/cmp-t12-353d2deb/target-sample-follow-up-d1afec5e.json) |
 
 共享测试当前候选为 [`d1afec5e`](https://github.com/inrust/food-digester-platform/commit/d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8)。本修复的直接回退版本是 [`07a385f4`](https://github.com/inrust/food-digester-platform/commit/07a385f4a1193e70334b9438914b0e1e2d9cca76)，其前端和管理 API 应成对回退，届时将恢复两处重置缺口。整体项目回退仍可参考 [`97cdd503`](https://github.com/inrust/food-digester-platform/commit/97cdd503db32f350a4f1d283b70200c817bbf8c1) 的历史配套产物。已增加的普通索引可保留，本轮回退演练为 `NOT_RUN`。
 

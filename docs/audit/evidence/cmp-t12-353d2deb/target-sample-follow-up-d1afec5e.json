@@ -1,0 +1,1365 @@
+{
+  "task": "T12",
+  "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+  "recordedAtUtc": "2026-11-19T10:25:36.629206+00:00",
+  "environment": "shared-test",
+  "status": "OPEN",
+  "binding": {
+    "beforeUtc": "2026-11-19T10:13:09.638899+00:00",
+    "afterUtc": "2026-11-19T10:24:54.454725+00:00",
+    "frontendJob": "172",
+    "apiCodeSha256": "LKncHeZGcmWtOOxBJB/XN8vYixpsaU4YkNMHui4KL4M=",
+    "openApiSha256": "5d1e026ddd90ddeda495c61c730de7e8a21c65178abe8434e2c7b9a3c17f0e73",
+    "runnerBuildId": "fdp-test-migration-runner:073638c6-f1ef-4cb8-8f07-e41ed998a938",
+    "migrationCount": 45,
+    "unfinishedMigrationCount": 0,
+    "ci": "https://github.com/inrust/food-digester-platform/actions/runs/44496846767",
+    "deployment": "https://github.com/inrust/food-digester-platform/actions/runs/44496846721"
+  },
+  "controlledScope": {
+    "tenants": [
+      "A",
+      "B"
+    ],
+    "baselineCounts": {
+      "platform": 11,
+      "A": 3,
+      "B": 2
+    },
+    "fixtures": [
+      "使用 A 原两台受控纯模拟器补发心跳，无设备命令。",
+      "复用两组已授权账号和设备归属。证书空态用一台专用从未分配设备的正常异步审批窗口，证书未领取。",
+      "仅在候选浏览器替换零台或阈值用的响应。"
+    ]
+  },
+  "localChecks": [
+    {
+      "command": "pnpm exec vitest run apps/cloud-api/test/admin-consumable.test.ts apps/ingestion-worker/test/telemetry-handler.test.ts",
+      "result": "PASS",
+      "passed": 15,
+      "sourceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "scope": "本地投影保存和采集契约隔离"
+    }
+  ],
+  "notRerun": [
+    {
+      "item": "完整 pnpm verify",
+      "result": "NOT_RUN",
+      "reason": "候选未变，保留 d1afec5e 原通过回执。"
+    },
+    {
+      "item": "目标数据库 EXPLAIN",
+      "result": "NOT_RUN",
+      "reason": "CMP-23 的原走查口径保留。"
+    },
+    {
+      "item": "回退演练",
+      "result": "NOT_RUN",
+      "reason": "本轮固定候选做剩余样本验收，回退未演练。"
+    },
+    {
+      "item": "D5 设备实际应用",
+      "result": "UNKNOWN",
+      "reason": "先前真实 Sync 已验证云端生效版本，当前缺少对应可信设备应用回执。"
+    }
+  ],
+  "historicalEvidence": {
+    "target-reset-follow-up-d1afec5e.json": {
+      "sha256": "c98acb83b77d8a2745c33660d21853378c123f05c6fc5191e2874130a89db4cd"
+    },
+    "target-completion-07a385f4.json": {
+      "sha256": "75f4f663225cbf017394b297e790fb4355db6076cf44d46b98d416aef9be848d"
+    },
+    "target-cmp23-follow-up-07a385f4.json": {
+      "sha256": "14937b168bf6bbe9b41d74d0cf53ad34381c18c0d10e08b3ea2424ecfe48b5d1"
+    }
+  },
+  "summary": {
+    "acceptance": {
+      "PASS": 42,
+      "NOT_RUN": 2
+    },
+    "p1": {
+      "PASS": 15
+    },
+    "rechecked": [
+      "CMP-02",
+      "CMP-07",
+      "CMP-10",
+      "CMP-34"
+    ],
+    "observedProductFailures": [],
+    "signoffStatus": "OPEN"
+  },
+  "signoffConditions": [
+    {
+      "item": "CMP-02",
+      "result": "NOT_RUN",
+      "condition": "批准可用的空测试租户并在同 SHA 或经复核的新候选上验证真实零台 API、概览空态和列表范围。也可由项目方明确签收浏览器合成替代的范围。"
+    },
+    {
+      "item": "CMP-34",
+      "result": "NOT_RUN",
+      "condition": "补齐可信耗材采集与投影输入，批准共享测试中自定义阈值、真实读数和恢复方案，现场复验阈值分档。也可由项目方按当前已交付的范围明确签收合成分档，并将采集对接列为后续。"
+    },
+    {
+      "item": "项目方签收",
+      "result": "OPEN",
+      "condition": "在确认候选 SHA 和本回执后，登记签收人、日期以及两项未执行路径的补验结果或书面接受范围。"
+    }
+  ],
+  "retests": {
+    "CMP-02": {
+      "overview": {
+        "cmp": "CMP-02",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:19:39.385Z",
+        "result": "NOT_RUN",
+        "requests": [
+          {
+            "step": "actual-dashboard",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "dashboard/overview",
+            "status": 200,
+            "requestId": "869d0392-65ea-4895-b62a-4d1bd76266af"
+          },
+          {
+            "step": "real-independent-ordered-device-register",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "b8b821a7-2eae-4742-8dab-cc8eb0591e2e",
+            "queryKeys": [
+              "limit"
+            ]
+          },
+          {
+            "step": "device-list-navigation",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "5cf14c35-3d83-4c19-b154-2ea8b9bd87b7"
+          },
+          {
+            "step": "actual-dashboard",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "dashboard/overview",
+            "status": 200,
+            "requestId": "9a61808d-2b26-428b-aebb-ad19e4292142"
+          },
+          {
+            "step": "real-independent-ordered-device-register",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "d449b730-dd30-4c06-ad9d-538ad71f5a8c",
+            "queryKeys": [
+              "limit"
+            ]
+          },
+          {
+            "step": "device-list-navigation",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "bfefb532-4b99-4e25-9447-21a117bdc9ee"
+          },
+          {
+            "step": "actual-dashboard",
+            "role": "CustomerViewer",
+            "endpoint": "dashboard/overview",
+            "status": 200,
+            "requestId": "023cb84f-f4e7-457f-b3dd-0d0263be4f67"
+          },
+          {
+            "step": "real-independent-ordered-device-register",
+            "role": "CustomerViewer",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "3425fea2-5e29-43cd-8790-5530234f7f46",
+            "queryKeys": [
+              "limit",
+              "customerId"
+            ]
+          },
+          {
+            "step": "device-list-navigation",
+            "role": "CustomerViewer",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "980a9837-6bd5-4f8c-999c-501a7c5534ca"
+          },
+          {
+            "step": "actual-dashboard",
+            "role": "CustomerViewer",
+            "endpoint": "dashboard/overview",
+            "status": 200,
+            "requestId": "30cc0c52-af6c-4e38-bf60-dc9f3ce9583a"
+          },
+          {
+            "step": "real-independent-ordered-device-register",
+            "role": "CustomerViewer",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "28d3fb35-703b-4eaa-94ce-815759108e7f",
+            "queryKeys": [
+              "limit",
+              "customerId"
+            ]
+          },
+          {
+            "step": "device-list-navigation",
+            "role": "CustomerViewer",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "7ccadff8-f2f7-4aa6-b728-cad2ef8980f2"
+          },
+          {
+            "step": "actual-dashboard",
+            "role": "CustomerAdmin",
+            "endpoint": "dashboard/overview",
+            "status": 200,
+            "requestId": "ee32c501-4480-4ec7-84fc-e14510c3098b"
+          },
+          {
+            "step": "real-independent-ordered-device-register",
+            "role": "CustomerAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "65d537d6-153e-4d9f-b7d4-961163e46932",
+            "queryKeys": [
+              "limit",
+              "customerId"
+            ]
+          },
+          {
+            "step": "device-list-navigation",
+            "role": "CustomerAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "e6eb012e-f59e-4ab9-8958-cc0a321ac16f"
+          },
+          {
+            "step": "read-baseline-for-projected-zero",
+            "role": "CustomerViewer",
+            "endpoint": "dashboard",
+            "status": 200,
+            "requestId": "fe4b6183-d9b6-423d-afef-dd4658ce734c",
+            "queryKeys": []
+          },
+          {
+            "step": "read-baseline-for-projected-zero",
+            "role": "CustomerViewer",
+            "endpoint": "dashboard",
+            "status": 200,
+            "requestId": "54860e7c-2626-4b41-8a2f-bed4474a39f2",
+            "queryKeys": []
+          }
+        ],
+        "checks": [
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "total": 12,
+            "shown": 10,
+            "result": "PASS"
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "en",
+            "width": 375,
+            "total": 12,
+            "shown": 10,
+            "result": "PASS"
+          },
+          {
+            "transport": "REAL_API",
+            "role": "CustomerViewer",
+            "lang": "zh-CN",
+            "width": 375,
+            "total": 2,
+            "shown": 2,
+            "result": "PASS"
+          },
+          {
+            "transport": "REAL_API",
+            "role": "CustomerViewer",
+            "lang": "en",
+            "width": 375,
+            "total": 2,
+            "shown": 2,
+            "result": "PASS"
+          },
+          {
+            "transport": "REAL_API",
+            "role": "CustomerAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "total": 3,
+            "shown": 3,
+            "result": "PASS"
+          },
+          {
+            "transport": "BROWSER_FIXTURE_ONLY",
+            "role": "CustomerViewer",
+            "lang": "zh-CN",
+            "width": 375,
+            "total": 0,
+            "shown": 0,
+            "result": "PASS"
+          },
+          {
+            "transport": "BROWSER_FIXTURE_ONLY",
+            "role": "CustomerViewer",
+            "lang": "en",
+            "width": 375,
+            "total": 0,
+            "shown": 0,
+            "result": "PASS"
+          }
+        ],
+        "remaining": "两组真实客户均有设备，只有浏览器模拟的零台结果通过。B 的两台均为 Active，现有分配 API 只接受 Onboarded/Assigned。保持两组测试归属；真实零台需要另获授权的空租户。",
+        "completedAtUtc": "2026-11-19T10:20:35.886Z"
+      }
+    },
+    "CMP-07": {
+      "quick": {
+        "cmp": "CMP-07",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:17:32.561Z",
+        "result": "PASS",
+        "requests": [
+          {
+            "step": "quick-actual-dto",
+            "role": "PlatformOperator",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "7d9bd5e0-e227-48bf-84bb-8d8bbe1615d1"
+          },
+          {
+            "step": "quick-actual-dto",
+            "role": "PlatformOperator",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "7abfcabe-55d4-4202-8ba4-2f229181da23"
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "fe998e10-225f-4fe0-821e-42b16bfcf0e7",
+            "queryKeys": []
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "62704de1-f920-443a-a991-dccdb0b0ff9e",
+            "queryKeys": []
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "0ca1d2e8-e3e2-4d02-984d-d507401b4081",
+            "queryKeys": []
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "bce797e4-c99c-46bc-8d32-71b41e1fa785",
+            "queryKeys": []
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "47e3026b-0bbe-4e64-a366-a2bfdfea25c1",
+            "queryKeys": []
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "23ca5e9d-063c-4510-8da6-2faf1c8baa9a",
+            "queryKeys": []
+          },
+          {
+            "step": "heartbeat-online-readback",
+            "role": "PlatformOperator",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "8af18012-0527-4db9-868d-bb5cfc88cc0f",
+            "queryKeys": []
+          },
+          {
+            "step": "quick-actual-dto",
+            "role": "PlatformOperator",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "160aa259-86bd-4590-87e3-b4b1cd1c8934"
+          },
+          {
+            "step": "quick-actual-dto",
+            "role": "PlatformOperator",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "6f8989ee-0a79-4e68-a956-20f31f1e57ed"
+          },
+          {
+            "step": "quick-actual-dto",
+            "role": "PlatformOperator",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "254e9ba6-e2a6-4916-b365-18134f7dc215"
+          },
+          {
+            "step": "quick-actual-dto",
+            "role": "PlatformOperator",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "c57fbaeb-27f6-49c6-8196-61f9b84ae068"
+          }
+        ],
+        "checks": [
+          {
+            "state": "OFFLINE_WITH_ENTITLEMENT",
+            "lang": "zh-CN",
+            "result": "PASS"
+          },
+          {
+            "state": "OFFLINE_WITH_ENTITLEMENT",
+            "lang": "en",
+            "result": "PASS"
+          },
+          {
+            "state": "ONLINE_ACTIVE_WITH_ENTITLEMENT",
+            "lang": "zh-CN",
+            "result": "PASS",
+            "writes": 0
+          },
+          {
+            "state": "ONLINE_ACTIVE_WITHOUT_ENTITLEMENT",
+            "lang": "zh-CN",
+            "result": "PASS"
+          },
+          {
+            "state": "ONLINE_ACTIVE_WITH_ENTITLEMENT",
+            "lang": "en",
+            "result": "PASS",
+            "writes": 0
+          },
+          {
+            "state": "ONLINE_ACTIVE_WITHOUT_ENTITLEMENT",
+            "lang": "en",
+            "result": "PASS"
+          }
+        ],
+        "completedAtUtc": "2026-11-19T10:18:16.459Z"
+      }
+    },
+    "CMP-10": {
+      "pre-certificate": {
+        "cmp": "CMP-10",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:16:34.596Z",
+        "result": "FAIL",
+        "requests": [
+          {
+            "step": "new-owned-synthetic-request",
+            "method": "POST",
+            "path": "/api/v1/device/onboarding/request",
+            "status": 201,
+            "requestId": "27439eac-26a8-4406-b136-bdcbf9211fad"
+          },
+          {
+            "step": "validate-dedicated-request",
+            "method": "GET",
+            "path": "/api/v1/admin/onboarding/requests/6dc0a688-af66-4b81-9d35-106e49986391",
+            "status": 200,
+            "requestId": "47ac39d0-6ed6-4133-82eb-356b77075a7b"
+          },
+          {
+            "step": "approve-only-owned-never-assigned-device",
+            "method": "POST",
+            "path": "/api/v1/admin/onboarding/requests/6dc0a688-af66-4b81-9d35-106e49986391/approve",
+            "status": 200,
+            "requestId": "a2ae0b96-e2d7-4273-b436-8c72e95666d8"
+          },
+          {
+            "step": "actual-inventory-own-prefix",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "8a3f2967-262e-4698-a485-680eea8f6793",
+            "queryKeys": [
+              "keyword",
+              "limit"
+            ]
+          },
+          {
+            "step": "actual-assignment-history",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices/assignments",
+            "status": 200,
+            "requestId": "a5492604-c639-4d65-800e-a0a73c6f5963"
+          },
+          {
+            "step": "actual-device-detail",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "devices/detail",
+            "status": 200,
+            "requestId": "c779a1c3-0c66-4a44-a5da-9630f541c1c6"
+          }
+        ],
+        "checks": [
+          "真实从未分配设备的历史 API 返回空数组，页面呈现分配历史空态。",
+          "证书异步签发前真实明细返回 certificate=null，候选页面上证书空态可见。"
+        ],
+        "failure": "expect(locator).toHaveCount(expected) failed",
+        "completedAtUtc": "2026-11-19T10:17:07.581Z",
+        "interpretation": "首轮真实证书和分配空态成立。测试脚本误以为只读角色不显示编辑入口，实际入口显示但禁用。补跑时按禁用态验证真实只读行为。"
+      },
+      "auditor-retry": {
+        "cmp": "CMP-10",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:20:05.472Z",
+        "result": "PASS",
+        "requests": [
+          {
+            "step": "auditor-real-detail-check",
+            "role": "Auditor",
+            "endpoint": "devices",
+            "status": 200,
+            "requestId": "13ab4da4-a34f-4e73-875f-3e1577a2347e",
+            "queryKeys": []
+          },
+          {
+            "step": "auditor-real-empty-history-from-group",
+            "role": "Auditor",
+            "endpoint": "devices/assignments",
+            "status": 200,
+            "requestId": "f73d1d83-f852-43a9-a6ce-01dca6f82e26"
+          },
+          {
+            "step": "customer-cannot-read-unassigned-device",
+            "role": "CustomerViewer",
+            "endpoint": "devices",
+            "status": 403,
+            "requestId": "c081d927-84ad-492f-9a98-efa37a0dd687",
+            "queryKeys": [],
+            "errorCode": "FORBIDDEN"
+          }
+        ],
+        "checks": [
+          "审计员在 375 像素英文版从设备群实际打开同一设备，空分配历史仍可读，别名编辑与证书轮换按钮均禁用。",
+          "客户角色不能通过直达接口读取从未分配的模拟设备。"
+        ],
+        "completedAtUtc": "2026-11-19T10:20:20.214Z"
+      }
+    },
+    "CMP-34": {
+      "first": {
+        "cmp": "CMP-34",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:19:39.386Z",
+        "result": "FAIL",
+        "requests": [
+          {
+            "step": "real-threshold-read",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "da1b5fc8-e435-474c-ac05-c6f6a075a63a",
+            "queryKeys": []
+          },
+          {
+            "step": "actual-own-consumables",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "consumables",
+            "status": 200,
+            "requestId": "b0ff7bb2-5962-4671-b160-b976932db256",
+            "queryKeys": [
+              "customerId",
+              "deviceId"
+            ]
+          },
+          {
+            "step": "real-business-setting-list",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "60ab6ebd-7c9a-4a22-9094-ab384919c1d5"
+          },
+          {
+            "step": "actual-config-with-projected-readings",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings/alarm.thresholds",
+            "status": 200,
+            "requestId": "534a981c-2dd1-42c0-91d5-7e389c6632b1"
+          },
+          {
+            "step": "real-business-setting-list",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "eb2a7dc6-9484-4df1-8056-70470770ed55"
+          }
+        ],
+        "checks": [
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "result": "PASS",
+            "facts": {
+              "settingPresent": false,
+              "actualRemainingPercentValues": 0
+            }
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "settings": 4
+            }
+          },
+          {
+            "transport": "BROWSER_FIXTURE_ONLY",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "remainingPercentages": [
+                9,
+                20
+              ],
+              "fallbackLevels": [
+                "low",
+                "mid"
+              ],
+              "projectedThreshold": {
+                "warning": 5,
+                "major": 15
+              },
+              "configuredLevels": [
+                "mid",
+                "ok"
+              ]
+            }
+          }
+        ],
+        "failure": "expect(locator).toContainText(expected) failed",
+        "completedAtUtc": "2026-11-19T10:20:55.350Z",
+        "interpretation": "英文 STORED_ONLY 的实际界面文案为 Storage only，首轮脚本误用 Stored only。"
+      },
+      "retry": {
+        "cmp": "CMP-34",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:21:53.528Z",
+        "result": "FAIL",
+        "requests": [
+          {
+            "step": "real-threshold-read",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "a5b33f55-409f-478f-95f1-4fd9c39e942f",
+            "queryKeys": []
+          },
+          {
+            "step": "actual-own-consumables",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "consumables",
+            "status": 200,
+            "requestId": "4068083b-4c72-49d3-9f91-9e004333512d",
+            "queryKeys": [
+              "customerId",
+              "keyword"
+            ]
+          },
+          {
+            "step": "real-business-setting-list",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "6f92dd61-cfa6-4086-ba23-b573f2571277"
+          },
+          {
+            "step": "actual-owned-consumable-unknown-browser",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "consumables",
+            "status": 200,
+            "requestId": "be135a5c-9389-4855-a567-60c200f12490"
+          }
+        ],
+        "checks": [
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "result": "PASS",
+            "facts": {
+              "settingPresent": false,
+              "actualRemainingPercentValues": 0
+            }
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "settings": 4
+            }
+          }
+        ],
+        "failure": "expect(locator).toContainText(expected) failed",
+        "completedAtUtc": "2026-11-19T10:22:14.157Z",
+        "interpretation": "中文未上报的实际界面文案为 unknown（未上报），测试脚本误期望 未知。最终轮验证了实际文案。"
+      },
+      "verified": {
+        "cmp": "CMP-34",
+        "candidate": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+        "startedAtUtc": "2026-11-19T10:23:05.342Z",
+        "result": "NOT_RUN",
+        "requests": [
+          {
+            "step": "real-threshold-read",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "9ecacd97-7b30-440d-8f9a-fb09ffb34fed",
+            "queryKeys": []
+          },
+          {
+            "step": "actual-own-consumables",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "consumables",
+            "status": 200,
+            "requestId": "6e429d38-73e1-4ded-8c83-f26326d780c4",
+            "queryKeys": [
+              "customerId",
+              "keyword"
+            ]
+          },
+          {
+            "step": "real-business-setting-list",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "b4010a57-97d0-43f9-bcf3-ac783dcf1ece"
+          },
+          {
+            "step": "actual-owned-consumable-unknown-browser",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "consumables",
+            "status": 200,
+            "requestId": "39e0a0ed-b9f1-4b42-bd64-29ebf678ed5f"
+          },
+          {
+            "step": "actual-config-with-projected-readings",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings/alarm.thresholds",
+            "status": 200,
+            "requestId": "cd021b1e-49d5-42ad-8c2c-3a448406e93e"
+          },
+          {
+            "step": "real-business-setting-list",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings",
+            "status": 200,
+            "requestId": "a072bada-09f5-4ba6-b42c-05ae7d62302b"
+          },
+          {
+            "step": "actual-owned-consumable-unknown-browser",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "consumables",
+            "status": 200,
+            "requestId": "5922e668-6517-48f4-b478-f9f409024f2f"
+          },
+          {
+            "step": "actual-config-with-projected-readings",
+            "role": "PlatformSuperAdmin",
+            "endpoint": "settings/alarm.thresholds",
+            "status": 200,
+            "requestId": "96f9c437-839b-40bf-b533-6e7902af01ea"
+          }
+        ],
+        "checks": [
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "result": "PASS",
+            "facts": {
+              "settingPresent": false,
+              "actualRemainingPercentValues": 0
+            }
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "settings": 4
+            }
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "unknownDisplayed": true,
+              "percentageBars": 0
+            }
+          },
+          {
+            "transport": "BROWSER_FIXTURE_ONLY",
+            "role": "PlatformSuperAdmin",
+            "lang": "zh-CN",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "remainingPercentages": [
+                9,
+                20
+              ],
+              "fallbackLevels": [
+                "low",
+                "mid"
+              ],
+              "projectedThreshold": {
+                "warning": 5,
+                "major": 15
+              },
+              "configuredLevels": [
+                "mid",
+                "ok"
+              ]
+            }
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "en",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "settings": 4
+            }
+          },
+          {
+            "transport": "REAL_API",
+            "role": "PlatformSuperAdmin",
+            "lang": "en",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "unknownDisplayed": true,
+              "percentageBars": 0
+            }
+          },
+          {
+            "transport": "BROWSER_FIXTURE_ONLY",
+            "role": "PlatformSuperAdmin",
+            "lang": "en",
+            "width": 375,
+            "result": "PASS",
+            "facts": {
+              "remainingPercentages": [
+                9,
+                20
+              ],
+              "fallbackLevels": [
+                "low",
+                "mid"
+              ],
+              "projectedThreshold": {
+                "warning": 5,
+                "major": 15
+              },
+              "configuredLevels": [
+                "mid",
+                "ok"
+              ]
+            }
+          }
+        ],
+        "remaining": "目标实际配置没有耗材专用阈值，受控设备接口返回未知百分比。当前 MQTT 采集契约没有耗材写入，已部署生产者未接线。真实读数及真实自定义全局阈值组成的端到端路径仍未执行。",
+        "completedAtUtc": "2026-11-19T10:23:30.499Z"
+      }
+    }
+  },
+  "acceptanceIndex": [
+    {
+      "cmp": "CMP-01",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "专用客户业务 displayName、业务 userId、Cognito 登录标识和键盘入口均读回。窄屏截断并提供完整文本。",
+      "baselineEvidence": "target-completion-07a385f4.json#L235",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1243"
+    },
+    {
+      "cmp": "CMP-02",
+      "priority": "P2/P3",
+      "result": "NOT_RUN",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "真实平台 12 台按 ID 升序仅显示前 10 台，客户 A 为 3 台、B 为 2 台，设备列表保持自身范围。候选浏览器的中英文零台合成响应均显示空态和设备列表入口。",
+      "baselineEvidence": "target-completion-07a385f4.json#L266",
+      "disposition": "OPEN",
+      "remaining": "真实零台。两组固定租户均有设备，B 的两台为 Active，分配接口只接受 Onboarded 或 Assigned。现场零台只完成浏览器合成响应。",
+      "coverage": "PARTIAL_TARGET",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1252"
+    },
+    {
+      "cmp": "CMP-03",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际顶部栏没有通知铃入口。",
+      "baselineEvidence": "target-completion-07a385f4.json#L315",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1263"
+    },
+    {
+      "cmp": "CMP-04",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际页面仅有上海、UTC，原偏好回退上海，UTC 刷新后保留并可切回。",
+      "baselineEvidence": "target-completion-07a385f4.json#L381",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1272"
+    },
+    {
+      "cmp": "CMP-05",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "客户访问失败重试、租户路径和无地区标签的平台直接查询均通过。",
+      "baselineEvidence": "target-completion-07a385f4.json#L447",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1281"
+    },
+    {
+      "cmp": "CMP-06",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实迟到和重试不会恢复旧目标，真实命令只下发到已应用纯模拟设备。",
+      "baselineEvidence": "target-completion-07a385f4.json#L502",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1290"
+    },
+    {
+      "cmp": "CMP-07",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "中英文分别实测离线有授权、在线运行有授权、在线运行无 REMOTE_CONTROL。两类禁用理由均与按钮关联。高风险加热需输入准确确认文本，Escape 退出，实际命令 POST 为 0。",
+      "baselineEvidence": "target-completion-07a385f4.json#L566",
+      "disposition": "RESOLVED",
+      "coverage": "TARGET_PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1299"
+    },
+    {
+      "cmp": "CMP-08",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "375/768/1440 显示无重叠，长命令标签实际提交到查询。",
+      "baselineEvidence": "target-completion-07a385f4.json#L591",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1310"
+    },
+    {
+      "cmp": "CMP-09",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "客户组筛选、真正第二页、单一重置及固定租户均通过。",
+      "baselineEvidence": "target-completion-07a385f4.json#L639",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1319"
+    },
+    {
+      "cmp": "CMP-10",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "专用模拟设备的真实详情在异步签发前返回 certificate=null，分配历史为空，两个页面空态均可见。审计员从设备群进入同一设备，编辑和轮换禁用。客户直达被拒。",
+      "baselineEvidence": "target-completion-07a385f4.json#L730",
+      "disposition": "RESOLVED",
+      "coverage": "TARGET_PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1328"
+    },
+    {
+      "cmp": "CMP-11",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "审批详情连接失败可重试，嵌套确认独立关闭，带版本批准并按设备序列号导航。",
+      "baselineEvidence": "target-completion-07a385f4.json#L807",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1339"
+    },
+    {
+      "cmp": "CMP-12",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "中止的首次拒绝保留详情和重试入口。实际重试带原因与当前版本，关闭后移出待审批，在已拒绝标签读回。",
+      "baselineEvidence": "target-completion-07a385f4.json#L853",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1348"
+    },
+    {
+      "cmp": "CMP-13",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "新建配置位于工具栏第一个操作，Escape 恢复焦点。",
+      "baselineEvidence": "target-completion-07a385f4.json#L898",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1357"
+    },
+    {
+      "cmp": "CMP-14",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实多版历史可独立展开。首次详情连接失败后可退出重开，专用空方案直接展示空历史。",
+      "baselineEvidence": "target-completion-07a385f4.json#L920",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1366"
+    },
+    {
+      "cmp": "CMP-15",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "八个真实未发布版本形成滚动容器，派生站点展示与 API 一致。审计员能访问最早版本且无发布权限。",
+      "baselineEvidence": "target-completion-07a385f4.json#L959",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1375"
+    },
+    {
+      "cmp": "CMP-16",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "原生 datetime-local 输入毫秒时展示错误且提交禁用，没有请求。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1082",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1384"
+    },
+    {
+      "cmp": "CMP-17",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "两真实相邻页各一台，设备定向和型号定向各自胜出。与对应版冻结参数逐项比对，两次真实 mTLS Sync 一致。逐版本通知包含实际目标，无匹配应用回执继续显示未知。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1147",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1393"
+    },
+    {
+      "cmp": "CMP-18",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "两种列表按真实请求保留固定租户，耗材状态筛选重置清除占比，申请查询进入指定自有设备。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1372",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1402"
+    },
+    {
+      "cmp": "CMP-19",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "受控设备提交前真实退役，服务端拒绝与字段提示一致。不存在、未分配、越权、合法及幂等也通过。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1416",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1411"
+    },
+    {
+      "cmp": "CMP-20",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "告警、事件和防拆分别在中英文窄屏验证真实第二页。独立重置清除草稿、已应用条件、游标和 URL 筛选，保留当前标签及固定客户范围。默认查询在第二页原地重置也回到第一项。两租户的可见范围已逐接口读回。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1514",
+      "disposition": "RESOLVED",
+      "coverage": "SAME_SHA_TARGET",
+      "caseCount": 7,
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1420"
+    },
+    {
+      "cmp": "CMP-21",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际告警确认与清除已读回。另一个专用告警从详情读回已关联图片，授权浏览器加载真实像素，外租户详情和签发均为 404。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1645",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1431"
+    },
+    {
+      "cmp": "CMP-22",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "客户窄屏按设备、类型查询已修复的实际媒体列表，返回四条自有样本且无法跳出固定租户。",
+      "baselineEvidence": "target-completion-07a385f4.json#L1998",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1440"
+    },
+    {
+      "cmp": "CMP-23",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "保留当前候选九项通过的同 SHA 发布回执。本轮没有更换该媒体样本或复写通过证据。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2037",
+      "coverage": "BASELINE_CARRIED",
+      "supplementalScope": "read_only_sort_pagination_smoke",
+      "supplementalResult": "PASS",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1449"
+    },
+    {
+      "cmp": "CMP-24",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实 UTC 区间、周统计和估算说明已核对。实际导出保留查询区间与固定客户并创建作业。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2047",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1460"
+    },
+    {
+      "cmp": "CMP-25",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "两条真实 MQTT 报告产生分页，日期错误重置后查询、导出和重选均验证固定租户与游标。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2103",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1469"
+    },
+    {
+      "cmp": "CMP-26",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "375/768/1440 控件独立无交叠，合约筛选实际提交专用客户。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2220",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1478"
+    },
+    {
+      "cmp": "CMP-27",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实关联撤销后仍能查到 ENDED 历史。原设备独立 License 继续有效，合约历史区域可见。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2268",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1487"
+    },
+    {
+      "cmp": "CMP-28",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实慢响应、错误与空候选都可退出，焦点回原按钮，关闭不写入。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2349",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1496"
+    },
+    {
+      "cmp": "CMP-29",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2496",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1505"
+    },
+    {
+      "cmp": "CMP-30",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "可见关闭与取消不发送写入，重开读回之前版本。对空合约的实际提交包含原因、版本和反馈，服务端读回生效。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2543",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1514"
+    },
+    {
+      "cmp": "CMP-31",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "按现有状态机使用专用即将到期授权。审计员真实拒写，平台操作员实际续期并产生新版本。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2590",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1523"
+    },
+    {
+      "cmp": "CMP-32",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "仅对额外专用模拟器的 License 模拟评估时间，状态过期及历史实际读回。详情展示独立区域，跨租户拒绝。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2690",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1532"
+    },
+    {
+      "cmp": "CMP-33",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "同值保存、实际请求体版本冲突、非法输入与关闭返回均通过。审计记录一次测试导致的同值版本递增。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2772",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1541"
+    },
+    {
+      "cmp": "CMP-34",
+      "priority": "P2/P3",
+      "result": "NOT_RUN",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "真实设置四项用途、消费方和编辑权限已核对。受控设备真实耗材显示 unknown（未上报），且无百分比条。候选浏览器合成 9% 和 20% 验证默认分档及自定义 warning/major 分档。",
+      "baselineEvidence": "target-completion-07a385f4.json#L2863",
+      "disposition": "OPEN",
+      "remaining": "真实耗材读数与实际自定义耗材阈值一起运行的端到端路径。已部署 MQTT 契约无耗材写入，当前目标设置也未配置专用阈值。",
+      "coverage": "PARTIAL_TARGET",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1550"
+    },
+    {
+      "cmp": "CMP-35",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "窄屏专用长业务用户表格可到达操作列，键盘打开后能读取完整显示名、地址及客户范围。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3021",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1561"
+    },
+    {
+      "cmp": "CMP-36",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "专用业务用户的嵌套键盘、关闭、取消零写及真实权限写入和审计全部通过，已恢复为只读。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3043",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1570"
+    },
+    {
+      "cmp": "CMP-37",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际矩阵查找读权限、按角色过滤且只读，五角色值符合共享 RBAC。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3123",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1579"
+    },
+    {
+      "cmp": "CMP-38",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实设备首次 Sync 获得专用账号，第二次带已提供快照时间读回 ACKNOWLEDGED。可区分通知与快照确认；无可信应用回执，仍显示未报告。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3145",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1588"
+    },
+    {
+      "cmp": "CMP-39",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "页面请求中止时仍可取消，重开读回原值和版本。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3234",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1597"
+    },
+    {
+      "cmp": "CMP-40",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "平台的客户、地区筛选命中真实长站点，独立新建入口可见，详情展示完整文本，客户越权读取被拒。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3273",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1606"
+    },
+    {
+      "cmp": "CMP-41",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "筛选完成后再记录真实滚动，资料连接失败后重试并恢复原行与滚动。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3312",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1615"
+    },
+    {
+      "cmp": "CMP-42",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "实际设备用户直达与权限匹配，获准设置入口在跳转前未请求设备用户列表。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3369",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1624"
+    },
+    {
+      "cmp": "CMP-43",
+      "priority": "P2/P3",
+      "result": "PASS",
+      "evidenceCommit": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+      "observation": "审计员在中英文窄屏从真实第二页重置。可编辑客户、筛选字段、日期错误、累积结果和游标均清理，页面重新获取第一页。两个客户会话的 API 返回 403，客户管理员直达也被路由权限拒绝。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3435",
+      "disposition": "RESOLVED",
+      "coverage": "SAME_SHA_TARGET",
+      "caseCount": 3,
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1633"
+    },
+    {
+      "cmp": "CMP-44",
+      "priority": "P1",
+      "result": "PASS",
+      "evidenceCommit": "07a385f4a1193e70334b9438914b0e1e2d9cca76",
+      "observation": "真实审计响应及浏览器均遮蔽受控敏感值。真实长值、键盘和焦点通过，前后值独立双向滚动使用已脱敏的界面投影。",
+      "baselineEvidence": "target-completion-07a385f4.json#L3518",
+      "remaining": "嵌套敏感键使用本地回归验证，目标接口未单独注入可持久化嵌套键。",
+      "coverage": "BASELINE_CARRIED",
+      "priorReceipt": "target-reset-follow-up-d1afec5e.json#L1644"
+    }
+  ]
+}
