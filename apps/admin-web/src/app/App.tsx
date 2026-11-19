@@ -177,13 +177,21 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       );
       break;
     case 'licenses':
-      page = <LicensesController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
+      page = (
+        <LicensesController
+          key={sessionScope}
+          api={services.api}
+          session={session}
+          search={location.search}
+          onNavigate={navigate}
+        />
+      );
       break;
     case 'configurations':
       page = <ConfigurationsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'device-users':
-      page = <DeviceUsersController api={services.api} session={session} />;
+      page = <DeviceUsersController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'alarms':
       page = <AlarmsController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
@@ -209,10 +217,10 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <MediaController api={services.api} session={session} />;
       break;
     case 'audit-logs':
-      page = <AuditLogsController api={services.api} session={session} />;
+      page = <AuditLogsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'settings':
-      page = <SettingsController api={services.api} session={session} />;
+      page = <SettingsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'contract-modify':
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
@@ -228,7 +236,13 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       break;
     case 'contract-detail':
       page = (
-        <ContractDetailController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+        <ContractDetailController
+          key={`${sessionScope}:${location.search}`}
+          api={services.api}
+          session={session}
+          search={location.search}
+          onNavigate={navigate}
+        />
       );
       break;
     case 'device-consumable':

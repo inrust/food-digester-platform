@@ -6,20 +6,20 @@ import { translate } from '../../i18n/i18n.js';
  * - 平台用户（BE-RBAC-01）：邀请（Cognito 临时凭证，表单无永久密码字段）、角色整体替换、
  *   Customer scope 变更、停用、受控重置；角色集封闭（DEC-012），高风险权限变更明确确认；
  *   界面显示名用“设备操作员”（不使用“运维人员”）；
- * - RBAC 权限矩阵只读展示（DEC-012：V1 固定，复选框 disabled，仅可分配已有角色）；
+ * - RBAC 权限矩阵只读展示（DEC-012：V1 固定，仅可分配已有角色）；
  * - 设备用户标签页嵌入 FE-09 DeviceUsersPage（含筛选/重置/创建/停用/分配）；
  * - 业务设置（BE-SET-01）：封闭 key 集四项，乐观锁 version 更新（409 → 刷新恢复）；
  *   command.confirmation 确认方式 DEC-023 固定——只读不提供编辑；固定协议枚举/AWS 运维配置不可编辑；
  * - 自我提权/越权由服务端 403 拒绝并正确呈现；不管理 IAM/CloudWatch/Budget/生产账号。
  */
 import { useRef, useState } from 'react';
-import { PERMISSIONS, permissionsOf } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
+import { PermissionMatrix } from './PermissionMatrix.js';
 import { DeviceUsersPage } from '../device-users/DeviceUsersPage.js';
 import type { DeviceUsersPageProps } from '../device-users/DeviceUsersPage.js';
 import type { InviteUserInput, UserListFilter } from './users-api.js';
@@ -89,6 +89,10 @@ type ConfirmTarget =
       readonly user: UserView;
       readonly roles: readonly Role[];
     };
+function accountPreview(value: string) {
+  const characters = Array.from(value);
+  return characters.length > 32 ? <span title={value}>{characters.slice(0, 32).join('')}…</span> : value;
+}
 export function SettingsPage({
   role,
   users,
@@ -111,6 +115,7 @@ export function SettingsPage({
     ...(canReadSettings(role) ? (['business-settings'] as const) : []),
   ];
   const [tab, setTab] = useState<SettingsTab>(visibleTabs[0] ?? 'device-users');
+  const [profile, setProfile] = useState<UserView | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteDraft, setInviteDraft] = useState<InviteDraft>({
     email: '',
@@ -338,112 +343,148 @@ export function SettingsPage({
             </Button>
           </div>
 
-          <CursorTable
-            ariaLabel={translate('page.b3d9235f9207')}
-            columns={[
-              { key: 'email', header: translate('page.9ed627bcf63d'), render: (u) => u.email },
-              { key: 'displayName', header: translate('page.c10bbf5ddd2d'), render: (u) => u.displayName },
-              {
-                key: 'roles',
-                header: translate('page.6b26695e4dce'),
-                render: (u) => u.roles.map(roleDisplayName).join('、'),
-              },
-              { key: 'status', header: translate('page.62e951a692ff'), render: (u) => USER_STATUS_LABELS[u.status] },
-              {
-                key: 'mfaEnabled',
-                header: 'MFA',
-                render: (u) => (u.mfaEnabled ? translate('page.25d284315063') : translate('page.8bb38ef00ccc')),
-              },
-              {
-                key: 'customerId',
-                header: translate('page.467c1137f479'),
-                render: (u) => u.customerId ?? translate('page.79dd9422df51'),
-              },
-              {
-                key: 'updatedAt',
-                header: translate('page.093dea88c930'),
-                render: (u) => <TimeText iso={u.updatedAt} />,
-              },
-              {
-                key: 'actions',
-                header: translate('page.f3ea6d345e2a'),
-                render: (u) => (
-                  <span className="action-row">
-                    <Button
-                      type="button"
-                      data-testid={`user-roles-${u.userId}`}
-                      disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                      onClick={() => {
-                        setActionError(null);
-                        setAssignTarget({ user: u, roles: u.roles });
-                      }}
-                    >
-                      {translate('page.6b26695e4dce')}
-                    </Button>
-                    {u.roles.every((r) => !isPlatformRole(r)) ? (
+          <div className="platform-user-list">
+            <CursorTable
+              keyboardScrollable
+              ariaLabel={translate('page.b3d9235f9207')}
+              columns={[
+                {
+                  key: 'email',
+                  header: translate('page.9ed627bcf63d'),
+                  width: 175,
+                  render: (u) => accountPreview(u.email),
+                },
+                {
+                  key: 'displayName',
+                  header: translate('page.c10bbf5ddd2d'),
+                  width: 145,
+                  render: (u) => accountPreview(u.displayName),
+                },
+                {
+                  key: 'roles',
+                  header: translate('page.6b26695e4dce'),
+                  width: 140,
+                  render: (u) => (
+                    <ul className="status-tag-list">
+                      {u.roles.map((r) => (
+                        <li key={r}>
+                          <span className="detail-status-badge">{roleDisplayName(r)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ),
+                },
+                {
+                  key: 'status',
+                  header: translate('page.62e951a692ff'),
+                  width: 82,
+                  render: (u) => (
+                    <span className="detail-status-badge" data-user-status={u.status}>
+                      {USER_STATUS_LABELS[u.status]}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'mfaEnabled',
+                  header: 'MFA',
+                  width: 62,
+                  render: (u) => (u.mfaEnabled ? translate('page.25d284315063') : translate('page.8bb38ef00ccc')),
+                },
+                {
+                  key: 'customerId',
+                  header: translate('page.467c1137f479'),
+                  width: 125,
+                  render: (u) => accountPreview(u.customerId ?? translate('page.79dd9422df51')),
+                },
+                {
+                  key: 'updatedAt',
+                  header: translate('page.093dea88c930'),
+                  width: 132,
+                  render: (u) => <TimeText iso={u.updatedAt} />,
+                },
+                {
+                  key: 'actions',
+                  header: translate('page.f3ea6d345e2a'),
+                  width: 243,
+                  render: (u) => (
+                    <div className="platform-user-actions">
+                      <Button type="button" data-testid={`user-profile-${u.userId}`} onClick={() => setProfile(u)}>
+                        {translate('detail.user.viewFull')}
+                      </Button>
                       <Button
                         type="button"
-                        data-testid={`user-scope-${u.userId}`}
+                        data-testid={`user-roles-${u.userId}`}
                         disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                        onClick={() => setScopeTarget({ user: u, customerId: u.customerId ?? '' })}
+                        onClick={() => {
+                          setActionError(null);
+                          setAssignTarget({ user: u, roles: u.roles });
+                        }}
                       >
-                        Scope
+                        {translate('page.6b26695e4dce')}
                       </Button>
-                    ) : null}
-                    <Button
-                      type="button"
-                      data-testid={`user-reset-${u.userId}`}
-                      disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                      onClick={() => setConfirm({ kind: 'reset', user: u })}
-                    >
-                      {translate('page.7e422146dd5b')}
-                    </Button>
-                    <Button
-                      type="button"
-                      className="danger-button"
-                      data-testid={`user-disable-${u.userId}`}
-                      disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                      onClick={() => setConfirm({ kind: 'disable', user: u })}
-                    >
-                      {translate('page.d989e55188c9')}
-                    </Button>
-                  </span>
-                ),
-              },
-            ]}
-            rows={users.rows === null ? null : [...users.rows]}
-            rowKey={(u) => u.userId}
-            {...(users.loading !== undefined ? { loading: users.loading } : {})}
-            {...(users.error !== undefined ? { error: users.error } : {})}
-            {...(users.nextCursor !== undefined ? { nextCursor: users.nextCursor } : {})}
-            onNextPage={onLoadMoreUsers}
-            onRefresh={onRefresh}
-            emptyText={translate('page.3d268bdd3945')}
-          />
+                      {u.roles.every((r) => !isPlatformRole(r)) ? (
+                        <Button
+                          type="button"
+                          data-testid={`user-scope-${u.userId}`}
+                          disabled={!manageUsers || busy || u.status === 'DISABLED'}
+                          onClick={() => setScopeTarget({ user: u, customerId: u.customerId ?? '' })}
+                        >
+                          Scope
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        data-testid={`user-reset-${u.userId}`}
+                        disabled={!manageUsers || busy || u.status === 'DISABLED'}
+                        onClick={() => setConfirm({ kind: 'reset', user: u })}
+                      >
+                        {translate('page.7e422146dd5b')}
+                      </Button>
+                      <Button
+                        type="button"
+                        className="danger-button"
+                        data-testid={`user-disable-${u.userId}`}
+                        disabled={!manageUsers || busy || u.status === 'DISABLED'}
+                        onClick={() => setConfirm({ kind: 'disable', user: u })}
+                      >
+                        {translate('page.d989e55188c9')}
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+              rows={users.rows === null ? null : [...users.rows]}
+              rowKey={(u) => u.userId}
+              {...(users.loading !== undefined ? { loading: users.loading } : {})}
+              {...(users.error !== undefined ? { error: users.error } : {})}
+              {...(users.nextCursor !== undefined ? { nextCursor: users.nextCursor } : {})}
+              onNextPage={onLoadMoreUsers}
+              onRefresh={onRefresh}
+              emptyText={translate('page.3d268bdd3945')}
+            />
+          </div>
 
-          <section data-testid="rbac-matrix" aria-label={translate('page.38d9705d3fe6')}>
-            <h4>{translate('page.3899d000246c')}</h4>
-            <p className="field-hint">{translate('page.af0664f3442f')}</p>
-            {ROLE_OPTIONS.map((r) => (
-              <div key={r} className="rbac-role" data-testid={`rbac-role-${r}`}>
-                <h5>{roleDisplayName(r)}</h5>
-                <div className="rbac-perms">
-                  {PERMISSIONS.map((permission) => (
-                    <label key={permission} className="rbac-perm">
-                      <Input
-                        type="checkbox"
-                        data-testid={`rbac-${r}-${permission}`}
-                        checked={permissionsOf(r).has(permission)}
-                        disabled
-                        readOnly
-                      />
-                      {permission}
-                    </label>
-                  ))}
-                </div>
+          <PermissionMatrix />
+
+          <Modal
+            open={profile !== null}
+            title={translate('detail.user.profile')}
+            testid="user-profile-dialog"
+            onClose={() => setProfile(null)}
+          >
+            {profile !== null ? (
+              <div className="detail-card">
+                <dl>
+                  <dt>{translate('page.9ed627bcf63d')}</dt>
+                  <dd>{profile.email}</dd>
+                  <dt>{translate('page.c10bbf5ddd2d')}</dt>
+                  <dd>{profile.displayName}</dd>
+                  <dt>{translate('page.467c1137f479')}</dt>
+                  <dd>{profile.customerId ?? translate('page.79dd9422df51')}</dd>
+                </dl>
               </div>
-            ))}
-          </section>
+            ) : null}
+          </Modal>
         </section>
       ) : null}
 

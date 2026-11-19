@@ -22,7 +22,6 @@ import type { DeviceLicenseSummaryView } from '../devices/types.js';
 import {
   ASSOCIATION_STATUS_LABELS,
   CONTRACT_STATUS_LABELS,
-  formatServicePeriod,
   gateContractAction,
   validateContractForm,
   validateRenew,
@@ -46,6 +45,7 @@ export interface ContractDetailPageProps {
     readonly error?: unknown;
   };
   readonly associations: readonly ContractDeviceAssociationView[] | null;
+  readonly associationsError?: unknown;
   /** 每设备 License 摘要（独立授权轴；DEC-007 并列展示，不联动修改）。 */
   readonly licenses?: Readonly<Record<string, DeviceLicenseSummaryView | null>>;
   readonly licenseError?: unknown;
@@ -78,6 +78,7 @@ export function ContractDetailPage({
   customerName,
   devices,
   associations,
+  associationsError,
   licenses,
   licenseError,
   onOpenLicense,
@@ -210,7 +211,7 @@ export function ContractDetailPage({
       return translate('page.1efeec44018f') + ' ' + bound.length + (' ' + translate('page.ff58c8e551d7'));
     });
   return (
-    <div className="contract-detail-page" data-testid="contract-detail-page">
+    <div className="contract-detail-page detail-stack" data-testid="contract-detail-page">
       <div className="page-header">
         <Button type="button" data-testid="contract-detail-back" onClick={onBack}>
           {translate('page.11d024154013')}
@@ -230,31 +231,56 @@ export function ContractDetailPage({
         <ErrorNotice error={actionError} onRefresh={onRefresh} />
       ) : null}
 
-      <section data-testid="contract-summary" aria-label={translate('page.82fe9340d299')}>
-        <dl>
-          <dt>{translate('page.e732638998ba')}</dt>
-          <dd>{contract.contractNumber}</dd>
-          <dt>{translate('page.eec5002799b1')}</dt>
-          <dd>{contract.name}</dd>
-          <dt>{translate('page.f20687060126')}</dt>
-          <dd data-testid="contract-detail-customer">{customerName ?? contract.customerId}</dd>
-          <dt>{translate('page.60beedc8f22b')}</dt>
-          <dd data-testid="contract-detail-contact">{contract.contact ?? translate('page.10e96b649498')}</dd>
-          <dt>{translate('page.1789ad816f47')}</dt>
-          <dd>{formatServicePeriod(contract.startAt, contract.endAt)}</dd>
-          <dt>{translate('page.b6ee2af15cf5')}</dt>
-          <dd data-testid="contract-detail-status">{CONTRACT_STATUS_LABELS[status]}</dd>
-          <dt>{translate('page.20de4a0b3abc')}</dt>
-          <dd data-testid="contract-detail-version">v{contract.version}</dd>
-          <dt>{translate('page.fcbd0932929e')}</dt>
-          <dd>
-            {contract.createdBy} · <TimeText iso={contract.createdAt} />
-          </dd>
-          <dt>{translate('page.d9db02d07adb')}</dt>
-          <dd>
-            <TimeText iso={contract.updatedAt} />
-          </dd>
-        </dl>
+      <div className="detail-grid">
+        <section className="detail-card" data-testid="contract-summary" aria-label={translate('page.82fe9340d299')}>
+          <h4>{translate('page.82fe9340d299')}</h4>
+          <dl>
+            <dt>{translate('page.e732638998ba')}</dt>
+            <dd>{contract.contractNumber}</dd>
+            <dt>{translate('page.eec5002799b1')}</dt>
+            <dd>{contract.name}</dd>
+            <dt>{translate('page.b6ee2af15cf5')}</dt>
+            <dd data-testid="contract-detail-status">
+              <span className="detail-status-badge">{CONTRACT_STATUS_LABELS[status]}</span>
+            </dd>
+            <dt>{translate('page.20de4a0b3abc')}</dt>
+            <dd data-testid="contract-detail-version">v{contract.version}</dd>
+            <dt>{translate('page.fcbd0932929e')}</dt>
+            <dd>
+              {contract.createdBy} · <TimeText iso={contract.createdAt} />
+            </dd>
+            <dt>{translate('page.d9db02d07adb')}</dt>
+            <dd>
+              <TimeText iso={contract.updatedAt} />
+            </dd>
+          </dl>
+        </section>
+        <section className="detail-card" aria-label={translate('page.1789ad816f47')}>
+          <h4>{translate('page.1789ad816f47')}</h4>
+          <dl>
+            <dt>{translate('detail.contract.startDate')}</dt>
+            <dd>
+              <time dateTime={contract.startAt}>{contract.startAt.slice(0, 10)}</time>
+            </dd>
+            <dt>{translate('detail.contract.endDate')}</dt>
+            <dd>
+              <time dateTime={contract.endAt}>{contract.endAt.slice(0, 10)}</time>
+            </dd>
+          </dl>
+        </section>
+        <section className="detail-card" aria-label={translate('detail.contract.customer')}>
+          <h4>{translate('detail.contract.customer')}</h4>
+          <dl>
+            <dt>{translate('page.f20687060126')}</dt>
+            <dd data-testid="contract-detail-customer">{customerName ?? contract.customerId}</dd>
+            <dt>{translate('page.60beedc8f22b')}</dt>
+            <dd data-testid="contract-detail-contact">{contract.contact ?? translate('page.10e96b649498')}</dd>
+          </dl>
+        </section>
+      </div>
+
+      <section className="detail-card" aria-label={translate('page.f3ea6d345e2a')}>
+        <h4>{translate('page.f3ea6d345e2a')}</h4>
         <div className="action-row">
           <Button
             type="button"
@@ -311,7 +337,7 @@ export function ContractDetailPage({
         </div>
       </section>
 
-      <section data-testid="contract-devices-table" aria-label={translate('page.b113e4704c10')}>
+      <section className="detail-card" data-testid="contract-devices-table" aria-label={translate('page.b113e4704c10')}>
         <div className="page-header">
           <h4>{translate('page.b113e4704c10')}</h4>
           <span className="action-row">
@@ -345,7 +371,12 @@ export function ContractDetailPage({
             {translate('page.d05230204feb')}
           </p>
         ) : (
-          <div className="cursor-table">
+          <div
+            className="table-scroll contract-detail-table contract-detail-table--devices"
+            tabIndex={0}
+            role="region"
+            aria-label={translate('page.c6ba0d8ee216')}
+          >
             <table aria-label={translate('page.c6ba0d8ee216')}>
               <thead>
                 <tr>
@@ -416,14 +447,21 @@ export function ContractDetailPage({
         )}
       </section>
 
-      <section data-testid="contract-associations" aria-label={translate('page.79d0d3a35e71')}>
+      <section className="detail-card" data-testid="contract-associations" aria-label={translate('page.79d0d3a35e71')}>
         <h4>{translate('page.79d0d3a35e71')}</h4>
-        {associations === null ? (
+        {associationsError !== undefined ? (
+          <ErrorNotice error={associationsError} />
+        ) : associations === null ? (
           <div role="status">{translate('page.300ee3dee4dc')}</div>
         ) : associations.length === 0 ? (
           <p className="empty-state">{translate('page.f4d45621b3d2')}</p>
         ) : (
-          <div className="cursor-table">
+          <div
+            className="table-scroll contract-detail-table"
+            tabIndex={0}
+            role="region"
+            aria-label={translate('page.b7fed88bb343')}
+          >
             <table aria-label={translate('page.b7fed88bb343')}>
               <thead>
                 <tr>

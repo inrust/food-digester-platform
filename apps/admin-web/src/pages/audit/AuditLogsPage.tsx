@@ -267,6 +267,7 @@ export function AuditLogsPage({
         open={detail.kind !== 'none'}
         title={translate('page.18c5e1d426e6')}
         testid="audit-detail-modal"
+        width={920}
         onClose={onCloseDetail}
       >
         {detail.kind === 'loading' ? (
@@ -276,38 +277,78 @@ export function AuditLogsPage({
         ) : null}
         {detail.kind === 'error' ? <ErrorNotice error={detail.error} /> : null}
         {readyDetail !== null ? (
-          <div data-testid="audit-detail">
-            <dl>
-              <dt>{translate('page.80532abd24d4')}</dt>
-              <dd data-testid="audit-detail-id">{readyDetail.auditId}</dd>
-              <dt>requestId</dt>
-              <dd data-testid="audit-detail-request-id">{readyDetail.requestId ?? '—'}</dd>
-              <dt>{translate('page.558f09d9d926')}</dt>
-              <dd>
-                {readyDetail.actorId ?? '—'} / {readyDetail.actorRole ?? '—'}
-              </dd>
-              <dt>{translate('page.f20687060126')}</dt>
-              <dd>{readyDetail.customerId ?? '—'}</dd>
-              <dt>{translate('page.a426465ce19a')}</dt>
-              <dd>
-                {readyDetail.objectType}/{readyDetail.objectId} · {readyDetail.action} ·{' '}
-                {AUDIT_RESULT_LABELS[readyDetail.result] ?? readyDetail.result}
-              </dd>
-              <dt>{translate('page.1ff9c3d00112')}</dt>
-              <dd data-testid="audit-detail-reason">{readyDetail.reason ?? '—'}</dd>
-              <dt>IP / User-Agent</dt>
-              <dd>
-                {readyDetail.ip ?? '—'} / {readyDetail.userAgent ?? '—'}
-              </dd>
-              <dt>{translate('page.89b4aa6364ce')}</dt>
-              <dd>
-                <TimeText iso={readyDetail.createdAt} />
-              </dd>
-            </dl>
-            <h5>{translate('page.504bbdd261f1')}</h5>
-            <pre data-testid="audit-detail-before">{formatAuditValue(readyDetail.beforeValue)}</pre>
-            <h5>{translate('page.9430f0567db6')}</h5>
-            <pre data-testid="audit-detail-after">{formatAuditValue(readyDetail.afterValue)}</pre>
+          <div className="detail-stack" data-testid="audit-detail">
+            <div className="detail-grid">
+              <section className="detail-card" aria-label={translate('detail.audit.event')}>
+                <h4>{translate('detail.audit.event')}</h4>
+                <dl>
+                  <dt>{translate('page.89b4aa6364ce')}</dt>
+                  <dd>
+                    <TimeText iso={readyDetail.createdAt} />
+                  </dd>
+                  <dt>{translate('page.558f09d9d926')}</dt>
+                  <dd>
+                    {readyDetail.actorId ?? '—'} / {readyDetail.actorRole ?? '—'}
+                  </dd>
+                  <dt>{translate('page.f20687060126')}</dt>
+                  <dd>{readyDetail.customerId ?? '—'}</dd>
+                  <dt>{translate('page.a426465ce19a')}</dt>
+                  <dd>
+                    {readyDetail.objectType} / {readyDetail.objectId}
+                  </dd>
+                  <dt>{translate('detail.audit.action')}</dt>
+                  <dd>{readyDetail.action}</dd>
+                  <dt>{translate('detail.audit.result')}</dt>
+                  <dd>
+                    <span className="detail-status-badge">
+                      {AUDIT_RESULT_LABELS[readyDetail.result] ?? readyDetail.result}
+                    </span>
+                  </dd>
+                  <dt>{translate('page.1ff9c3d00112')}</dt>
+                  <dd data-testid="audit-detail-reason">{readyDetail.reason ?? '—'}</dd>
+                </dl>
+              </section>
+              <section className="detail-card" aria-label={translate('detail.audit.trace')}>
+                <h4>{translate('detail.audit.trace')}</h4>
+                <dl>
+                  <dt>{translate('page.80532abd24d4')}</dt>
+                  <dd data-testid="audit-detail-id">{readyDetail.auditId}</dd>
+                  <dt>requestId</dt>
+                  <dd data-testid="audit-detail-request-id">{readyDetail.requestId ?? '—'}</dd>
+                  <dt>IP</dt>
+                  <dd>{readyDetail.ip ?? '—'}</dd>
+                  <dt>User-Agent</dt>
+                  <dd>{readyDetail.userAgent ?? '—'}</dd>
+                </dl>
+              </section>
+            </div>
+            <section className="detail-card" aria-label={translate('detail.audit.values')}>
+              <h4>{translate('detail.audit.values')}</h4>
+              <div className="detail-grid">
+                <div className="audit-value">
+                  <h5>{translate('page.504bbdd261f1')}</h5>
+                  <pre
+                    tabIndex={0}
+                    role="region"
+                    aria-label={translate('page.504bbdd261f1')}
+                    data-testid="audit-detail-before"
+                  >
+                    {formatAuditValue(readyDetail.beforeValue)}
+                  </pre>
+                </div>
+                <div className="audit-value">
+                  <h5>{translate('page.9430f0567db6')}</h5>
+                  <pre
+                    tabIndex={0}
+                    role="region"
+                    aria-label={translate('page.9430f0567db6')}
+                    data-testid="audit-detail-after"
+                  >
+                    {formatAuditValue(readyDetail.afterValue)}
+                  </pre>
+                </div>
+              </div>
+            </section>
           </div>
         ) : null}
       </Modal>

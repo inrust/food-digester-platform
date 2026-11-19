@@ -17,6 +17,7 @@ export interface CursorTableColumn<T> {
   readonly key: string;
   readonly header: string;
   readonly render: (row: T) => ReactNode;
+  readonly width?: number;
 }
 
 export interface CursorTableProps<T> {
@@ -36,6 +37,7 @@ export interface CursorTableProps<T> {
   readonly onRefresh?: () => void;
   readonly emptyText?: string;
   readonly ariaLabel: string;
+  readonly keyboardScrollable?: boolean;
   /** 行级 className（如 CRITICAL 告警显著行）。 */
   readonly rowClassName?: (row: T) => string | undefined;
 }
@@ -55,6 +57,7 @@ export function CursorTable<T>({
   onRefresh,
   emptyText,
   ariaLabel,
+  keyboardScrollable = false,
   rowClassName,
 }: CursorTableProps<T>) {
   const { t } = useI18n();
@@ -108,7 +111,10 @@ export function CursorTable<T>({
           />
         </div>
       ) : (
-        <div className="table-scroll">
+        <div
+          className="table-scroll"
+          {...(keyboardScrollable ? { role: 'region', 'aria-label': ariaLabel, tabIndex: 0 } : {})}
+        >
           <Table
             components={tableComponents}
             size="middle"
@@ -117,6 +123,7 @@ export function CursorTable<T>({
             columns={columns.map((column) => ({
               key: column.key,
               title: column.header,
+              ...(column.width !== undefined ? { width: column.width } : {}),
               render: (_: unknown, record: { source: T }) => column.render(record.source),
             }))}
             rowClassName={(record) => rowClassName?.(record.source) ?? ''}

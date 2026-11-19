@@ -1166,11 +1166,16 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
   });
 
   await page.goto('/contracts/detail?contractId=con-fe17');
-  await expect(page.getByTestId('contract-detail-page')).toContainText('HT-FE17');
+  await expect(page.getByTestId('contract-summary')).toContainText('HT-FE17');
+  await expect(page.getByRole('region', { name: '服务期限' })).toContainText('2027-01-01');
+  await expect(page.getByRole('region', { name: '客户与联系人' })).toContainText('ops@example.test');
+  await expect(page.getByTestId('contract-associations')).toContainText('dev-bound');
   await expect(page.getByTestId('license-summary')).toContainText('授权有效');
   await page.getByTestId('license-summary-open').click();
   await expect(page).toHaveURL(/\/licenses\?licenseId=lic-fe17$/);
   await expect(page.getByTestId('license-id')).toContainText('lic-fe17');
+  await expect(page.getByRole('region', { name: '能力授权（Entitlement）' })).toContainText('已启用');
+  await expect(page.getByTestId('license-history')).toBeVisible();
   await page.goto('/contracts/detail?contractId=con-fe17');
   const editContract = page.getByTestId('contract-edit-open');
   await editContract.click();

@@ -3,7 +3,7 @@ import { translate } from '../../i18n/i18n.js';
  * FE-16 用户/角色与业务设置纯逻辑：封闭角色集、邀请校验、设置 key 目录、CT-06 锚点。
  *
  * - 角色集合封闭（AUTH-01/DEC-012），V1 权限矩阵固定只读：页面仅允许分配已有角色，
- *   权限复选框渲染为只读展示（不可编辑矩阵本身）；
+ *   权限矩阵仅作只读展示；
  * - DEC-012 冻结显示名：PlatformOperator 界面名固定为“设备操作员”（不得使用“运维人员”）；
  * - 平台/Customer 角色禁止混绑（单一 actorType）；Customer 角色必填 customerId，平台角色必须省略；
  * - 业务设置封闭 key 集四项；command.confirmation 的确认方式由 DEC-023 固定——UI 只读展示；

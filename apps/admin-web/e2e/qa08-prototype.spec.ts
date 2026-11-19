@@ -541,9 +541,13 @@ for (const width of VIEWPORTS)
           await expect(page.getByRole('dialog').locator('input[type="password"]')).toHaveCount(0);
           await close(page);
         } else if (id === 'settings.field.permissionCheckboxes') {
-          const boxes = page.locator('input[data-testid^="rbac-"]');
-          expect(await boxes.count()).toBeGreaterThan(0);
-          for (const box of await boxes.all()) await expect(box).toBeDisabled();
+          const matrix = page.getByTestId('rbac-table');
+          await expect(matrix).toBeVisible();
+          await expect(matrix.locator('input, button, select')).toHaveCount(0);
+          await expect(matrix.getByTestId('rbac-PlatformSuperAdmin-role:write')).toHaveAttribute(
+            'data-granted',
+            'true',
+          );
           await go();
         } else {
           await expect(

@@ -392,185 +392,211 @@ export function DeviceUsersPage({
 
       {detailView !== null ? (
         <aside
-          className="device-user-detail"
+          className="device-user-detail detail-stack"
           data-testid="device-user-detail"
           aria-label={translate('page.eac30b08be59')}
         >
-          <h4>{translate('page.eac30b08be59')}</h4>
-          <dl>
-            <dt>{translate('page.a1aaf352cb07')}</dt>
-            <dd data-testid="detail-username">{detailView.username}</dd>
-            <dt>{translate('page.c10bbf5ddd2d')}</dt>
-            <dd>{detailView.displayName ?? '—'}</dd>
-            <dt>{translate('page.467c1137f479')}</dt>
-            <dd>{detailView.customerId}</dd>
-            <dt>{translate('page.62e951a692ff')}</dt>
-            <dd data-testid="detail-status">{DEVICE_USER_STATUS_LABELS[detailView.status]}</dd>
-            <dt>{translate('page.928728223d5a')}</dt>
-            <dd data-testid="detail-version">v{detailView.version}</dd>
-            <dt>{translate('page.093dea88c930')}</dt>
-            <dd>
-              <TimeText iso={detailView.updatedAt} />
-            </dd>
-          </dl>
+          <header className="page-header">
+            <h3>{translate('page.eac30b08be59')}</h3>
+          </header>
+          <section className="detail-card" aria-label={translate('detail.deviceUser.account')}>
+            <h4>{translate('detail.deviceUser.account')}</h4>
+            <dl>
+              <dt>{translate('page.a1aaf352cb07')}</dt>
+              <dd data-testid="detail-username">{detailView.username}</dd>
+              <dt>{translate('page.c10bbf5ddd2d')}</dt>
+              <dd>{detailView.displayName ?? '—'}</dd>
+              <dt>{translate('page.467c1137f479')}</dt>
+              <dd>{detailView.customerId}</dd>
+              <dt>{translate('page.62e951a692ff')}</dt>
+              <dd data-testid="detail-status">{DEVICE_USER_STATUS_LABELS[detailView.status]}</dd>
+              <dt>{translate('page.928728223d5a')}</dt>
+              <dd data-testid="detail-version">v{detailView.version}</dd>
+              <dt>{translate('page.093dea88c930')}</dt>
+              <dd>
+                <TimeText iso={detailView.updatedAt} />
+              </dd>
+            </dl>
+          </section>
 
-          <div className="detail-actions">
-            <Button type="button" onClick={onCloseDetail}>
-              {translate('page.6c14bd7f6f9e')}
-            </Button>
-            {canWrite ? (
-              <>
-                <Button
-                  type="button"
-                  data-testid="device-user-edit"
-                  disabled={busy}
-                  onClick={() => {
-                    setActionError(null);
-                    setModal('edit');
-                  }}
-                >
-                  {translate('page.644d5f06bdba')}
-                </Button>
-                <Button
-                  type="button"
-                  data-testid="device-user-password-reset"
-                  disabled={busy}
-                  onClick={() => setModal('password')}
-                >
-                  {translate('page.7e422146dd5b')}
-                </Button>
-                <Button
-                  type="button"
-                  className="danger-button"
-                  data-testid="device-user-disable"
-                  disabled={busy || detailView.status === 'DISABLED'}
-                  {...(detailView.status === 'DISABLED' ? { title: translate('page.0b78023f2a15') } : {})}
-                  onClick={() => setDisableOpen(true)}
-                >
-                  {translate('page.d989e55188c9')}
-                </Button>
-              </>
-            ) : null}
-            {canAssign ? (
-              <>
-                <Button
-                  type="button"
-                  data-testid="device-user-assign"
-                  disabled={busy || detailView.status === 'DISABLED'}
-                  {...(detailView.status === 'DISABLED' ? { title: translate('page.70f547130bda') } : {})}
-                  onClick={() => setModal('assign')}
-                >
-                  {translate('page.229546d5233e')}
-                </Button>
-                <Button
-                  type="button"
-                  data-testid="device-user-revoke"
-                  disabled={busy || !detailView.assignments.some((a) => a.status === 'ACTIVE')}
-                  {...(!detailView.assignments.some((a) => a.status === 'ACTIVE')
-                    ? { title: translate('page.78216ecf2dfc') }
-                    : {})}
-                  onClick={() => setModal('revoke')}
-                >
-                  {translate('page.38fe0730070c')}
-                </Button>
-              </>
-            ) : null}
-          </div>
+          <section className="detail-card" aria-label={translate('page.f3ea6d345e2a')}>
+            <h4>{translate('page.f3ea6d345e2a')}</h4>
+            <div className="detail-actions">
+              <Button type="button" onClick={onCloseDetail}>
+                {translate('page.6c14bd7f6f9e')}
+              </Button>
+              {canWrite ? (
+                <>
+                  <Button
+                    type="button"
+                    data-testid="device-user-edit"
+                    disabled={busy}
+                    onClick={() => {
+                      setActionError(null);
+                      setModal('edit');
+                    }}
+                  >
+                    {translate('page.644d5f06bdba')}
+                  </Button>
+                  <Button
+                    type="button"
+                    data-testid="device-user-password-reset"
+                    disabled={busy}
+                    onClick={() => setModal('password')}
+                  >
+                    {translate('page.7e422146dd5b')}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="danger-button"
+                    data-testid="device-user-disable"
+                    disabled={busy || detailView.status === 'DISABLED'}
+                    {...(detailView.status === 'DISABLED' ? { title: translate('page.0b78023f2a15') } : {})}
+                    onClick={() => setDisableOpen(true)}
+                  >
+                    {translate('page.d989e55188c9')}
+                  </Button>
+                </>
+              ) : null}
+              {canAssign ? (
+                <>
+                  <Button
+                    type="button"
+                    data-testid="device-user-assign"
+                    disabled={busy || detailView.status === 'DISABLED'}
+                    {...(detailView.status === 'DISABLED' ? { title: translate('page.70f547130bda') } : {})}
+                    onClick={() => setModal('assign')}
+                  >
+                    {translate('page.229546d5233e')}
+                  </Button>
+                  <Button
+                    type="button"
+                    data-testid="device-user-revoke"
+                    disabled={busy || !detailView.assignments.some((a) => a.status === 'ACTIVE')}
+                    {...(!detailView.assignments.some((a) => a.status === 'ACTIVE')
+                      ? { title: translate('page.78216ecf2dfc') }
+                      : {})}
+                    onClick={() => setModal('revoke')}
+                  >
+                    {translate('page.38fe0730070c')}
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </section>
 
-          <section data-testid="device-user-assignments" aria-label={translate('page.c9a07e5c1fbd')}>
-            <h5>{translate('page.c9a07e5c1fbd')}</h5>
+          <section
+            className="detail-card"
+            data-testid="device-user-assignments"
+            aria-label={translate('page.c9a07e5c1fbd')}
+          >
+            <h4>{translate('page.c9a07e5c1fbd')}</h4>
             {detailView.assignments.length === 0 ? (
               <p className="empty-state" data-testid="assignments-empty">
                 {translate('page.6364e9edd026')}
               </p>
             ) : (
-              <table aria-label={translate('page.c9a07e5c1fbd')}>
-                <thead>
-                  <tr>
-                    <th scope="col">{translate('page.01f2c16cda65')}</th>
-                    <th scope="col">{translate('page.62e951a692ff')}</th>
-                    <th scope="col">{translate('page.af2cdb23eed1')}</th>
-                    <th scope="col">{translate('page.cca320a7ae9a')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detailView.assignments.map((a) => (
-                    <tr key={a.assignmentId} data-testid={`user-assignment-${a.assignmentId}`}>
-                      <td>{a.deviceId}</td>
-                      <td>{DEVICE_USER_ASSIGNMENT_STATUS_LABELS[a.status] ?? a.status}</td>
-                      <td>
-                        <TimeText iso={a.assignedAt} />
-                      </td>
-                      <td>{a.revokedAt !== null ? <TimeText iso={a.revokedAt} /> : '—'}</td>
+              <div className="table-scroll" role="region" aria-label={translate('page.c9a07e5c1fbd')} tabIndex={0}>
+                <table aria-label={translate('page.c9a07e5c1fbd')}>
+                  <thead>
+                    <tr>
+                      <th scope="col">{translate('page.01f2c16cda65')}</th>
+                      <th scope="col">{translate('page.62e951a692ff')}</th>
+                      <th scope="col">{translate('page.af2cdb23eed1')}</th>
+                      <th scope="col">{translate('page.cca320a7ae9a')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {detailView.assignments.map((a) => (
+                      <tr key={a.assignmentId} data-testid={`user-assignment-${a.assignmentId}`}>
+                        <td>{a.deviceId}</td>
+                        <td>{DEVICE_USER_ASSIGNMENT_STATUS_LABELS[a.status] ?? a.status}</td>
+                        <td>
+                          <TimeText iso={a.assignedAt} />
+                        </td>
+                        <td>{a.revokedAt !== null ? <TimeText iso={a.revokedAt} /> : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
-          <section data-testid="device-user-sync-states" aria-label={translate('page.1338e028c94c')}>
-            <h5>{translate('page.969bc1b6280a')}</h5>
-            <p className="field-hint">{translate('page.5db8e7715b3a')}</p>
+          <section
+            className="detail-card detail-stack"
+            data-testid="device-user-sync-states"
+            aria-label={translate('page.1338e028c94c')}
+          >
+            <header>
+              <h4>{translate('page.969bc1b6280a')}</h4>
+              <p className="field-hint">{translate('page.5db8e7715b3a')}</p>
+            </header>
             {(detailView.syncStates ?? []).length === 0 ? (
               <p className="empty-state">{translate('page.920160f6e04d')}</p>
             ) : (
-              <table aria-label={translate('page.1338e028c94c')}>
-                <thead>
-                  <tr>
-                    <th scope="col">{translate('page.01f2c16cda65')}</th>
-                    <th scope="col">{translate('page.1e6d17c65416')}</th>
-                    <th scope="col">{translate('page.590a52b9ae48')}</th>
-                    <th scope="col">{translate('page.d8ba8ff705e9')}</th>
-                    <th scope="col">{translate('page.1e3d4f2f1d00')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(detailView.syncStates ?? []).map((state) => (
-                    <tr key={state.deviceId} data-testid={`user-sync-${state.deviceId}`}>
-                      <td>{state.deviceId}</td>
-                      <td>
-                        {state.entityVersion === null ? translate('page.eb89a5e85f07') : `v${state.entityVersion}`}
-                      </td>
-                      <td>
-                        {state.notificationStatus}
-                        {state.notificationPublishedAt ? (
-                          <>
-                            {' '}
-                            · <TimeText iso={state.notificationPublishedAt} />
-                          </>
-                        ) : null}
-                      </td>
-                      <td>
-                        {state.snapshotStatus === 'NOT_SERVED'
-                          ? translate('page.e630360276ef')
-                          : (state.snapshotStatus === 'ACKNOWLEDGED'
-                              ? translate('page.1086959ccc94')
-                              : translate('page.4f75a1dce29f')) +
-                            ' v' +
-                            (state.deliveredEntityVersion ?? '?')}
-                        {state.snapshotServedAt ? (
-                          <>
-                            {' '}
-                            · <TimeText iso={state.snapshotServedAt} />
-                          </>
-                        ) : null}
-                        {state.deviceReportedLastSyncAt ? (
-                          <>
-                            <br />
-                            {translate('page.ba2bdef874e5')}
-                            <TimeText iso={state.deviceReportedLastSyncAt} />
-                          </>
-                        ) : null}
-                      </td>
-                      <td>
-                        {state.deviceApplyStatus === 'NOT_REPORTED'
-                          ? translate('page.7b199c696da2')
-                          : state.deviceApplyStatus}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              (detailView.syncStates ?? []).map((state) => (
+                <section
+                  className="device-user-sync-entry detail-stack"
+                  key={state.deviceId}
+                  data-testid={`user-sync-${state.deviceId}`}
+                  aria-label={state.deviceId}
+                >
+                  <h5>
+                    <span>{translate('page.01f2c16cda65')}</span> {state.deviceId}
+                  </h5>
+                  <div className="detail-grid">
+                    <section className="detail-card" aria-label={translate('page.590a52b9ae48')}>
+                      <h5>{translate('page.590a52b9ae48')}</h5>
+                      <dl>
+                        <dt>{translate('page.1e6d17c65416')}</dt>
+                        <dd>
+                          {state.entityVersion === null ? translate('page.eb89a5e85f07') : `v${state.entityVersion}`}
+                        </dd>
+                        <dt>{translate('page.62e951a692ff')}</dt>
+                        <dd>
+                          <span className="detail-status-badge">
+                            {translate(`detail.deviceUser.notice.${state.notificationStatus}`)}
+                          </span>
+                        </dd>
+                        <dt>{translate('detail.deviceUser.publishedAt')}</dt>
+                        <dd>
+                          {state.notificationPublishedAt ? <TimeText iso={state.notificationPublishedAt} /> : '—'}
+                        </dd>
+                      </dl>
+                    </section>
+                    <section className="detail-card" aria-label={translate('detail.deviceUser.confirmation')}>
+                      <h5>{translate('detail.deviceUser.confirmation')}</h5>
+                      <dl>
+                        <dt>{translate('page.d8ba8ff705e9')}</dt>
+                        <dd>
+                          {state.snapshotStatus === 'NOT_SERVED'
+                            ? translate('page.e630360276ef')
+                            : (state.snapshotStatus === 'ACKNOWLEDGED'
+                                ? translate('page.1086959ccc94')
+                                : translate('page.4f75a1dce29f')) +
+                              (state.deliveredEntityVersion === null ? '' : ` v${state.deliveredEntityVersion}`)}
+                          {state.snapshotServedAt ? (
+                            <>
+                              {' '}
+                              · <TimeText iso={state.snapshotServedAt} />
+                            </>
+                          ) : null}
+                        </dd>
+                        <dt>{translate('detail.deviceUser.lastSyncAt')}</dt>
+                        <dd>
+                          {state.deviceReportedLastSyncAt ? <TimeText iso={state.deviceReportedLastSyncAt} /> : '—'}
+                        </dd>
+                        <dt>{translate('detail.deviceUser.applyStatus')}</dt>
+                        <dd data-testid="device-user-apply-status">
+                          {state.deviceApplyStatus === 'NOT_REPORTED'
+                            ? translate('detail.deviceUser.notReported')
+                            : state.deviceApplyStatus}
+                        </dd>
+                      </dl>
+                    </section>
+                  </div>
+                </section>
+              ))
             )}
           </section>
         </aside>

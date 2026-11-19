@@ -4,10 +4,11 @@
  * - 三标签页按权限可见（SuperAdmin 全部；CustomerAdmin 仅设备用户）；
  * - 平台用户：邀请（无永久密码字段/提交体不含 password）、角色整体替换（高风险确认）、
  *   scope 变更、停用、受控重置（不接触密码）；
- * - RBAC 矩阵只读（复选框 disabled）；DEC-012“设备操作员”显示名；
+ * - RBAC 矩阵只读；DEC-012“设备操作员”显示名；
  * - 自我提权/越权 403 正确呈现；业务设置乐观锁 409 可恢复（刷新）；
  * - 封闭 key 集四项；command.confirmation（DEC-023 固定）只读无编辑入口。
  */
+import { PERMISSIONS, ROLES, hasPermission } from '@fdp/auth/browser';
 import { afterEach, assert, test } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -288,17 +289,32 @@ test('自我提权/越权：403 经 ErrorNotice 正确呈现', async () => {
   assert.ok(error.textContent?.includes('无权访问'));
 });
 
-test('RBAC 矩阵只读：复选框全部 disabled；DEC-012 显示名“设备操作员”（无“运维人员”）', () => {
-  renderPage();
+test('RBAC 矩阵逐角色呈现共享定义，支持按权限和模块筛选', async () => {
+  const user = userEvent.setup();
+  renderPage({ role: 'Auditor' });
   const matrix = screen.getByTestId('rbac-matrix');
-  const checkboxes = matrix.querySelectorAll('input[type="checkbox"]');
-  assert.ok(checkboxes.length > 0);
-  for (const checkbox of checkboxes) {
-    assert.equal((checkbox as HTMLInputElement).disabled, true);
-  }
-  assert.ok(matrix.textContent?.includes('设备操作员'));
-  assert.ok(!matrix.textContent?.includes('运维人员'));
-  assert.ok(matrix.textContent?.includes('平台管理员'));
+  const table = within(matrix).getByTestId('rbac-table');
+  assert.equal(table.querySelector('input, select, button'), null);
+  for (const role of ROLES)
+    for (const permission of PERMISSIONS) {
+      const cell = within(table).getByTestId(`rbac-${role}-${permission}`);
+      assert.equal(cell.getAttribute('data-granted'), String(hasPermission(role, permission)));
+    }
+  assert.ok(table.textContent?.includes('设备操作员'));
+  assert.ok(!table.textContent?.includes('运维人员'));
+  const search = within(matrix).getByLabelText('查找权限或模块');
+  await user.selectOptions(within(matrix).getByRole('combobox', { name: '按角色查看' }), 'CustomerViewer');
+  await user.type(search, 'contract:read');
+  assert.equal(within(table).getByTestId('rbac-CustomerViewer-contract:read').textContent, '未授权');
+  assert.equal(within(table).queryByTestId('rbac-PlatformSuperAdmin-contract:read'), null);
+  assert.equal(within(table).queryByTestId('rbac-CustomerViewer-contract:write'), null);
+  await user.clear(search);
+  await user.type(search, '合约');
+  assert.ok(within(table).getByTestId('rbac-CustomerViewer-contract:write'));
+  await user.clear(search);
+  await user.type(search, 'unmatched');
+  assert.equal(within(matrix).queryByTestId('rbac-table'), null);
+  assert.ok(within(matrix).getByText('没有匹配的权限'));
 });
 
 test('用户列表筛选回调（roleType/status/customerId/q）', async () => {

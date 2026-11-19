@@ -290,7 +290,7 @@ test('修改资料：原因必填；空显示名提交 null；详情含同步版
   assert.ok(screen.getByTestId('user-assignment-dua-1').textContent?.includes('生效中'));
   assert.ok(screen.getByTestId('user-assignment-dua-2').textContent?.includes('已撤销'));
   const syncState = screen.getByTestId('user-sync-dev-001').textContent ?? '';
-  assert.match(syncState, /PUBLISHED/);
+  assert.match(syncState, /已投递/);
   assert.match(syncState, /设备后续同步已确认 v3/);
   assert.match(syncState, /协议未上报/);
 

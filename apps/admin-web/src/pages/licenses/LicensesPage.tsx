@@ -352,94 +352,128 @@ function LicenseDetailPanel({
   const renewGate = gateLicenseAction('renew', license.status, role);
   const revokeGate = gateLicenseAction('revoke', license.status, role);
   return (
-    <aside className="license-detail" data-testid="license-detail" aria-label={translate('page.93b851a5b6f2')}>
-      <h4>{translate('page.93b851a5b6f2')}</h4>
-      <dl>
-        <dt>License ID</dt>
-        <dd data-testid="license-id">{license.licenseId}</dd>
-        <dt>{translate('page.01f2c16cda65')}</dt>
-        <dd>{license.deviceId}</dd>
-        <dt>{translate('page.f20687060126')}</dt>
-        <dd>{license.customerId}</dd>
-        <dt>{translate('page.62e951a692ff')}</dt>
-        <dd data-testid="license-status">{licenseStatusLabel(license.status)}</dd>
-        <dt>{translate('page.222460c095e3')}</dt>
-        <dd data-testid="license-validity">
-          {license.validFrom} ~ {license.validTo}
-        </dd>
-        <dt>{translate('page.491e18841b98')}</dt>
-        <dd data-testid="license-effective">
-          {license.effective ? translate('page.b63f91b9f291') : translate('page.2ed178b6071c')}
-        </dd>
-        <dt>Entitlement</dt>
-        <dd data-testid="license-entitlements">
-          {license.entitlements
-            .filter((e) => e.enabled)
-            .map((e) => ENTITLEMENT_LABELS[e.code])
-            .join('、') || '—'}
-        </dd>
-        <dt>{translate('page.07ab7e9e7613')}</dt>
-        <dd data-testid="license-signature">
-          {license.signature !== null ? <code>{license.signature}</code> : translate('page.b1e93a417c61')}
-        </dd>
-        <dt>{translate('page.989d1affa089')}</dt>
-        <dd>v{license.version}</dd>
-        <dt>{translate('page.787ad1deae49')}</dt>
-        <dd>{license.createdBy}</dd>
-        <dt>{translate('page.093dea88c930')}</dt>
-        <dd>
-          <TimeText iso={license.updatedAt} />
-        </dd>
-      </dl>
-
-      <div className="detail-actions">
-        <Button type="button" onClick={onClose}>
-          {translate('page.6c14bd7f6f9e')}
-        </Button>
-        {issueGate.enabled ? (
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="license-issue"
-            disabled={busy}
-            onClick={() => onIntent('issue')}
-          >
-            {translate('page.e48011457930')}
-          </Button>
-        ) : null}
-        {activateGate.enabled ? (
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="license-activate"
-            disabled={busy}
-            onClick={() => onIntent('activate')}
-          >
-            {translate('page.4c25820818d6')}
-          </Button>
-        ) : null}
-        {renewGate.enabled ? (
-          <Button type="button" data-testid="license-renew" disabled={busy} onClick={onRenewIntent}>
-            {translate('page.199d45f0cbc5')}
-          </Button>
-        ) : null}
-        {revokeGate.enabled ? (
-          <Button
-            type="button"
-            className="danger-button"
-            data-testid="license-revoke"
-            disabled={busy}
-            onClick={() => onIntent('revoke')}
-          >
-            {translate('page.9fcefd8dc81e')}
-          </Button>
-        ) : null}
+    <aside
+      className="license-detail detail-stack"
+      data-testid="license-detail"
+      aria-label={translate('page.93b851a5b6f2')}
+    >
+      <header className="page-header">
+        <h3>{translate('page.93b851a5b6f2')}</h3>
+        <span className="detail-status-badge" data-testid="license-status">
+          {licenseStatusLabel(license.status)}
+        </span>
+      </header>
+      <div className="detail-grid">
+        <section className="detail-card" aria-label={translate('detail.license.identity')}>
+          <h4>{translate('detail.license.identity')}</h4>
+          <dl>
+            <dt>License ID</dt>
+            <dd data-testid="license-id">{license.licenseId}</dd>
+            <dt>{translate('page.01f2c16cda65')}</dt>
+            <dd>{license.deviceId}</dd>
+            <dt>{translate('page.f20687060126')}</dt>
+            <dd>{license.customerId}</dd>
+            <dt>{translate('page.989d1affa089')}</dt>
+            <dd>v{license.version}</dd>
+            <dt>{translate('page.787ad1deae49')}</dt>
+            <dd>{license.createdBy}</dd>
+            <dt>{translate('page.093dea88c930')}</dt>
+            <dd>
+              <TimeText iso={license.updatedAt} />
+            </dd>
+          </dl>
+        </section>
+        <section className="detail-card" aria-label={translate('page.222460c095e3')}>
+          <h4>{translate('page.222460c095e3')}</h4>
+          <dl>
+            <dt>{translate('page.222460c095e3')}</dt>
+            <dd data-testid="license-validity">
+              <time dateTime={license.validFrom}>{license.validFrom}</time> ~{' '}
+              <time dateTime={license.validTo}>{license.validTo}</time>
+            </dd>
+            <dt>{translate('page.491e18841b98')}</dt>
+            <dd data-testid="license-effective">
+              {license.effective ? translate('page.b63f91b9f291') : translate('page.2ed178b6071c')}
+            </dd>
+            <dt>{translate('page.07ab7e9e7613')}</dt>
+            <dd data-testid="license-signature">
+              {license.signature !== null ? <code>{license.signature}</code> : translate('page.b1e93a417c61')}
+            </dd>
+          </dl>
+        </section>
+        <section className="detail-card" aria-label={translate('detail.license.entitlements')}>
+          <h4>{translate('detail.license.entitlements')}</h4>
+          {license.entitlements.length === 0 ? (
+            <p className="empty-state" data-testid="license-entitlements">
+              —
+            </p>
+          ) : (
+            <ul className="status-tag-list" data-testid="license-entitlements">
+              {license.entitlements.map((entry) => (
+                <li key={entry.code}>
+                  <span className="detail-status-badge" data-enabled={entry.enabled}>
+                    {ENTITLEMENT_LABELS[entry.code] ?? entry.code} ·{' '}
+                    {translate(entry.enabled ? 'detail.enabled' : 'detail.disabled')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
-      <section data-testid="license-history" aria-label={translate('page.eb46c07247da')}>
-        <h5>{translate('page.3c6baab8c09c')}</h5>
-        {historyError !== undefined ? <ErrorNotice error={historyError} onRefresh={onRefresh} /> : null}
-        {history === null ? (
+      <section className="detail-card" aria-label={translate('page.f3ea6d345e2a')}>
+        <h4>{translate('page.f3ea6d345e2a')}</h4>
+        <div className="detail-actions">
+          <Button type="button" onClick={onClose}>
+            {translate('page.6c14bd7f6f9e')}
+          </Button>
+          {issueGate.enabled ? (
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="license-issue"
+              disabled={busy}
+              onClick={() => onIntent('issue')}
+            >
+              {translate('page.e48011457930')}
+            </Button>
+          ) : null}
+          {activateGate.enabled ? (
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="license-activate"
+              disabled={busy}
+              onClick={() => onIntent('activate')}
+            >
+              {translate('page.4c25820818d6')}
+            </Button>
+          ) : null}
+          {renewGate.enabled ? (
+            <Button type="button" data-testid="license-renew" disabled={busy} onClick={onRenewIntent}>
+              {translate('page.199d45f0cbc5')}
+            </Button>
+          ) : null}
+          {revokeGate.enabled ? (
+            <Button
+              type="button"
+              className="danger-button"
+              data-testid="license-revoke"
+              disabled={busy}
+              onClick={() => onIntent('revoke')}
+            >
+              {translate('page.9fcefd8dc81e')}
+            </Button>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="detail-card" data-testid="license-history" aria-label={translate('page.eb46c07247da')}>
+        <h4>{translate('page.3c6baab8c09c')}</h4>
+        {historyError !== undefined ? (
+          <ErrorNotice error={historyError} onRefresh={onRefresh} />
+        ) : history === null ? (
           <div role="status" data-testid="history-loading">
             {translate('page.300ee3dee4dc')}
           </div>
@@ -451,11 +485,15 @@ function LicenseDetailPanel({
           <ol className="history-timeline">
             {history.map((entry) => (
               <li key={entry.historyId} data-testid={`history-${entry.historyId}`}>
-                <TimeText iso={entry.createdAt} />：
-                {entry.fromStatus !== null ? `${licenseStatusLabel(entry.fromStatus)} → ` : ''}
-                {licenseStatusLabel(entry.toStatus)}
-                {entry.actorId !== null ? `（${entry.actorId}）` : ''}
-                {entry.reason !== null ? ` — ${entry.reason}` : ''}
+                <div className="history-transition">
+                  <strong>
+                    {entry.fromStatus !== null ? `${licenseStatusLabel(entry.fromStatus)} → ` : ''}
+                    {licenseStatusLabel(entry.toStatus)}
+                  </strong>
+                  <TimeText iso={entry.createdAt} />
+                </div>
+                {entry.actorId !== null ? <div>{entry.actorId}</div> : null}
+                {entry.reason !== null ? <div>{entry.reason}</div> : null}
               </li>
             ))}
           </ol>

@@ -264,6 +264,7 @@ export function ContractDetailController({
     rows: null,
   });
   const [associations, setAssociations] = useState<readonly ContractDeviceAssociationView[] | null>(null);
+  const [associationsError, setAssociationsError] = useState<unknown>();
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [licenses, setLicenses] = useState<Readonly<Record<string, DeviceLicenseSummaryView | null>>>({});
   const [licenseError, setLicenseError] = useState<unknown>();
@@ -271,6 +272,7 @@ export function ContractDetailController({
     if (contractId === null) return setContractError(new Error(translate('ui.0eb22b066a9a')));
     setContractError(undefined);
     setLicenseError(undefined);
+    setAssociationsError(undefined);
     const results = await Promise.allSettled([
       getContract(api, contractId),
       listContractDevices(api, contractId),
@@ -285,7 +287,8 @@ export function ContractDetailController({
       );
     } else setContractError(results[0].reason);
     setDevices(results[1].status === 'fulfilled' ? { rows: results[1].value } : { rows: [], error: results[1].reason });
-    setAssociations(results[2].status === 'fulfilled' ? results[2].value : []);
+    if (results[2].status === 'fulfilled') setAssociations(results[2].value);
+    else setAssociationsError(results[2].reason);
     if (results[0].status === 'fulfilled' && results[1].status === 'fulfilled') {
       try {
         const allLicenses = await listCustomerLicenses(api, results[0].value.customerId);
@@ -326,6 +329,7 @@ export function ContractDetailController({
       customerName={customerName}
       devices={devices}
       associations={associations}
+      {...(associationsError !== undefined ? { associationsError } : {})}
       licenses={licenses}
       {...(licenseError !== undefined ? { licenseError } : {})}
       onOpenLicense={(licenseId) => onNavigate(`/licenses?licenseId=${encodeURIComponent(licenseId)}`)}

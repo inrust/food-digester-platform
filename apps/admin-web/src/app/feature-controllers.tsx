@@ -370,7 +370,7 @@ export function LicensesController({
     }[]
   >([]);
   const [detail, setDetail] = useState<LicenseDetailState>({ kind: 'none' });
-  const selected = useRef<string | null>(null);
+  const selected = useRef<{ id: string } | null>(null);
   const loadList = useCallback(
     async (cursor?: string) => {
       setList((old) => ({ ...old, loading: true, error: undefined }));
@@ -389,19 +389,21 @@ export function LicensesController({
   );
   const loadDetail = useCallback(
     async (id: string) => {
-      selected.current = id;
+      const selection = { id };
+      selected.current = selection;
       setDetail({ kind: 'loading' });
       try {
         const license = await fetchLicense(api, id);
+        if (selection !== selected.current) return;
         setDetail({ kind: 'ready', license, history: null });
         try {
           const history = await fetchLicenseHistory(api, id);
-          if (selected.current === id) setDetail({ kind: 'ready', license, history });
+          if (selected.current === selection) setDetail({ kind: 'ready', license, history });
         } catch (historyError) {
-          if (selected.current === id) setDetail({ kind: 'ready', license, history: [], historyError });
+          if (selected.current === selection) setDetail({ kind: 'ready', license, history: [], historyError });
         }
       } catch (error) {
-        if (selected.current === id) setDetail({ kind: 'error', error });
+        if (selected.current === selection) setDetail({ kind: 'error', error });
       }
     },
     [api],
@@ -411,7 +413,10 @@ export function LicensesController({
     void loadList();
   }, [loadList]);
   useEffect(() => {
-    if (linkedLicenseId !== null && selected.current !== linkedLicenseId) void loadDetail(linkedLicenseId);
+    if (linkedLicenseId === null) {
+      selected.current = null;
+      setDetail({ kind: 'none' });
+    } else if (selected.current?.id !== linkedLicenseId) void loadDetail(linkedLicenseId);
   }, [linkedLicenseId, loadDetail]);
   useEffect(() => {
     let active = true;
@@ -435,7 +440,7 @@ export function LicensesController({
   }, [api]);
   const refresh = () => {
     void loadList();
-    if (selected.current !== null) void loadDetail(selected.current);
+    if (selected.current !== null) void loadDetail(selected.current.id);
   };
   return (
     <LicensesPage
@@ -570,7 +575,7 @@ export function useDeviceUsersPageProps({
   const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
   const [topologyOptions, setTopologyOptions] = useState<readonly DeviceUserTopologyOption[]>([]);
   const [assignableDevices, setAssignableDevices] = useState<readonly FilterOption[]>([]);
-  const selected = useRef<string | null>(null);
+  const selected = useRef<{ id: string } | null>(null);
   const loadList = useCallback(async () => {
     const customerId = fixedCustomerId ?? filter.customerId;
     setList({ rows: null });
@@ -591,13 +596,14 @@ export function useDeviceUsersPageProps({
   }, [api, filter, fixedCustomerId]);
   const loadDetail = useCallback(
     async (id: string) => {
-      selected.current = id;
+      const selection = { id };
+      selected.current = selection;
       setDetail({ kind: 'loading' });
       try {
         const next = await fetchDeviceUser(api, id);
-        if (selected.current === id) setDetail({ kind: 'ready', detail: next });
+        if (selected.current === selection) setDetail({ kind: 'ready', detail: next });
       } catch (error) {
-        if (selected.current === id) setDetail({ kind: 'error', error });
+        if (selected.current === selection) setDetail({ kind: 'error', error });
       }
     },
     [api],
@@ -647,7 +653,7 @@ export function useDeviceUsersPageProps({
   };
   const refresh = () => {
     void loadList();
-    if (selected.current !== null) void loadDetail(selected.current);
+    if (selected.current !== null) void loadDetail(selected.current.id);
   };
   return {
     role: roleOf(session),
