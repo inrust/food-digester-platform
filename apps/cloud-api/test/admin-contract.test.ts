@@ -487,3 +487,90 @@ test('PATCH trace distinguishes conditional conflict, rollback and independent f
   for (const secret of ['private-name', 'private-contact', 'private-reason'])
     assert.notInclude(JSON.stringify(rows), secret);
 });
+
+describe('A/T03 R11 上海业务日期', () => {
+  test('同一闰日含全天，非法日期和同边界双格式无写入，重复创建只有一次成功', async () => {
+    const h = handlers();
+    const customerId = await plantCustomer();
+    const contractNumber = `T03-LEAP-${seq}`;
+    const body = { contractNumber, name: '闰日服务', customerId, startDate: '2028-02-29', endDate: '2028-02-29' };
+    for (const dateFields of [
+      { endDate: '2026-02-29' },
+      { endDate: '2028-02-28' },
+      { startAt: '2028-02-29T00:00:00Z' },
+    ]) {
+      const failed = await h.create(req(superAdmin, { body: { ...body, ...dateFields } }));
+      assert.equal(failed.status, 400);
+    }
+    assert.equal(await prisma.contract.count({ where: { contractNumber } }), 0);
+    assert.equal(await auditCount(contractNumber, 'contract.create'), 0);
+
+    const created = await h.create(req(superAdmin, { body }));
+    assert.equal(created.status, 201);
+    assertOpenApiResponse('createContract', 201, created.body);
+    const { contractId, startAt, endAt } = (created.body as DataBody).data;
+    assert.equal(startAt, '2028-02-28T16:00:00.000Z');
+    assert.equal(endAt, '2028-02-29T16:00:00.000Z');
+    assert.equal((await h.create(req(superAdmin, { body }))).status, 409);
+    assert.equal(await prisma.contract.count({ where: { contractNumber } }), 1);
+    assert.equal(await auditCount(contractNumber, 'contract.create'), 1);
+
+    const params = { contractId: contractId as string };
+    assert.equal((await h.activate(writeReq(superAdmin, 1, { params, body: { reason: '启用' } }))).status, 200);
+    const lastIncluded = await handlersAt('2028-02-29T15:59:59.999Z').detail(req(operator, { params }));
+    const excluded = await handlersAt('2028-02-29T16:00:00.000Z').detail(req(operator, { params }));
+    assert.equal((lastIncluded.body as DataBody).data.derivedStatus, 'EXPIRING_SOON');
+    assert.equal((excluded.body as DataBody).data.derivedStatus, 'EXPIRED');
+  });
+
+  test('旧精确时间可读，按新日期编辑单侧边界并受 If-Match 保护，续约延长 UTC 窗口', async () => {
+    const h = handlers();
+    const customerId = await plantCustomer();
+    const exactStart = '2026-08-01T11:27:38.919Z';
+    const exactEnd = '2026-08-31T12:05:25.312Z';
+    const legacy = await createContract(h, customerId, { startAt: exactStart, endAt: exactEnd });
+    const contractId = legacy.contractId as string;
+    const params = { contractId };
+    const draftEdit = (body: Record<string, unknown>) =>
+      h.update(writeReq(superAdmin, 1, { params, body: { ...body, reason: '调整草稿' } }));
+    const original = await h.detail(req(superAdmin, { params }));
+    assert.equal((original.body as DataBody).data.startAt, exactStart);
+    assert.equal((original.body as DataBody).data.endAt, exactEnd);
+
+    assert.equal((await draftEdit({ startDate: '2026-09-01', name: '应回滚' })).status, 400);
+    const updated = await draftEdit({ startDate: '2026-08-02' });
+    assert.equal(updated.status, 200);
+    assert.equal((updated.body as DataBody).data.startAt, '2026-08-01T16:00:00.000Z');
+    assert.equal((updated.body as DataBody).data.endAt, exactEnd);
+    const stale = await draftEdit({ endDate: '2026-10-01' });
+    assert.equal(stale.status, 409);
+    assert.equal((stale.body as ErrorBody).error.code, 'VERSION_CONFLICT');
+    assert.equal(await auditCount(contractId, 'contract.update'), 1);
+
+    assert.equal((await h.activate(writeReq(superAdmin, 2, { params, body: { reason: '启用' } }))).status, 200);
+    const renew = (newEndDate: string, version = 3) =>
+      h.renew(writeReq(superAdmin, version, { params, body: { newEndDate, reason: '延长服务' } }));
+    assert.equal((await renew('2026-08-30')).status, 400);
+    const monthEnd = await renew('2026-09-30');
+    assert.equal(monthEnd.status, 200);
+    assertOpenApiResponse('renewContract', 200, monthEnd.body);
+    assert.equal((monthEnd.body as DataBody).data.endAt, '2026-09-30T16:00:00.000Z');
+    assert.equal((await renew('2026-10-01')).status, 409);
+    assert.equal(await auditCount(contractId, 'contract.renew'), 1);
+
+    const previousClient = await h.renew(
+      writeReq(superAdmin, 4, {
+        params,
+        body: { newEndAt: '2026-10-02T12:34:56.777Z', reason: '旧版续约' },
+      }),
+    );
+    assert.equal(previousClient.status, 200);
+    assert.equal((previousClient.body as DataBody).data.endAt, '2026-10-02T12:34:56.777Z');
+    assert.equal((previousClient.body as DataBody).data.startAt, '2026-08-01T16:00:00.000Z');
+    assert.equal((previousClient.body as DataBody).data.name, legacy.name);
+  });
+});
+
+function handlersAt(timestamp: string) {
+  return createAdminContractHandlers({ client: prisma, now: () => new Date(timestamp) });
+}

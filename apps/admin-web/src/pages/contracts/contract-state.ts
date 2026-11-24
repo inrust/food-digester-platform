@@ -11,6 +11,7 @@ import { translate } from '../../i18n/i18n.js';
  *   绑定至少 1 台设备（重叠租期/跨 Customer/重复编号 → 服务端 409 字段级呈现）。
  */
 import { hasPermission } from '@fdp/auth/browser';
+import { contractDateBoundary, displayContractDate } from '@fdp/contracts/domain/contract-business-date.js';
 import type { Role } from '@fdp/auth/browser';
 import type { ContractStatus } from './types.js';
 export const CONTRACT_STATUS_OPTIONS: readonly ContractStatus[] = [
@@ -60,13 +61,13 @@ export const CONTRACT_ACTION_LABELS: Readonly<Record<ContractAction, string>> = 
 };
 /**
  * 状态机矩阵（派生状态为准；列表筛选与展示均用 derivedStatus）：
- * - DRAFT：编辑/激活/终止（startAt/endAt 仅 DRAFT 可改）；
+ * - DRAFT：编辑/激活/终止/关联（startAt/endAt 仅 DRAFT 可改）；
  * - EFFECTIVE/EXPIRING_SOON：编辑（名称/联系方式）/续约/终止/关联/解绑；
  * - EXPIRED：编辑（名称/联系方式）/续约/终止（绑定 → 服务端 409）；
  * - TERMINATED：终态，无动作。
  */
 export const CONTRACT_ACTION_MATRIX: Readonly<Record<ContractStatus, readonly ContractAction[]>> = {
-  DRAFT: ['edit', 'activate', 'terminate'],
+  DRAFT: ['edit', 'activate', 'terminate', 'bind'],
   EFFECTIVE: ['edit', 'renew', 'terminate', 'bind', 'unbind'],
   EXPIRING_SOON: ['edit', 'renew', 'terminate', 'bind', 'unbind'],
   EXPIRED: ['edit', 'renew', 'terminate'],
@@ -95,11 +96,14 @@ export interface ContractFormDraft {
   readonly name: string;
   readonly customerId: string;
   readonly contact: string;
-  readonly startAt: string;
-  readonly endAt: string;
+  readonly startDate: string;
+  readonly endDate: string;
 }
 /** 创建/编辑校验：返回字段级错误（全部通过 → null）。 */
-export function validateContractForm(draft: ContractFormDraft): Record<string, string> | null {
+export function validateContractForm(
+  draft: ContractFormDraft,
+  existing?: { readonly startAt: string; readonly endAt: string },
+): Record<string, string> | null {
   const errors: Record<string, string> = {};
   const number = draft.contractNumber.trim();
   if (number.length === 0 || number.length > 100) errors['contractNumber'] = translate('ui.867431bded5c');
@@ -107,9 +111,15 @@ export function validateContractForm(draft: ContractFormDraft): Record<string, s
   if (name.length === 0 || name.length > 200) errors['name'] = translate('ui.044052bf73b1');
   if (draft.customerId.trim() === '') errors['customerId'] = translate('ui.e10e42f6ba65');
   if (draft.contact.trim().length > 200) errors['contact'] = translate('ui.4edb15bc2697');
-  const start = Date.parse(draft.startAt);
-  const end = Date.parse(draft.endAt);
-  if (Number.isNaN(start) || Number.isNaN(end)) {
+  const start =
+    existing && draft.startDate === displayContractDate(existing.startAt, 'start')
+      ? Date.parse(existing.startAt)
+      : contractDateBoundary(draft.startDate, 'start');
+  const end =
+    existing && draft.endDate === displayContractDate(existing.endAt, 'end')
+      ? Date.parse(existing.endAt)
+      : contractDateBoundary(draft.endDate, 'end');
+  if (start === null || end === null) {
     errors['period'] = translate('ui.bdfc888c87f4');
   } else if (start >= end) {
     errors['period'] = translate('ui.baaf9dd038d2');
@@ -117,16 +127,15 @@ export function validateContractForm(draft: ContractFormDraft): Record<string, s
   return Object.keys(errors).length === 0 ? null : errors;
 }
 /** 续约校验：newEndAt 必须晚于当前 endAt。 */
-export function validateRenew(newEndAt: string, currentEndAt: string): string | null {
-  const next = Date.parse(newEndAt);
+export function validateRenew(newEndDate: string, currentEndAt: string): string | null {
+  const next = contractDateBoundary(newEndDate, 'end');
   const current = Date.parse(currentEndAt);
-  if (Number.isNaN(next)) return translate('ui.fb6ff1e4ae39');
+  if (next === null) return translate('ui.fb6ff1e4ae39');
   if (!Number.isNaN(current) && next <= current) return translate('ui.b8b4a49a4d64');
   return null;
 }
-/** 服务期限展示（UTC 日期段）。 */
-export function formatServicePeriod(startAt: string, endAt: string): string {
-  return `${startAt.slice(0, 10)} ~ ${endAt.slice(0, 10)}`;
+export function formatServicePeriod(startAt: string, endAt: string | null): string {
+  return `${displayContractDate(startAt, 'start')} ~ ${endAt === null ? '—' : displayContractDate(endAt, 'end')}`;
 }
 export const ASSOCIATION_STATUS_LABELS: Readonly<Record<string, string>> = {
   get ACTIVE() {

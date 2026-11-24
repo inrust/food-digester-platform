@@ -197,8 +197,12 @@ export const EN: Readonly<Record<string, string>> = {
   'auth.error.flowExpired': 'The sign-in flow has expired. Return to sign-in and start again.',
   'auth.error.accountConfiguration': 'The account permissions are misconfigured. Contact an administrator.',
   'auth.error.unknown': 'The sign-in request could not be completed. Try again or contact an administrator.',
-  'ui.contractDeviceRequired':
-    'Bind at least one eligible device before finishing. The draft is saved and recoverable in this step.',
+  'contract.dateBasis': 'Dates use Shanghai time. Both the start and end dates are included.',
+  'contract.currentEndDate': 'The current end date is {date}.',
+  'contract.existingCustomer':
+    'Select an existing customer. If the customer is missing, add them in Customer Management, then return here to select them.',
+  'contract.draftSaved':
+    'Contract {number} has been saved as a draft. Associate devices now or continue later from the contract details.',
   'ui.consumableThresholdLoading': 'Loading the consumable display threshold source…',
   'ui.consumableThresholdSetting':
     'Consumable display thresholds come from alarm.thresholds setting version v{version}.',

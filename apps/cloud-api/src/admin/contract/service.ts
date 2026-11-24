@@ -255,7 +255,9 @@ export async function updateContract(
       const startAt = input.startAt ?? current.startAt;
       const endAt = input.endAt ?? current.endAt;
       assertContractWindow(startAt, endAt);
-      const data: Record<string, unknown> = { startAt, endAt };
+      const data: Record<string, unknown> = {};
+      if (input.startAt !== undefined) data.startAt = startAt;
+      if (input.endAt !== undefined) data.endAt = endAt;
       if (input.name !== undefined) data.name = input.name;
       if (input.contact !== undefined) data.contact = input.contact;
       // DRAFT 下窗口修改不改变状态；状态仅由显式动作与 evaluate 推导

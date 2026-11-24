@@ -375,23 +375,23 @@ async function checkGroup(key: string, page: Page, q: Qa08, go: () => Promise<vo
       await page.getByTestId('contract-number-input').fill(f.contractNumber);
       await page.getByTestId('contract-name-input').fill(f.contractName);
       await page.getByTestId('contract-customer-select').selectOption(f.customerId);
-      await page.getByTestId('contract-start-input').fill('2026-10-01T00:00');
-      await page.getByTestId('contract-end-input').fill('2027-10-01T00:00');
+      await page.getByTestId('contract-start-input').fill('2026-10-01');
+      await page.getByTestId('contract-end-input').fill('2027-10-01');
       await expect(page.getByTestId('contract-create-submit')).toBeEnabled();
       break;
     case 'contract-new.submit':
       await page.getByTestId('contract-number-input').fill(f.contractNumber);
       await page.getByTestId('contract-name-input').fill(f.contractName);
       await page.getByTestId('contract-customer-select').selectOption(f.customerId);
-      await page.getByTestId('contract-start-input').fill('2026-10-01T00:00');
-      await page.getByTestId('contract-end-input').fill('2027-10-01T00:00');
+      await page.getByTestId('contract-start-input').fill('2026-10-01');
+      await page.getByTestId('contract-end-input').fill('2027-10-01');
       await page.getByTestId('contract-create-submit').click();
       await expect(page.getByTestId(`contract-new-device-${f.deviceId}`)).toBeVisible();
-      await expect(page.getByTestId('contract-new-done')).toBeDisabled();
+      await expect(page.getByTestId('contract-new-done')).toBeEnabled();
       await page.getByTestId(`contract-new-device-${f.deviceId}`).check();
       await page.getByTestId('contract-bind-reason').fill(f.prefix);
       await page.getByTestId('contract-bind-submit').click();
-      await expect(page.getByTestId('contract-new-done')).toBeEnabled();
+      await expect(page.getByTestId('action-notice')).toContainText('已关联');
       break;
     case 'contract-new.cancel':
       await page.getByTestId('contract-create-cancel').click();

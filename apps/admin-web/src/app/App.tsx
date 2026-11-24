@@ -1,7 +1,7 @@
 import { Button } from '../components/ui.js';
 import { DesignProvider } from '../components/DesignProvider.js';
 import { translate } from '../i18n/i18n.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { resetUserTimeZonePreference, TimeZoneProvider } from '../components/TimeText.js';
 import { I18nProvider, useI18n } from '../i18n/i18n.js';
@@ -97,14 +97,6 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
   const [account, setAccount] = useState<{ key: string; profile: OwnAccountProfile } | null>(null);
-  const [contractNavigationBlocked, setContractNavigationBlocked] = useState(false);
-  const navigateWithinApp = useCallback(
-    (path: string, options?: { replace?: boolean }) => {
-      if (contractNavigationBlocked) return;
-      navigate(path, options);
-    },
-    [contractNavigationBlocked, navigate],
-  );
   const toasts = useToastQueue();
   const session = services.session.current();
   useEffect(
@@ -237,21 +229,13 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <AuditLogsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'settings':
-      page = (
-        <SettingsController key={sessionScope} api={services.api} session={session} onNavigate={navigateWithinApp} />
-      );
+      page = <SettingsController key={sessionScope} api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'contract-modify':
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'contract-new':
-      page = (
-        <ContractNewController
-          api={services.api}
-          onNavigate={navigateWithinApp}
-          onNavigationBlockedChange={setContractNavigationBlocked}
-        />
-      );
+      page = <ContractNewController api={services.api} onNavigate={navigate} />;
       break;
     case 'contract-detail':
       page = (
@@ -281,7 +265,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
         path={location.pathname}
         session={session}
         accountProfile={account?.key === accountKey ? account.profile : null}
-        onNavigate={navigateWithinApp}
+        onNavigate={navigate}
         onLogout={() => void services.auth.logout()}
       >
         {page}

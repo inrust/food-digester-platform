@@ -14,7 +14,7 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { createAdminContractDeviceHandlers } from '../src/index.js';
+import { createAdminContractDeviceHandlers, createAdminContractHandlers } from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 import { assertOpenApiResponse } from './openapi-response.js';
@@ -439,4 +439,36 @@ describe('契约一致性', () => {
       assert.ok(!/@fdp\/aws-clients|@aws-sdk|aws-sdk/.test(source), `${file} 引用了 AWS 客户端`);
     }
   });
+});
+
+test('R11 日期合约关联默认使用半开窗口，相邻可写，重叠失败且不留下部分关联', async () => {
+  const { customerId, siteId } = await plantContract();
+  const ctx = { customerId, siteId };
+  const d1 = await plantDevice(ctx);
+  const d2 = await plantDevice(ctx);
+  const contracts = createAdminContractHandlers({ client: prisma, now });
+  const create = async (label: string, date: string) => {
+    const res = await contracts.create(
+      req(superAdmin, {
+        body: { contractNumber: `R11-${seq}-${label}`, name: label, customerId, startDate: date, endDate: date },
+      }),
+    );
+    assert.equal(res.status, 201);
+    return (res.body as { data: { contractId: string } }).data.contractId;
+  };
+
+  const h = handlers();
+  const leapDay = await create('leap', '2028-02-29');
+  const nextDay = await create('next', '2028-03-01');
+  const overlapping = await create('overlap', '2028-02-29');
+  assert.equal((await bind(h, leapDay, [d1])).status, 201);
+  assert.equal((await bind(h, overlapping, [d2, d1])).status, 409);
+  assert.equal(await prisma.contractDevice.count({ where: { contractId: overlapping } }), 0);
+  assert.equal((await bind(h, nextDay, [d1])).status, 201);
+  const rows = await prisma.contractDevice.findMany({ where: { deviceId: d1 }, orderBy: { validFrom: 'asc' } });
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0]?.validTo?.toISOString(), '2028-02-29T16:00:00.000Z');
+  assert.equal(rows[1]?.validFrom.toISOString(), rows[0]?.validTo?.toISOString());
+
+  assert.equal((await bind(h, overlapping, [d2])).status, 201);
 });

@@ -16,6 +16,7 @@
  */
 import { AuthError, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
+import { contractDateBoundary } from '@fdp/contracts/domain/contract-business-date.js';
 import { ContractStateError } from '@fdp/domain';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
@@ -88,6 +89,41 @@ function requireTimestamp(value: unknown, field: string): Date {
   return date;
 }
 
+/** Each boundary accepts one business date or its legacy timestamp. */
+function parseBoundary(
+  body: Record<string, unknown>,
+  dateField: string,
+  timestampField: string,
+  boundary: 'start' | 'end',
+  required: true,
+): Date;
+function parseBoundary(
+  body: Record<string, unknown>,
+  dateField: string,
+  timestampField: string,
+  boundary: 'start' | 'end',
+): Date | undefined;
+function parseBoundary(
+  body: Record<string, unknown>,
+  dateField: string,
+  timestampField: string,
+  boundary: 'start' | 'end',
+  required = false,
+): Date | undefined {
+  const date = body[dateField];
+  const timestamp = body[timestampField];
+  if (date === undefined) {
+    if (!required && timestamp === undefined) return undefined;
+    return requireTimestamp(timestamp, timestampField);
+  }
+  if (timestamp !== undefined) {
+    throw contractValidationFailed(`Provide only one of ${dateField} and ${timestampField}`);
+  }
+  const instant = typeof date === 'string' ? contractDateBoundary(date, boundary) : null;
+  if (instant === null) throw contractValidationFailed(`${dateField} must be a valid YYYY-MM-DD date`);
+  return new Date(instant);
+}
+
 function optionalTimestamp(value: unknown, field: string): Date | undefined {
   if (value === undefined || value === null) return undefined;
   return requireTimestamp(value, field);
@@ -147,7 +183,17 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req, ['contractNumber', 'name', 'customerId', 'contact', 'startAt', 'endAt', 'reason']);
+      const body = bodyOf(req, [
+        'contractNumber',
+        'name',
+        'customerId',
+        'contact',
+        'startAt',
+        'endAt',
+        'startDate',
+        'endDate',
+        'reason',
+      ]);
       assertOptionalStringFields(body, ['contact', 'reason'], contractValidationFailed);
       const contractNumber = optionalString(body.contractNumber, 'contractNumber', 100);
       const name = optionalString(body.name, 'name', 200);
@@ -160,8 +206,8 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
         name,
         customerId: body.customerId.trim(),
         ...(typeof body.contact === 'string' ? { contact: body.contact } : {}),
-        startAt: requireTimestamp(body.startAt, 'startAt'),
-        endAt: requireTimestamp(body.endAt, 'endAt'),
+        startAt: parseBoundary(body, 'startDate', 'startAt', 'start', true),
+        endAt: parseBoundary(body, 'endDate', 'endAt', 'end', true),
         ...(typeof body.reason === 'string' ? { reason: body.reason } : {}),
       });
       return { status: 201, body: { data: view, meta: meta(req) } };
@@ -187,16 +233,17 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const update = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req, ['name', 'contact', 'startAt', 'endAt', 'reason']);
+      const keys = ['name', 'contact', 'startAt', 'endAt', 'startDate', 'endDate', 'reason'];
+      const body = bodyOf(req, keys);
       if (body.contact !== undefined && body.contact !== null && typeof body.contact !== 'string') {
         throw contractValidationFailed('contact must be a string or null');
       }
       const view = await updateContract(deps, actorOf(req), {
-        ...writeInputOf(req, ['name', 'contact', 'startAt', 'endAt', 'reason']),
+        ...writeInputOf(req, keys),
         ...(body.name !== undefined ? { name: optionalString(body.name, 'name', 200) } : {}),
         ...(body.contact !== undefined ? { contact: body.contact as string | null } : {}),
-        ...(body.startAt !== undefined ? { startAt: requireTimestamp(body.startAt, 'startAt') } : {}),
-        ...(body.endAt !== undefined ? { endAt: requireTimestamp(body.endAt, 'endAt') } : {}),
+        startAt: parseBoundary(body, 'startDate', 'startAt', 'start'),
+        endAt: parseBoundary(body, 'endDate', 'endAt', 'end'),
       });
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
@@ -213,10 +260,11 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   const renew = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'contract:write' },
     async (req) => {
-      const body = bodyOf(req, ['newEndAt', 'reason']);
+      const keys = ['newEndAt', 'newEndDate', 'reason'];
+      const body = bodyOf(req, keys);
       const view = await renewContract(deps, actorOf(req), {
-        ...writeInputOf(req, ['newEndAt', 'reason']),
-        newEndAt: requireTimestamp(body.newEndAt, 'newEndAt'),
+        ...writeInputOf(req, keys),
+        newEndAt: parseBoundary(body, 'newEndDate', 'newEndAt', 'end', true),
       });
       return { status: 200, body: { data: view, meta: meta(req) } };
     },

@@ -47,7 +47,7 @@
       },
       {
         "file": "admin-contract-api.json",
-        "sha256": "2d230c425a660fab3fa09eb57426c7f906d33db69659b6a17fa5a59c01b9b575",
+        "sha256": "bbb6fe09efd8dc30082fb71b5fb0addc33e67517ee48e630861fedb11e17b18b",
         "status": "implemented"
       },
       {
@@ -2334,7 +2334,8 @@
           "admin"
         ],
         "operationId": "createContract",
-        "summary": "创建 Contract（DRAFT；contractNumber 全局唯一；startAt<endAt）",
+        "summary": "创建 Contract（DRAFT；contractNumber 全局唯一）",
+        "description": "每个边界选择业务日期或原有 UTC 时间戳。日期以 Asia/Shanghai 计算，起始日 00:00 开始，结束日包含当天（次日 00:00 为排他边界）。起止同日有效。",
         "security": [
           {
             "CognitoJwt": []
@@ -2503,7 +2504,8 @@
           "admin"
         ],
         "operationId": "updateContract",
-        "summary": "编辑 Contract（If-Match + 强制原因；startAt/endAt 仅 DRAFT 可改）",
+        "summary": "编辑 Contract（If-Match + 强制原因；有效期仅 DRAFT 可改）",
+        "description": "草稿的每个有效期边界可独立提供业务日期或原有 UTC 时间戳。省略的边界保留已存储的精确时间。",
         "security": [
           {
             "CognitoJwt": []
@@ -2655,7 +2657,7 @@
         ],
         "operationId": "renewContract",
         "summary": "续约 Contract（延长 endAt，状态按新窗口重推导；If-Match + 强制原因）",
-        "description": "EFFECTIVE/EXPIRING_SOON/EXPIRED 可续约；newEndAt 必须晚于当前 endAt；DRAFT 走编辑，TERMINATED 不可续约。",
+        "description": "EFFECTIVE/EXPIRING_SOON/EXPIRED 可续约；newEndDate（含当天）或 newEndAt 换算后的 UTC 边界必须晚于当前 endAt；DRAFT 走编辑，TERMINATED 不可续约。",
         "security": [
           {
             "CognitoJwt": []
@@ -13648,14 +13650,48 @@
           }
         }
       },
+      "AdminContractApi__ContractBusinessDate": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^(?!0000)[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+        "description": "Asia/Shanghai 日历日期，格式 YYYY-MM-DD。"
+      },
       "AdminContractApi__ContractCreateRequest": {
         "type": "object",
         "required": [
           "contractNumber",
           "name",
-          "customerId",
-          "startAt",
-          "endAt"
+          "customerId"
+        ],
+        "allOf": [
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "startDate"
+                ]
+              },
+              {
+                "required": [
+                  "startAt"
+                ]
+              }
+            ]
+          },
+          {
+            "oneOf": [
+              {
+                "required": [
+                  "endDate"
+                ]
+              },
+              {
+                "required": [
+                  "endAt"
+                ]
+              }
+            ]
+          }
         ],
         "additionalProperties": false,
         "properties": {
@@ -13679,6 +13715,14 @@
             "maxLength": 200,
             "description": "Customer 联系方式（最小权限返回）"
           },
+          "startDate": {
+            "$ref": "#/components/schemas/AdminContractApi__ContractBusinessDate",
+            "description": "上海当地 00:00 起算。"
+          },
+          "endDate": {
+            "$ref": "#/components/schemas/AdminContractApi__ContractBusinessDate",
+            "description": "结束日期含当天，上海次日 00:00 为排他边界。"
+          },
           "startAt": {
             "$ref": "#/components/schemas/UtcTimestamp"
           },
@@ -13698,6 +13742,22 @@
           "reason"
         ],
         "additionalProperties": false,
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "startAt",
+                "startDate"
+              ]
+            },
+            {
+              "required": [
+                "endAt",
+                "endDate"
+              ]
+            }
+          ]
+        },
         "properties": {
           "name": {
             "type": "string",
@@ -13710,6 +13770,14 @@
               "null"
             ],
             "maxLength": 200
+          },
+          "startDate": {
+            "$ref": "#/components/schemas/AdminContractApi__ContractBusinessDate",
+            "description": "上海当地 00:00 起算。"
+          },
+          "endDate": {
+            "$ref": "#/components/schemas/AdminContractApi__ContractBusinessDate",
+            "description": "结束日期含当天，上海次日 00:00 为排他边界。"
           },
           "startAt": {
             "$ref": "#/components/schemas/UtcTimestamp",
@@ -13743,11 +13811,26 @@
       "AdminContractApi__ContractRenewRequest": {
         "type": "object",
         "required": [
-          "newEndAt",
           "reason"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "newEndDate"
+            ]
+          },
+          {
+            "required": [
+              "newEndAt"
+            ]
+          }
         ],
         "additionalProperties": false,
         "properties": {
+          "newEndDate": {
+            "$ref": "#/components/schemas/AdminContractApi__ContractBusinessDate",
+            "description": "含当天。上海次日 00:00 必须晚于当前 endAt。"
+          },
           "newEndAt": {
             "$ref": "#/components/schemas/UtcTimestamp",
             "description": "必须晚于当前 endAt"

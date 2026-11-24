@@ -10,6 +10,7 @@ import { translate } from '../../i18n/i18n.js';
  * - 设备仅从 eligible 列表选择（绑定 Modal 实时加载）；重叠租期/跨 Customer/重复关联 → 409 呈现；
  * - contact 最小权限：Auditor 视图为 null（显示“最小权限不可见”），不伪造。
  */
+import { displayContractDate } from '@fdp/contracts/domain/contract-business-date.js';
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
@@ -22,6 +23,7 @@ import type { DeviceLicenseSummaryView } from '../devices/types.js';
 import {
   ASSOCIATION_STATUS_LABELS,
   CONTRACT_STATUS_LABELS,
+  formatServicePeriod,
   gateContractAction,
   validateContractForm,
   validateRenew,
@@ -53,7 +55,7 @@ export interface ContractDetailPageProps {
   readonly onListAvailable: () => Promise<readonly AvailableDeviceView[]>;
   readonly onEdit: (input: ContractUpdateInput, version: number) => Promise<ContractView>;
   readonly onActivate: (reason: string, version: number) => Promise<ContractView>;
-  readonly onRenew: (newEndAt: string, reason: string, version: number) => Promise<ContractView>;
+  readonly onRenew: (newEndDate: string, reason: string, version: number) => Promise<ContractView>;
   readonly onTerminate: (reason: string, version: number) => Promise<ContractView>;
   readonly onBind: (deviceIds: readonly string[], reason: string) => Promise<readonly string[]>;
   readonly onUnbind: (deviceIds: readonly string[], reason: string) => Promise<readonly string[]>;
@@ -94,11 +96,12 @@ export function ContractDetailPage({
 }: ContractDetailPageProps) {
   const [editDraft, setEditDraft] = useState<ContractFormDraft | null>(null);
   const [editReason, setEditReason] = useState('');
-  const [renewEndAt, setRenewEndAt] = useState<string | null>(null);
+  const [renewEndDate, setRenewEndDate] = useState<string | null>(null);
   const [renewReason, setRenewReason] = useState('');
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
   const [bindOpen, setBindOpen] = useState(false);
   const [available, setAvailable] = useState<readonly AvailableDeviceView[] | null>(null);
+  const [availableFailure, setAvailableFailure] = useState<{ error: unknown } | null>(null);
   const availableRequest = useRef(0);
   const [bindSelected, setBindSelected] = useState<readonly string[]>([]);
   const [bindReason, setBindReason] = useState('');
@@ -143,28 +146,33 @@ export function ContractDetailPage({
   }
   const status = contract.derivedStatus;
   const gate = (action: Parameters<typeof gateContractAction>[0]) => gateContractAction(action, status, role);
-  const editFieldErrors =
-    editDraft !== null ? validateContractForm({ ...editDraft, customerId: contract.customerId }) : null;
-  const renewError = renewEndAt !== null ? validateRenew(renewEndAt, contract.endAt) : null;
+  const startDate = displayContractDate(contract.startAt, 'start');
+  const endDate = displayContractDate(contract.endAt, 'end');
+  const editFieldErrors = editDraft !== null ? validateContractForm(editDraft, contract) : null;
+  const renewError = renewEndDate !== null ? validateRenew(renewEndDate, contract.endAt) : null;
   const closeBind = () => {
     availableRequest.current += 1;
     setBindOpen(false);
   };
-  const openBind = () => {
+  const loadAvailable = () => {
     const request = ++availableRequest.current;
-    setBindOpen(true);
-    setActionError(null);
     setAvailable(null);
-    setBindSelected([]);
-    setBindReason('');
+    setAvailableFailure(null);
     void onListAvailable().then(
       (devices) => {
         if (request === availableRequest.current) setAvailable(devices);
       },
       (err: unknown) => {
-        if (request === availableRequest.current) setActionError(err);
+        if (request === availableRequest.current) setAvailableFailure({ error: err });
       },
     );
+  };
+  const openBind = () => {
+    setBindOpen(true);
+    setActionError(null);
+    setBindSelected([]);
+    setBindReason('');
+    loadAvailable();
   };
   const submitEdit = () =>
     runAction(async () => {
@@ -173,7 +181,8 @@ export function ContractDetailPage({
         name: editDraft.name.trim(),
         contact: editDraft.contact.trim() === '' ? null : editDraft.contact.trim(),
         reason: editReason.trim(),
-        ...(status === 'DRAFT' ? { startAt: editDraft.startAt, endAt: editDraft.endAt } : {}),
+        ...(status === 'DRAFT' && editDraft.startDate !== startDate ? { startDate: editDraft.startDate } : {}),
+        ...(status === 'DRAFT' && editDraft.endDate !== endDate ? { endDate: editDraft.endDate } : {}),
       };
       await onEdit(input, contract.version);
       setEditDraft(null);
@@ -182,9 +191,9 @@ export function ContractDetailPage({
     });
   const submitRenew = () =>
     runAction(async () => {
-      if (renewEndAt === null || renewError !== null) return '';
-      await onRenew(renewEndAt, renewReason.trim(), contract.version);
-      setRenewEndAt(null);
+      if (renewEndDate === null || renewError !== null) return '';
+      await onRenew(renewEndDate, renewReason.trim(), contract.version);
+      setRenewEndDate(null);
       setRenewReason('');
       return translate('page.58d9c1174d71');
     });
@@ -227,7 +236,7 @@ export function ContractDetailPage({
           {notice}
         </p>
       ) : null}
-      {actionError !== null && editDraft === null && renewEndAt === null && !bindOpen ? (
+      {actionError !== null && editDraft === null && renewEndDate === null && !bindOpen ? (
         <ErrorNotice error={actionError} onRefresh={onRefresh} />
       ) : null}
 
@@ -260,11 +269,11 @@ export function ContractDetailPage({
           <dl>
             <dt>{translate('detail.contract.startDate')}</dt>
             <dd>
-              <time dateTime={contract.startAt}>{contract.startAt.slice(0, 10)}</time>
+              <time dateTime={startDate}>{startDate}</time>
             </dd>
             <dt>{translate('detail.contract.endDate')}</dt>
             <dd>
-              <time dateTime={contract.endAt}>{contract.endAt.slice(0, 10)}</time>
+              <time dateTime={endDate}>{endDate}</time>
             </dd>
           </dl>
         </section>
@@ -294,8 +303,8 @@ export function ContractDetailPage({
                 name: contract.name,
                 customerId: contract.customerId,
                 contact: contract.contact ?? '',
-                startAt: contract.startAt,
-                endAt: contract.endAt,
+                startDate,
+                endDate,
               });
               setEditReason('');
             }}
@@ -318,7 +327,7 @@ export function ContractDetailPage({
             {...(gate('renew') !== null ? { title: gate('renew') ?? '' } : {})}
             onClick={() => {
               setActionError(null);
-              setRenewEndAt('');
+              setRenewEndDate('');
               setRenewReason('');
             }}
           >
@@ -436,7 +445,7 @@ export function ContractDetailPage({
                       <LicenseSummary summary={licenses?.[device.deviceId] ?? null} onOpen={onOpenLicense} />
                     </td>
                     <td>
-                      {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}（
+                      {formatServicePeriod(association.validFrom, association.validTo)}（
                       {ASSOCIATION_STATUS_LABELS[association.status] ?? association.status}）
                     </td>
                   </tr>
@@ -476,9 +485,7 @@ export function ContractDetailPage({
                 {associations.map((association) => (
                   <tr key={association.associationId}>
                     <td>{association.deviceId}</td>
-                    <td>
-                      {association.validFrom.slice(0, 10)} ~ {association.validTo?.slice(0, 10) ?? '—'}
-                    </td>
+                    <td>{formatServicePeriod(association.validFrom, association.validTo)}</td>
                     <td>{ASSOCIATION_STATUS_LABELS[association.status] ?? association.status}</td>
                     <td>
                       <TimeText iso={association.createdAt} />
@@ -531,16 +538,19 @@ export function ContractDetailPage({
                 <Input
                   id="contract-edit-start"
                   data-testid="contract-edit-start"
-                  value={editDraft.startAt}
-                  onChange={(event) => setEditDraft({ ...editDraft, startAt: event.target.value })}
+                  type="date"
+                  value={editDraft.startDate}
+                  onChange={(event) => setEditDraft({ ...editDraft, startDate: event.target.value })}
                 />
                 <label htmlFor="contract-edit-end">{translate('page.a1bf0b770919')}</label>
                 <Input
                   id="contract-edit-end"
                   data-testid="contract-edit-end"
-                  value={editDraft.endAt}
-                  onChange={(event) => setEditDraft({ ...editDraft, endAt: event.target.value })}
+                  type="date"
+                  value={editDraft.endDate}
+                  onChange={(event) => setEditDraft({ ...editDraft, endDate: event.target.value })}
                 />
+                <p className="field-hint">{translate('contract.dateBasis')}</p>
               </div>
             ) : null}
             {editFieldErrors !== null && editFieldErrors['period'] !== undefined ? (
@@ -577,27 +587,25 @@ export function ContractDetailPage({
       </Modal>
 
       <Modal
-        open={renewEndAt !== null}
+        open={renewEndDate !== null}
         title={translate('page.71549b1a320e')}
         testid="contract-renew-form"
-        onClose={() => setRenewEndAt(null)}
+        onClose={() => setRenewEndDate(null)}
       >
-        {renewEndAt !== null ? (
+        {renewEndDate !== null ? (
           <div>
             {actionError !== null ? <ErrorNotice error={actionError} /> : null}
-            <p className="field-hint">
-              If-Match：v{contract.version}
-              {translate('page.8ca11a88bfcc')}
-              {contract.endAt.slice(0, 10)}）。
-            </p>
+            <p className="field-hint">{translate('contract.currentEndDate', { date: endDate })}</p>
             <div className="dialog-field">
               <label htmlFor="contract-renew-end">{translate('page.540c7d9c2407')}</label>
               <Input
                 id="contract-renew-end"
                 data-testid="contract-renew-end"
-                value={renewEndAt}
-                onChange={(event) => setRenewEndAt(event.target.value)}
+                type="date"
+                value={renewEndDate}
+                onChange={(event) => setRenewEndDate(event.target.value)}
               />
+              <p className="field-hint">{translate('contract.dateBasis')}</p>
             </div>
             {renewError !== null ? (
               <p className="field-hint" data-testid="contract-renew-error">
@@ -615,7 +623,7 @@ export function ContractDetailPage({
               />
             </div>
             <div className="dialog-actions">
-              <Button type="button" onClick={() => setRenewEndAt(null)}>
+              <Button type="button" onClick={() => setRenewEndDate(null)}>
                 {translate('common.cancel')}
               </Button>
               <Button
@@ -635,12 +643,17 @@ export function ContractDetailPage({
       <Modal open={bindOpen} title={translate('page.d3ca3e6b7106')} testid="contract-bind-form" onClose={closeBind}>
         {actionError !== null ? <ErrorNotice error={actionError} /> : null}
         <p className="field-hint">{translate('page.816ff488d0a0')}</p>
-        {available === null ? (
-          actionError === null ? (
-            <div role="status" data-testid="contract-bind-loading">
-              {translate('page.d360706fdd30')}
-            </div>
-          ) : null
+        {availableFailure !== null ? (
+          <div>
+            <ErrorNotice error={availableFailure.error} />
+            <Button type="button" data-testid="contract-bind-retry" onClick={loadAvailable}>
+              {translate('detail.retry')}
+            </Button>
+          </div>
+        ) : available === null ? (
+          <div role="status" data-testid="contract-bind-loading">
+            {translate('page.d360706fdd30')}
+          </div>
         ) : available.length === 0 ? (
           <p className="empty-state" data-testid="contract-bind-empty">
             {translate('page.941fc73da805')}
@@ -667,10 +680,11 @@ export function ContractDetailPage({
           </div>
         )}
         <div className="dialog-field">
-          <label htmlFor="contract-bind-reason">{translate('page.c25db741afe8')}</label>
+          <label htmlFor="contract-bind-reason">{translate('page.45ec50c74ef1')}</label>
           <Input
             id="contract-bind-reason"
             data-testid="contract-bind-reason"
+            required
             maxLength={500}
             value={bindReason}
             onChange={(event) => setBindReason(event.target.value)}
