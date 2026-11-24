@@ -160,6 +160,12 @@ export const DELIVERED_OPERATIONS = [
     path: '/api/v1/admin/sites/{siteId}/deactivate',
     runtime: 'admin-api',
   },
+  {
+    operationId: 'reactivateSite',
+    method: 'POST',
+    path: '/api/v1/admin/sites/{siteId}/reactivate',
+    runtime: 'admin-api',
+  },
   { operationId: 'listDevices', method: 'GET', path: '/api/v1/admin/devices', runtime: 'admin-api' },
   {
     operationId: 'getDevice',

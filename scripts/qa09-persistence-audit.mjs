@@ -11,6 +11,7 @@ export const MUTATION_AUDIT_ACTIONS = {
   updateSite: 'site.update',
   deleteSite: 'site.delete',
   deactivateSite: 'site.deactivate',
+  reactivateSite: 'site.reactivate',
   updateDeviceMetadata: 'device.metadata.update',
   assignDevice: 'device.assignment.assign',
   createReplayJob: 'replay.job.create',

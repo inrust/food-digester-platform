@@ -3,7 +3,7 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Device Assignment API",
     "version": "0.1.0",
-    "description": "BE-DEV-02 设备分配接口（Cognito 认证）：分配/调整 Customer 和 Site（device:assign，PlatformSuperAdmin/PlatformOperator；首次分配 Onboarded→Assigned 按 DOM-01 迁移表仅 PlatformSuperAdmin），记录 Assignment 历史与授权窗口（assignedAt/endedAt），每次真实变更恰好生成一个 ASSIGNMENT_CHANGED Notification（经 Outbox 下行，deviceAction=SYNC）。仅 Onboarded/Assigned 生命周期合法；Site 必须属于目标 Customer（跨 Customer 拒绝 400）；目标与当前 ACTIVE 分配一致的重复请求幂等（无写入、无新通知）；不自动创建 License。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-DEV-02 设备分配接口（Cognito 认证）：分配/调整 Customer 和 Site（device:assign，PlatformSuperAdmin/PlatformOperator；首次分配 Onboarded→Assigned 按 DOM-01 迁移表仅 PlatformSuperAdmin），记录 Assignment 历史与授权窗口（assignedAt/endedAt），每次真实变更恰好生成一个 ASSIGNMENT_CHANGED Notification（经 Outbox 下行，deviceAction=SYNC）。仅 Onboarded/Assigned 生命周期合法；Site 必须属于目标 Customer（跨 Customer 拒绝 400）；仅可分配至 ACTIVE 站点；可在同一事务创建站点并分配；目标与当前 ACTIVE 分配一致的重复请求幂等（无写入、无新通知）；不自动创建 License。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-011@1.0.0"],
     "x-decision-register-version": "1.40.0"
   },
@@ -23,7 +23,7 @@
         "tags": ["admin"],
         "operationId": "assignDevice",
         "summary": "分配/调整设备 Customer 和 Site（device:assign + 审计 + ASSIGNMENT_CHANGED 通知）",
-        "description": "首次分配（Onboarded→Assigned）经 DOM-01 生命周期迁移（仅 PlatformSuperAdmin）；Assigned 状态调整为同状态再分配；写审计（device.assignment.assign）；幂等重放返回 replayed=true 且 notification=null。",
+        "description": "首次分配（Onboarded→Assigned）经 DOM-01 生命周期迁移（仅 PlatformSuperAdmin）；Assigned 状态调整为同状态再分配；写审计（device.assignment.assign）；幂等重放返回 replayed=true 且 notification=null。siteId 与 newSite 二选一。内联建站另需 site:write，写入站点、设备归属、分配历史及审计一并提交。同一客户下重名返回 409，可改用明确选中的 siteId 提交。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
@@ -46,7 +46,7 @@
             }
           },
           "400": {
-            "description": "校验失败（VALIDATION_FAILED：缺 customerId/siteId、跨 Customer Site 引用）",
+            "description": "校验失败（VALIDATION_FAILED：缺 customerId、站点来源未二选一或字段非法、跨 Customer Site 引用）",
             "content": {
               "application/json": {
                 "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
@@ -62,7 +62,7 @@
             }
           },
           "403": {
-            "description": "无权限（FORBIDDEN：无 device:assign 权限，或 Operator 执行首次分配）",
+            "description": "无权限（FORBIDDEN：无 device:assign 权限、内联建站时无 site:write 权限，或 Operator 执行首次分配）",
             "content": {
               "application/json": {
                 "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
@@ -78,7 +78,7 @@
             }
           },
           "409": {
-            "description": "生命周期不允许分配（DEVICE_STATE_NOT_ALLOWED）或并发冲突（CONFLICT）",
+            "description": "生命周期不允许分配（DEVICE_STATE_NOT_ALLOWED）、站点停用、同一客户下站点重名或并发冲突（CONFLICT）",
             "content": {
               "application/json": {
                 "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
@@ -158,11 +158,23 @@
     "schemas": {
       "AssignmentRequest": {
         "type": "object",
-        "required": ["customerId", "siteId"],
+        "required": ["customerId"],
+        "oneOf": [{ "required": ["siteId"] }, { "required": ["newSite"] }],
         "additionalProperties": false,
         "properties": {
           "customerId": { "type": "string", "minLength": 1 },
-          "siteId": { "type": "string", "minLength": 1, "description": "必须属于 customerId" },
+          "siteId": { "type": "string", "minLength": 1, "description": "必须为 customerId 下已启用的站点" },
+          "newSite": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "region": { "type": ["string", "null"], "maxLength": 200 },
+              "subregion": { "type": ["string", "null"], "maxLength": 200 },
+              "timezone": { "type": "string", "description": "IANA 标识，缺省 UTC" }
+            }
+          },
           "reason": { "type": "string", "maxLength": 500, "description": "可选；写入分配记录与审计" }
         }
       },

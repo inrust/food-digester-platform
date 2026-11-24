@@ -3,7 +3,7 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Site API",
     "version": "0.1.0",
-    "description": "BE-CUS-02 Site 管理接口（Cognito 认证）：列表（customerId/region/subregion/status 筛选 + 键集游标分页）、详情（含设备数量）、创建、更新、停用、软删除。Site 必须属于唯一 Customer（customerId 创建后不可变，DEC-011：Customer→Site→Device）；Region/Subregion 为 Site 可筛选属性，设备不维护地域真值；时区使用 IANA 标识。写操作（site:write，PlatformSuperAdmin/PlatformOperator）强制 If-Match 乐观锁并写审计（DOM-03）；读操作需 site:read，Customer 角色由服务端身份上下文强制限定所属 Customer。删除为软删除：有关联设备时返回 409 CONFLICT；V1 不做物理删除。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-CUS-02 Site 管理接口（Cognito 认证）：列表（customerId/region/subregion/status 筛选 + 键集游标分页）、详情（含设备数量）、创建、更新、停用、重新启用、软删除。Site 必须属于唯一 Customer（customerId 创建后不可变，DEC-011：Customer→Site→Device）；Region/Subregion 为 Site 可筛选属性，设备不维护地域真值；时区使用 IANA 标识。写操作（site:write，PlatformSuperAdmin/PlatformOperator）强制 If-Match 乐观锁并写审计（DOM-03）；读操作需 site:read，Customer 角色由服务端身份上下文强制限定所属 Customer。删除为软删除：有关联设备时返回 409 CONFLICT；V1 不做物理删除。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-011@1.0.0", "DEC-012@1.0.0"],
     "x-decision-register-version": "1.40.0"
   },
@@ -29,6 +29,12 @@
           { "$ref": "openapi-base.json#/components/parameters/Limit" },
           { "$ref": "openapi-base.json#/components/parameters/Cursor" },
           { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "按站点 ID 精确匹配，或按站点名称搜索（包括无关联设备的站点）",
+            "schema": { "type": "string" }
+          },
           { "name": "region", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "subregion", "in": "query", "required": false, "schema": { "type": "string" } },
           {
@@ -416,6 +422,77 @@
           },
           "409": {
             "description": "版本冲突（VERSION_CONFLICT）或已处于 SUSPENDED（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sites/{siteId}/reactivate": {
+      "post": {
+        "tags": ["admin"],
+        "operationId": "reactivateSite",
+        "summary": "重新启用 Site（site:write + If-Match + 审计）",
+        "description": "SUSPENDED → ACTIVE；已启用时返回 409 CONFLICT；状态与审计（site.reactivate）同一事务。",
+        "security": [{ "CognitoJwt": [] }],
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "$ref": "openapi-base.json#/components/parameters/IfMatch" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site 已重新启用（status=ACTIVE，version 自增）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SiteSuccess" }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺或无效 If-Match，或携带请求体）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Site 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或已处于 ACTIVE（CONFLICT）",
             "content": {
               "application/json": {
                 "schema": { "$ref": "openapi-base.json#/components/schemas/ErrorResponse" }

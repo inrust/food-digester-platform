@@ -8,7 +8,7 @@ import { translate } from '../../i18n/i18n.js';
  * - 创建/编辑表单客户端校验（名称必填、IANA 时区、邮箱格式），customerId 创建后不可变（编辑只读展示）；
  * - 停用弹窗展示关联设备数提示（有关联对象停用提示），原因必填；409 VERSION_CONFLICT → 提示刷新。
  */
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
@@ -20,6 +20,7 @@ import type { SiteFieldErrors } from './sites-state.js';
 import { SITE_STATUS_LABELS } from './types.js';
 import type { SiteInput, SiteStatus, SiteView } from './types.js';
 export interface SiteFilters {
+  readonly keyword?: string | null;
   readonly customerId: string | null;
   readonly region: string | null;
   readonly subregion: string | null;
@@ -47,10 +48,14 @@ export interface SitesPageProps {
     label: string;
   }[];
   readonly canWrite: boolean;
+  readonly initialSiteId?: string | null;
+  readonly onBack?: () => void;
   readonly onReadSite: (siteId: string) => Promise<SiteView>;
   readonly onCreate: (customerId: string, input: SiteInput) => Promise<SiteView>;
   readonly onUpdate: (site: SiteView, input: SiteInput) => Promise<SiteView>;
   readonly onDeactivate: (site: SiteView, reason: string) => Promise<SiteView>;
+  readonly onReactivate?: (site: SiteView) => Promise<SiteView>;
+  readonly onDelete?: (site: SiteView) => Promise<SiteView>;
 }
 type SiteDetail =
   | { kind: 'loading'; siteId: string }
@@ -66,7 +71,7 @@ type Dialog =
       site: SiteView;
     }
   | {
-      kind: 'deactivate';
+      kind: 'deactivate' | 'reactivate' | 'delete';
       site: SiteView;
     };
 const EMPTY_INPUT: SiteInput = {
@@ -173,6 +178,9 @@ function SiteFormDialog({
           {translate('page.73108099a058')}
         </p>
       )}
+      {editing !== null && editing.deviceCount > 0 ? (
+        <p data-testid="site-edit-impact">{translate('siteFlow.editImpact', { count: String(editing.deviceCount) })}</p>
+      ) : null}
       {field('site-name', translate('page.e72ec84bc978'), form.name, (v) => set({ name: v }), 'name')}
       {field('site-region', translate('page.406e0f8c6852'), form.region ?? '', (v) => set({ region: textOrNull(v) }))}
       {field('site-subregion', translate('page.ff0beacd69e2'), form.subregion ?? '', (v) =>
@@ -217,10 +225,14 @@ export function SitesPage({
   onRefresh,
   customerOptions,
   canWrite,
+  initialSiteId,
+  onBack,
   onReadSite,
   onCreate,
   onUpdate,
   onDeactivate,
+  onReactivate,
+  onDelete,
 }: SitesPageProps) {
   const [detail, setDetail] = useState<SiteDetail | null>(null);
   const selected = detail?.kind === 'ready' ? detail.site : null;
@@ -239,19 +251,28 @@ export function SitesPage({
             label: customerOptions.find((option) => option.value === fixedCustomerId)?.label ?? fixedCustomerId,
           },
         ];
-  const loadDetail = (siteId: string) => {
-    const request = ++selection.current;
-    setActionError(null);
-    setDetail({ kind: 'loading', siteId });
-    void onReadSite(siteId).then(
-      (site) => {
-        if (request === selection.current) setDetail({ kind: 'ready', site });
-      },
-      (error: unknown) => {
-        if (request === selection.current) setDetail({ kind: 'error', siteId, error });
-      },
-    );
-  };
+  const loadDetail = useCallback(
+    (siteId: string) => {
+      const request = ++selection.current;
+      setActionError(null);
+      setDetail({ kind: 'loading', siteId });
+      void onReadSite(siteId).then(
+        (site) => {
+          if (request === selection.current) setDetail({ kind: 'ready', site });
+        },
+        (error: unknown) => {
+          if (request === selection.current) setDetail({ kind: 'error', siteId, error });
+        },
+      );
+    },
+    [onReadSite],
+  );
+  useEffect(() => {
+    if (initialSiteId) loadDetail(initialSiteId);
+    return () => {
+      selection.current += 1;
+    };
+  }, [initialSiteId, loadDetail]);
   const closeDetail = () => {
     ++selection.current;
     setDetail(null);
@@ -267,7 +288,7 @@ export function SitesPage({
     if (selected !== null) loadDetail(selected.id);
     onRefresh();
   };
-  const runAction = async (fn: () => Promise<SiteView>) => {
+  const runAction = async (fn: () => Promise<SiteView>, deleted = false) => {
     if (inFlight.current) return;
     inFlight.current = true;
     const request = selection.current;
@@ -277,13 +298,13 @@ export function SitesPage({
       const updated = await fn();
       if (request === selection.current) {
         setDialog(null);
-        setDetail({ kind: 'ready', site: updated });
+        setDetail(deleted ? null : { kind: 'ready', site: updated });
       }
       onRefresh();
     } catch (err) {
       if (request === selection.current) {
         setActionError(err);
-        setDialog((current) => (current?.kind === 'deactivate' ? null : current));
+        setDialog((current) => (current?.kind === 'create' || current?.kind === 'edit' ? current : null));
       }
     } finally {
       inFlight.current = false;
@@ -294,6 +315,11 @@ export function SitesPage({
     <div className="sites-page" data-testid="sites-page">
       <header className="page-header">
         <h1>{translate('design.page.sites')}</h1>
+        {onBack ? (
+          <Button type="button" data-testid="sites-back" onClick={onBack}>
+            {translate('siteFlow.back')}
+          </Button>
+        ) : null}
       </header>
       {canWrite ? (
         <div className="page-toolbar" data-testid="site-toolbar">
@@ -313,6 +339,16 @@ export function SitesPage({
         </div>
       ) : null}
       <FilterBar testId="site-filters">
+        <div className="filter-field">
+          <label htmlFor="site-keyword">{translate('siteFlow.search')}</label>
+          <Input
+            id="site-keyword"
+            data-testid="site-keyword"
+            value={filters.keyword ?? ''}
+            maxLength={200}
+            onChange={(event) => onFilterChange({ ...filters, keyword: event.target.value })}
+          />
+        </div>
         <div className="filter-field">
           <label htmlFor="filter-customer">{translate('page.467c1137f479')}</label>
           <select
@@ -489,6 +525,35 @@ export function SitesPage({
                   >
                     {translate('page.d989e55188c9')}
                   </Button>
+                ) : onReactivate ? (
+                  <Button
+                    type="button"
+                    data-testid="reactivate-site"
+                    disabled={busy}
+                    onClick={() => {
+                      setActionError(null);
+                      setDialog({ kind: 'reactivate', site: selected });
+                    }}
+                  >
+                    {translate('siteFlow.reactivate')}
+                  </Button>
+                ) : null}
+                {onDelete ? (
+                  <Button
+                    type="button"
+                    className="danger-button"
+                    data-testid="delete-site"
+                    disabled={busy || selected.deviceCount > 0}
+                    onClick={() => {
+                      setActionError(null);
+                      setDialog({ kind: 'delete', site: selected });
+                    }}
+                  >
+                    {translate('siteFlow.remove')}
+                  </Button>
+                ) : null}
+                {onDelete && selected.deviceCount > 0 ? (
+                  <p data-testid="site-delete-constrained">{translate('siteFlow.deleteConstrained')}</p>
                 ) : null}
               </div>
             ) : null}
@@ -496,7 +561,7 @@ export function SitesPage({
         ) : null}
       </Modal>
 
-      {dialog !== null && dialog.kind !== 'deactivate' ? (
+      {dialog?.kind === 'create' || dialog?.kind === 'edit' ? (
         <SiteFormDialog
           dialog={dialog}
           customerOptions={customerOptions}
@@ -533,6 +598,24 @@ export function SitesPage({
         }}
         onCancel={cancelDialog}
       />
+      {dialog?.kind === 'reactivate' || dialog?.kind === 'delete' ? (
+        <ConfirmDialog
+          open
+          title={translate(dialog.kind === 'reactivate' ? 'siteFlow.reactivate' : 'siteFlow.remove')}
+          description={translate(
+            dialog.kind === 'reactivate' ? 'siteFlow.reactivateConfirm' : 'siteFlow.deleteConfirm',
+            {
+              name: dialog.site.name,
+            },
+          )}
+          danger={dialog.kind === 'delete'}
+          onConfirm={() => {
+            if (dialog.kind === 'reactivate' && onReactivate) void runAction(() => onReactivate(dialog.site));
+            if (dialog.kind === 'delete' && onDelete) void runAction(() => onDelete(dialog.site), true);
+          }}
+          onCancel={cancelDialog}
+        />
+      ) : null}
     </div>
   );
 }

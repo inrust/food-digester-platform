@@ -29,7 +29,7 @@ function collectRefs(node: unknown, out: string[] = []): string[] {
   return out;
 }
 
-test('六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码齐备', () => {
+test('七端点齐备且 Cognito 认证；写操作声明 If-Match；响应码齐备', () => {
   assert.equal(doc.openapi, '3.1.0');
   const collection = doc.paths['/api/v1/admin/sites'];
   assert.equal(collection.get.operationId, 'listSites');
@@ -40,8 +40,12 @@ test('六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码�
   assert.equal(item.delete.operationId, 'deleteSite');
   const deactivate = doc.paths['/api/v1/admin/sites/{siteId}/deactivate'].post;
   assert.equal(deactivate.operationId, 'deactivateSite');
+  const reactivate = doc.paths['/api/v1/admin/sites/{siteId}/reactivate'].post;
+  assert.equal(reactivate.operationId, 'reactivateSite');
+  assert.equal(reactivate.requestBody, undefined);
+  assert.ok(collection.get.parameters.some((parameter: { name?: string }) => parameter.name === 'keyword'));
 
-  const ops = [collection.get, collection.post, item.get, item.patch, item.delete, deactivate];
+  const ops = [collection.get, collection.post, item.get, item.patch, item.delete, deactivate, reactivate];
   for (const op of ops) {
     assert.deepEqual(op.security, [{ CognitoJwt: [] }], `${op.operationId} 必须 Cognito 认证`);
   }
@@ -54,7 +58,7 @@ test('六端点齐备且 Cognito 认证；写操作声明 If-Match；响应码�
   for (const status of ['201', '400', '401', '403', '404', '409', '500']) {
     assert.ok(collection.post.responses[status], `create 缺少 ${status}`);
   }
-  for (const op of [item.patch, item.delete, deactivate]) {
+  for (const op of [item.patch, item.delete, deactivate, reactivate]) {
     const hasIfMatch = op.parameters.some(
       (p: { $ref?: string }) => p.$ref === 'openapi-base.json#/components/parameters/IfMatch',
     );

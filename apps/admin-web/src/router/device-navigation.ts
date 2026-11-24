@@ -95,3 +95,12 @@ export function uniqueQueryId(search: string, key: string): string | null {
   const values = new URLSearchParams(search).getAll(key);
   return values.length === 0 ? null : values.length === 1 ? values[0]!.trim() : '';
 }
+
+export function sitesWorkbenchPath(context: { deviceId?: string; siteId?: string; customerId?: string } = {}): string {
+  const params = new URLSearchParams();
+  if (context.deviceId) params.set('deviceId', context.deviceId);
+  if (context.siteId) params.set('siteId', context.siteId);
+  if (context.customerId) params.set('customerId', context.customerId);
+  const query = params.toString();
+  return query ? `/devices/sites?${query}` : '/devices/sites';
+}

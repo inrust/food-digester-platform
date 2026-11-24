@@ -2,6 +2,7 @@ import { deviceScopeMismatch } from './DeviceWorkbench.js';
 import {
   deviceGroupsReturnPath,
   groupFiltersFromContext,
+  sitesWorkbenchPath,
   licenseWorkbenchPath,
   uniqueQueryId,
   withGroupFilters,
@@ -92,6 +93,7 @@ import type { LicenseScope, LicenseScopeView } from '../pages/licenses/licenses-
 import { EMPTY_LICENSE_FILTER, LicensesPage } from '../pages/licenses/LicensesPage.js';
 import type { LicenseDetailState, LicenseFilter } from '../pages/licenses/LicensesPage.js';
 import type { LicenseView } from '../pages/licenses/types.js';
+import type { SiteView } from '../pages/sites/types.js';
 import { fetchSites } from '../pages/sites/sites-api.js';
 import type { SessionSnapshot } from '../session/session-manager.js';
 type Navigate = (
@@ -186,6 +188,18 @@ export function DeviceViewController({
   return (
     <DeviceViewPage
       device={device}
+      {...(device && session.roles.some((role) => hasPermission(role, 'site:read'))
+        ? {
+            onOpenSites: () =>
+              onNavigate(
+                sitesWorkbenchPath({
+                  deviceId: device.id,
+                  ...(device.site ? { siteId: device.site.id } : {}),
+                  ...(device.customer ? { customerId: device.customer.id } : {}),
+                }),
+              ),
+          }
+        : {})}
       liveImagePreview={
         device &&
         device.id === previewDeviceId &&
@@ -249,7 +263,8 @@ export function DeviceManageController({
   readonly search: string;
   readonly onNavigate: Navigate;
 }) {
-  const deviceId = queryId(search);
+  const deviceId = uniqueQueryId(search, 'deviceId');
+  const serialNumber = deviceId === null ? uniqueQueryId(search, 'serialNumber') : null;
   const [device, setDevice] = useState<DeviceView | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown>();
@@ -258,13 +273,14 @@ export function DeviceManageController({
   const [retirement, setRetirement] = useState<RetirementRecordView | null>(null);
   const [rotation, setRotation] = useState<RotationRequestView | null>(null);
   const [customers, setCustomers] = useState<readonly FilterOption[]>([]);
-  const [sites, setSites] = useState<
-    readonly (FilterOption & {
-      customerId: string;
-    })[]
-  >([]);
+  const [sites, setSites] = useState<readonly SiteView[]>([]);
+  const [siteOptionsError, setSiteOptionsError] = useState<unknown>();
+  const [siteOptionsLoading, setSiteOptionsLoading] = useState(true);
+  const loadGeneration = useRef(0);
+  const directoryGeneration = useRef(0);
   const load = useCallback(async () => {
-    if (deviceId === null) {
+    const generation = ++loadGeneration.current;
+    if (deviceId === null && serialNumber === null) {
       setDevice(null);
       setAssignments([]);
       return;
@@ -273,55 +289,82 @@ export function DeviceManageController({
     setLoadError(undefined);
     setAssignments(null);
     setAssignmentsError(undefined);
-    const results = await Promise.allSettled([fetchDevice(api, deviceId), fetchDeviceAssignments(api, deviceId)]);
-    if (results[0].status === 'fulfilled' && results[0].value.id === deviceId) {
-      setDevice(results[0].value);
-      setRetirement(results[0].value.retirement ?? null);
-    } else {
-      setDevice(null);
-      setLoadError(results[0].status === 'rejected' ? results[0].reason : deviceScopeMismatch());
+    try {
+      if (deviceId === '' || serialNumber === '') throw deviceScopeMismatch();
+      const resolvedId =
+        deviceId ??
+        (
+          await collectAll((cursor) =>
+            fetchDevices(api, { keyword: serialNumber, customerId: session.customerId }, { cursor, limit: 100 }),
+          )
+        ).find((candidate) => candidate.serialNumber === serialNumber)?.id;
+      if (generation !== loadGeneration.current) return;
+      if (!resolvedId) throw deviceScopeMismatch();
+      const [detail, history] = await Promise.allSettled([
+        fetchDevice(api, resolvedId),
+        fetchDeviceAssignments(api, resolvedId),
+      ]);
+      if (generation !== loadGeneration.current) return;
+      if (detail.status === 'rejected') throw detail.reason;
+      if (detail.value.id !== resolvedId || (serialNumber !== null && detail.value.serialNumber !== serialNumber)) {
+        throw deviceScopeMismatch();
+      }
+      setDevice(detail.value);
+      setRetirement(detail.value.retirement ?? null);
+      if (history.status === 'fulfilled') setAssignments(history.value);
+      else {
+        setAssignments([]);
+        setAssignmentsError(history.reason);
+      }
+    } catch (error) {
+      if (generation === loadGeneration.current) {
+        setDevice(null);
+        setLoadError(error);
+      }
+    } finally {
+      if (generation === loadGeneration.current) setLoading(false);
     }
-    if (results[1].status === 'fulfilled') setAssignments(results[1].value);
-    else {
-      setAssignments([]);
-      setAssignmentsError(results[1].reason);
-    }
-    setLoading(false);
-  }, [api, deviceId]);
+  }, [api, deviceId, serialNumber, session.customerId]);
   useEffect(() => {
     setRotation(null);
     void load();
-  }, [load]);
-  useEffect(() => {
-    let active = true;
-    void Promise.all([
-      collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 })),
-      fetchSites(api, undefined, { limit: 100 }),
-    ]).then(
-      ([customerRows, sitePage]) => {
-        if (!active) return;
-        const labels = customerOptionLabels(
-          customerRows,
-          (c) => c.id,
-          (c) => c.name,
-        );
-        setCustomers(customerRows.map((c) => option(c.id, labels.get(c.id) ?? c.name)));
-        setSites(sitePage.items.map((s) => ({ ...option(s.id, s.name), customerId: s.customerId })));
-      },
-      () => {
-        if (active) {
-          setCustomers([]);
-          setSites([]);
-        }
-      },
-    );
     return () => {
-      active = false;
+      loadGeneration.current += 1;
     };
+  }, [load]);
+  const loadSiteOptions = useCallback(async () => {
+    const generation = ++directoryGeneration.current;
+    setSiteOptionsLoading(true);
+    setSiteOptionsError(undefined);
+    try {
+      const [customerRows, siteRows] = await Promise.all([
+        collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 })),
+        collectAll((cursor) => fetchSites(api, undefined, { cursor, limit: 100 })),
+      ]);
+      if (generation !== directoryGeneration.current) return;
+      const labels = customerOptionLabels(
+        customerRows,
+        (c) => c.id,
+        (c) => c.name,
+      );
+      setCustomers(customerRows.map((c) => option(c.id, labels.get(c.id) ?? c.name)));
+      setSites(siteRows);
+    } catch (error) {
+      if (generation === directoryGeneration.current) setSiteOptionsError(error);
+    } finally {
+      if (generation === directoryGeneration.current) setSiteOptionsLoading(false);
+    }
   }, [api]);
+  const canAssign = session.roles.some((role) => hasPermission(role, 'device:assign'));
+  useEffect(() => {
+    if (canAssign) void loadSiteOptions();
+    return () => {
+      directoryGeneration.current += 1;
+    };
+  }, [canAssign, loadSiteOptions]);
   const requireId = () => {
-    if (deviceId === null) throw new Error(translate('ui.b05a6a2c019b'));
-    return deviceId;
+    if (device === null) throw new Error(translate('ui.b05a6a2c019b'));
+    return device.id;
   };
   return (
     <DeviceManagePage
@@ -334,10 +377,39 @@ export function DeviceManageController({
       retirement={retirement}
       rotation={rotation}
       customers={customers}
-      sites={sites}
+      sites={sites.map((site) => ({
+        ...option(site.id, site.name),
+        customerId: site.customerId,
+        status: site.status,
+        region: site.region,
+        subregion: site.subregion,
+      }))}
+      siteOptionsLoading={siteOptionsLoading}
+      siteOptionsError={siteOptionsError}
+      onRefreshSiteOptions={() => void loadSiteOptions()}
+      onboardingAssignment={serialNumber !== null}
+      onOpenSites={() => {
+        if (device === null) return;
+        onNavigate(
+          withGroupFilters(
+            sitesWorkbenchPath({
+              deviceId: device.id,
+              ...(device.site ? { siteId: device.site.id } : {}),
+              ...(device.customer ? { customerId: device.customer.id } : {}),
+            }),
+            groupFiltersFromContext(search),
+          ),
+        );
+      }}
       onBack={() => onNavigate(deviceGroupsReturnPath(search))}
       onRefresh={() => void load()}
-      onAssign={(input) => assignDevice(api, requireId(), input)}
+      onAssign={async (input) => {
+        try {
+          return await assignDevice(api, requireId(), input);
+        } finally {
+          void loadSiteOptions();
+        }
+      }}
       onSuspend={(reason) => suspendDevice(api, requireId(), reason)}
       onReactivate={(reason) => reactivateDevice(api, requireId(), reason)}
       onRetire={async (reason) => {

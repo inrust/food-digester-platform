@@ -16,6 +16,7 @@ import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import { ADMIN_ASSIGNMENT_ERROR_HTTP_STATUS, createAdminDeviceAssignmentHandlers } from '../src/index.js';
+import { createAdminSiteHandlers } from '../src/admin/site/handler.js';
 import { createAdminContractHandlers } from '../src/admin/contract/handler.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
@@ -388,4 +389,104 @@ test('C/T09 R16 an inline contract customer is available to the existing onboard
   assert.equal(saved.customerId, customerId);
   assert.equal(saved.siteId, site.id);
   assert.equal(saved.lifecycleStatus, 'Assigned');
+});
+
+test('C/T10 R02 R16 inline site and first assignment roll back together, then retry uses the canonical relation', async () => {
+  const customer = await plantCustomer();
+  const device = await plantDevice('Onboarded');
+  const body = { customerId: customer.id, newSite: { name: 'T10 Inline', region: '华东', subregion: 'T12' } };
+  const assign = (actor: ActorContext, value: object) =>
+    handlers().assign(req(actor, { params: { deviceId: device.id }, body: value }));
+
+  const early = await plantDevice('OnboardingApproved');
+  assert.equal((await handlers().assign(req(superAdmin, { params: { deviceId: early.id }, body }))).status, 409);
+  assert.equal((await assign(operator, body)).status, 403);
+  assert.equal((await assign(superAdmin, { ...body, siteId: 'both' })).status, 400);
+
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION t10_fail_assign() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'controlled assignment failure'; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER t10_fail_assign BEFORE INSERT ON device_assignments
+    FOR EACH ROW EXECUTE FUNCTION t10_fail_assign()`);
+  try {
+    assert.equal((await assign(superAdmin, body)).status, 500);
+    assert.equal(await prisma.site.count({ where: { customerId: customer.id } }), 0);
+    assert.equal(await prisma.auditLog.count({ where: { customerId: customer.id, result: 'SUCCESS' } }), 0);
+    assert.equal(await assignmentOutboxCount(device.id), 0);
+    assert.equal((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).lifecycleStatus, 'Onboarded');
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER t10_fail_assign ON device_assignments');
+    await prisma.$executeRawUnsafe('DROP FUNCTION t10_fail_assign()');
+  }
+
+  const results = await Promise.all([assign(superAdmin, body), assign(superAdmin, body)]);
+  assert.deepEqual(results.map(({ status }) => status).sort(), [200, 409]);
+  const saved = results.find(({ status }) => status === 200)!;
+  assertOpenApiResponse('assignDevice', 200, saved.body);
+  const siteId = (saved.body as DataBody).data.siteId as string;
+  const site = await prisma.site.findUniqueOrThrow({ where: { id: siteId } });
+  assert.deepEqual([site.customerId, site.region, site.subregion], [customer.id, '华东', 'T12']);
+  assert.equal(await prisma.site.count({ where: { customerId: customer.id } }), 1);
+  const replay = await assign(superAdmin, { customerId: customer.id, siteId });
+  assert.equal(replay.status, 200);
+  assert.equal((replay.body as DataBody).data.replayed, true);
+  assert.equal(await assignmentOutboxCount(device.id), 1);
+  assert.equal(
+    await prisma.auditLog.count({ where: { customerId: customer.id, result: 'SUCCESS' } }),
+    2,
+    'only one site and one assignment success audit',
+  );
+
+  const other = await plantCustomer();
+  const legacy = await plantDevice('Assigned', other.id);
+  const otherSite = await handlers().assign(
+    req(operator, {
+      params: { deviceId: legacy.id },
+      body: { ...body, customerId: other.id },
+    }),
+  );
+  assert.equal(
+    otherSite.status,
+    200,
+    'unassigned legacy location can be filled and a different customer can use the same name',
+  );
+  assert.notEqual((otherSite.body as DataBody).data.siteId, siteId);
+});
+
+test('C/T10 R09 site deletion and assignment are mutually exclusive and a suspended site needs recovery', async () => {
+  const customer = await plantCustomer();
+  const device = await plantDevice();
+  const site = await plantSite(customer.id);
+  const siteHandlers = createAdminSiteHandlers({ client: prisma });
+  const writeSite = (siteId: string, version: number) =>
+    req(superAdmin, { params: { siteId }, headers: { 'If-Match': String(version) } });
+  const allocate = (deviceId: string, siteId: string) =>
+    handlers().assign(req(superAdmin, { params: { deviceId }, body: { customerId: customer.id, siteId } }));
+
+  await siteHandlers.deactivate({ ...writeSite(site.id, 1), body: { reason: 'closed' } });
+  assert.equal((await allocate(device.id, site.id)).status, 409);
+  assert.equal(await assignmentOutboxCount(device.id), 0);
+  assert.equal((await siteHandlers.reactivate(writeSite(site.id, 2))).status, 200);
+  assert.equal((await allocate(device.id, site.id)).status, 200);
+  assert.equal((await siteHandlers.remove(writeSite(site.id, 3))).status, 409);
+
+  for (const removeFirst of [false, true]) {
+    const target = await plantSite(customer.id);
+    const next = await plantDevice();
+    const remove = () => siteHandlers.remove(writeSite(target.id, 1));
+    const assign = () => allocate(next.id, target.id);
+    const [first, second] = await Promise.all(removeFirst ? [remove(), assign()] : [assign(), remove()]);
+    const [deleted, assigned] = removeFirst ? [first, second] : [second, first];
+    const row = await prisma.site.findUniqueOrThrow({ where: { id: target.id } });
+    const nextDevice = await prisma.device.findUniqueOrThrow({ where: { id: next.id } });
+    if (deleted.status === 200) {
+      assert.equal(assigned.status, 404);
+      assert.isNotNull(row.deletedAt);
+      assert.isNull(nextDevice.siteId);
+    } else {
+      assert.equal(deleted.status, 409);
+      assert.equal(assigned.status, 200);
+      assert.isNull(row.deletedAt);
+      assert.equal(nextDevice.siteId, target.id);
+    }
+  }
 });

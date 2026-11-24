@@ -180,13 +180,13 @@ test('CMP-41 returns to the same row and scroll position and uses the latest sit
   await page.keyboard.press('Enter');
   const edit = details.getByTestId('edit-site');
   await edit.click();
-  await page.getByLabel('站点名称').fill('Unsaved fixture');
+  await page.getByTestId('site-form').getByLabel('站点名称', { exact: true }).fill('Unsaved fixture');
   await page.keyboard.press('Escape');
   await expect(edit).toBeFocused();
   await expect(details).toContainText('Fixture site');
   expect(writes).toEqual([]);
   await edit.click();
-  await page.getByLabel('站点名称').fill('Updated fixture');
+  await page.getByTestId('site-form').getByLabel('站点名称', { exact: true }).fill('Updated fixture');
   await page.getByRole('button', { name: '保存' }).click();
   await expect(details).toContainText('Updated fixture');
   expect(writes[0]).toMatchObject({ method: 'PATCH', version: '4', body: { name: 'Updated fixture' } });

@@ -225,15 +225,25 @@ export const APP_ROUTES: readonly AppRoute[] = [
     menuGroup: null,
     parentPath: '/contracts',
   },
-  // site:read = 全部五角色；Customer 角色 scope 由服务端强制
+  // The legacy bookmark uses the same permissions as the contextual site directory.
   {
     path: '/sites',
     pageState: 'sites',
     get label() {
       return translate('ui.f40b79d76fd3');
     },
-    roles: ALL_ROLES,
-    menuGroup: 'platform',
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'site:read')),
+    menuGroup: null,
+  },
+  {
+    path: '/devices/sites',
+    pageState: 'sites',
+    get label() {
+      return translate('ui.f40b79d76fd3');
+    },
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'site:read')),
+    menuGroup: null,
+    parentPath: '/devices/groups',
   },
   // FE-08 扩展路由（CT-06 矩阵外）：license:read = 平台三角色（AUTH-01；Customer 角色无 license:read）
   {

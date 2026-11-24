@@ -17,7 +17,17 @@ import type { CustomerStatus, CustomerView } from '../pages/customers/types.js';
 import { DashboardPage } from '../pages/dashboard/DashboardPage.js';
 import { createDashboardCommandSubmitter, fetchDashboardOverview } from '../pages/dashboard/dashboard-api.js';
 import type { DashboardPageState } from '../pages/dashboard/DashboardPage.js';
-import { deviceGroupsPath, readDeviceGroupFilters, withGroupFilters } from '../router/device-navigation.js';
+import {
+  deviceGroupsPath,
+  deviceGroupsReturnPath,
+  groupFiltersFromContext,
+  readDeviceGroupFilters,
+  sitesWorkbenchPath,
+  uniqueQueryId,
+  withGroupFilters,
+} from '../router/device-navigation.js';
+import { collectAll } from './collect-all.js';
+import { customerOptionLabels } from '../pages/customers/customer-options.js';
 import { DeviceGroupsPage } from '../pages/devices/DeviceGroupsPage.js';
 import { fetchDevices } from '../pages/devices/devices-api.js';
 import type { DeviceView } from '../pages/devices/types.js';
@@ -31,7 +41,15 @@ import {
 import type { OnboardingRequestView, OnboardingStatus } from '../pages/onboarding/types.js';
 import { SitesPage } from '../pages/sites/SitesPage.js';
 import type { SiteFilters } from '../pages/sites/SitesPage.js';
-import { createSite, deactivateSite, fetchSite, fetchSites, updateSite } from '../pages/sites/sites-api.js';
+import {
+  createSite,
+  deactivateSite,
+  deleteSite,
+  fetchSite,
+  fetchSites,
+  reactivateSite,
+  updateSite,
+} from '../pages/sites/sites-api.js';
 import type { SiteInput, SiteView } from '../pages/sites/types.js';
 interface PageResult<T> {
   readonly items: readonly T[];
@@ -200,12 +218,27 @@ export function SitesController({
   api,
   session,
   toasts,
+  search,
+  onNavigate,
 }: {
   api: ApiClient;
   session: SessionSnapshot;
   toasts: ToastQueue;
+  search: string;
+  onNavigate: (path: string) => void;
 }) {
-  const [filters, setFilters] = useState<SiteFilters>(EMPTY_SITE_FILTERS);
+  const params = new URLSearchParams(search);
+  const status = params.get('status');
+  const deviceId = uniqueQueryId(search, 'deviceId');
+  const siteId = uniqueQueryId(search, 'siteId');
+  const [filters, setFilters] = useState<SiteFilters>(() => ({
+    ...EMPTY_SITE_FILTERS,
+    customerId: params.get('customerId'),
+    status: status === 'ACTIVE' || status === 'SUSPENDED' ? status : null,
+    region: params.get('region'),
+    subregion: params.get('subregion'),
+    keyword: params.get('keyword'),
+  }));
   const fixedCustomerId = session.customerId;
   const effectiveFilters = useMemo(
     () => (fixedCustomerId === null ? filters : { ...filters, customerId: fixedCustomerId }),
@@ -219,16 +252,33 @@ export function SitesController({
   >(session.customerId === null ? [] : [{ value: session.customerId, label: session.customerId }]);
   useEffect(() => {
     if (!can(session, 'customer:read')) return;
-    void fetchCustomers(api, { limit: 100 }).then(
-      (result) => setCustomerOptions(result.items.map((customer) => ({ value: customer.id, label: customer.name }))),
-      (error: unknown) => toasts.push('error', error instanceof Error ? error.message : translate('ui.9226e4104016')),
+    let active = true;
+    void collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 })).then(
+      (items) => {
+        if (!active) return;
+        const labels = customerOptionLabels(
+          items,
+          (customer) => customer.id,
+          (customer) => customer.name,
+        );
+        setCustomerOptions(
+          items.map((customer) => ({ value: customer.id, label: labels.get(customer.id) ?? customer.name })),
+        );
+      },
+      (error: unknown) => {
+        if (active) toasts.push('error', error instanceof Error ? error.message : translate('ui.9226e4104016'));
+      },
     );
+    return () => {
+      active = false;
+    };
   }, [api, session, toasts.push]);
   const loader = useCallback(
     (cursor: string | null) => fetchSites(api, effectiveFilters, { cursor, limit: 50 }),
     [api, effectiveFilters],
   );
   const page = useCursorController<SiteView>(loader);
+  const readSite = useCallback((id: string) => fetchSite(api, id), [api]);
   const applyFilters = (next: SiteFilters) => {
     setFilters(next);
     page.reset();
@@ -252,7 +302,18 @@ export function SitesController({
       onRefresh={page.refresh}
       customerOptions={customerOptions}
       canWrite={can(session, 'site:write')}
-      onReadSite={(id) => fetchSite(api, id)}
+      initialSiteId={siteId}
+      onBack={() =>
+        onNavigate(
+          deviceId
+            ? withGroupFilters(
+                `/devices/manage?deviceId=${encodeURIComponent(deviceId)}`,
+                groupFiltersFromContext(search),
+              )
+            : deviceGroupsReturnPath(search),
+        )
+      }
+      onReadSite={readSite}
       onCreate={async (customerId: string, input: SiteInput) => {
         const result = await createSite(api, customerId, input);
         success(toasts, translate('ui.5992e4f5d109'));
@@ -266,6 +327,16 @@ export function SitesController({
       onDeactivate={async (site: SiteView, reason: string) => {
         const result = await deactivateSite(api, site.id, site.version, reason);
         success(toasts, translate('ui.6fce6628527c'));
+        return result;
+      }}
+      onReactivate={async (site) => {
+        const result = await reactivateSite(api, site.id, site.version);
+        success(toasts, translate('siteFlow.reactivated'));
+        return result;
+      }}
+      onDelete={async (site) => {
+        const result = await deleteSite(api, site.id, site.version);
+        success(toasts, translate('siteFlow.deleted'));
         return result;
       }}
     />
@@ -290,6 +361,25 @@ export function DeviceGroupsController({
     [api, filters, session.customerId],
   );
   const devices = useCursorController<DeviceView>(deviceLoader);
+  const [directory, setDirectory] = useState<readonly SiteView[]>([]);
+  const loadDirectory = useCallback(
+    () => collectAll((cursor) => fetchSites(api, { customerId: session.customerId }, { cursor, limit: 100 })),
+    [api, session.customerId],
+  );
+  const [directoryRevision, setDirectoryRevision] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setDirectory([]);
+    void loadDirectory().then(
+      (items) => {
+        if (active) setDirectory(items);
+      },
+      () => {},
+    );
+    return () => {
+      active = false;
+    };
+  }, [loadDirectory, directoryRevision]);
   const [knownSites, setKnownSites] = useState<{
     customerId: string | null;
     sites: ReadonlyMap<string, NonNullable<DeviceView['site']>>;
@@ -331,7 +421,12 @@ export function DeviceGroupsController({
     );
   };
   const options = useMemo(() => {
-    const locations = knownSites?.customerId === session.customerId ? [...knownSites.sites.values()] : [];
+    const locations = [
+      ...new Map([
+        ...(knownSites?.customerId === session.customerId ? knownSites.sites : []),
+        ...directory.map((site) => [site.id, site] as const),
+      ]).values(),
+    ];
     const regions = [...new Set(locations.map((site) => site.region).filter((v): v is string => Boolean(v)))];
     const subregions = [
       ...new Map(
@@ -353,7 +448,7 @@ export function DeviceGroupsController({
         : [],
     );
     return { regions: regions.map((value) => ({ value, label: value })), subregions, sites };
-  }, [knownSites, session.customerId]);
+  }, [directory, knownSites, session.customerId]);
   return (
     <DeviceGroupsPage
       list={{
@@ -373,8 +468,14 @@ export function DeviceGroupsController({
       }}
       onLoadMore={devices.next}
       onLoadPrevious={devices.prev}
-      onRefresh={devices.refresh}
+      onRefresh={() => {
+        devices.refresh();
+        setDirectoryRevision((value) => value + 1);
+      }}
       filterOptions={options}
+      {...(can(session, 'site:read')
+        ? { onOpenSites: () => onNavigate(withGroupFilters(sitesWorkbenchPath(), search)) }
+        : {})}
       onNavigate={(path) => onNavigate(withGroupFilters(path, search))}
       {...(can(session, 'config:read')
         ? {

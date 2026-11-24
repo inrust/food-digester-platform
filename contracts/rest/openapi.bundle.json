@@ -72,7 +72,7 @@
       },
       {
         "file": "admin-device-assignment-api.json",
-        "sha256": "83612b24e0d74e71011d04a094f0b46206071202ce2b4f048fa13997ddac9a9e",
+        "sha256": "7009f3b733ca9fe21b8f2142d3ccd8fef98a6ec161ec40aa51b5c8baa3e9bdd1",
         "status": "implemented"
       },
       {
@@ -137,7 +137,7 @@
       },
       {
         "file": "admin-site-api.json",
-        "sha256": "e926aeac9d1ba5b696afe37cda71d66d00b4c3fd1cd271fd1f4c93ba588d180c",
+        "sha256": "853b06615bbae32f6c4d8ed1799dbaf341f5f04489a43aa3622b9d7e6ffec93a",
         "status": "implemented"
       },
       {
@@ -4213,7 +4213,7 @@
         ],
         "operationId": "assignDevice",
         "summary": "分配/调整设备 Customer 和 Site（device:assign + 审计 + ASSIGNMENT_CHANGED 通知）",
-        "description": "首次分配（Onboarded→Assigned）经 DOM-01 生命周期迁移（仅 PlatformSuperAdmin）；Assigned 状态调整为同状态再分配；写审计（device.assignment.assign）；幂等重放返回 replayed=true 且 notification=null。",
+        "description": "首次分配（Onboarded→Assigned）经 DOM-01 生命周期迁移（仅 PlatformSuperAdmin）；Assigned 状态调整为同状态再分配；写审计（device.assignment.assign）；幂等重放返回 replayed=true 且 notification=null。siteId 与 newSite 二选一。内联建站另需 site:write，写入站点、设备归属、分配历史及审计一并提交。同一客户下重名返回 409，可改用明确选中的 siteId 提交。",
         "security": [
           {
             "CognitoJwt": []
@@ -4252,7 +4252,7 @@
             }
           },
           "400": {
-            "description": "校验失败（VALIDATION_FAILED：缺 customerId/siteId、跨 Customer Site 引用）",
+            "description": "校验失败（VALIDATION_FAILED：缺 customerId、站点来源未二选一或字段非法、跨 Customer Site 引用）",
             "content": {
               "application/json": {
                 "schema": {
@@ -4272,7 +4272,7 @@
             }
           },
           "403": {
-            "description": "无权限（FORBIDDEN：无 device:assign 权限，或 Operator 执行首次分配）",
+            "description": "无权限（FORBIDDEN：无 device:assign 权限、内联建站时无 site:write 权限，或 Operator 执行首次分配）",
             "content": {
               "application/json": {
                 "schema": {
@@ -4292,7 +4292,7 @@
             }
           },
           "409": {
-            "description": "生命周期不允许分配（DEVICE_STATE_NOT_ALLOWED）或并发冲突（CONFLICT）",
+            "description": "生命周期不允许分配（DEVICE_STATE_NOT_ALLOWED）、站点停用、同一客户下站点重名或并发冲突（CONFLICT）",
             "content": {
               "application/json": {
                 "schema": {
@@ -8400,6 +8400,14 @@
             }
           },
           {
+            "name": "keyword",
+            "in": "query",
+            "description": "按站点 ID 精确匹配，或按站点名称搜索（包括无关联设备的站点）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "region",
             "in": "query",
             "required": false,
@@ -8962,6 +8970,109 @@
           },
           "409": {
             "description": "版本冲突（VERSION_CONFLICT）或已处于 SUSPENDED（CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-source-document": "admin-site-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/sites/{siteId}/reactivate": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "reactivateSite",
+        "summary": "重新启用 Site（site:write + If-Match + 审计）",
+        "description": "SUSPENDED → ACTIVE；已启用时返回 409 CONFLICT；状态与审计（site.reactivate）同一事务。",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Site 已重新启用（status=ACTIVE，version 自增）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSiteApi__SiteSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "校验失败（VALIDATION_FAILED：缺或无效 If-Match，或携带请求体）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Site 不存在或已删除（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突（VERSION_CONFLICT）或已处于 ACTIVE（CONFLICT）",
             "content": {
               "application/json": {
                 "schema": {
@@ -15948,8 +16059,19 @@
       "AdminDeviceAssignmentApi__AssignmentRequest": {
         "type": "object",
         "required": [
-          "customerId",
-          "siteId"
+          "customerId"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "siteId"
+            ]
+          },
+          {
+            "required": [
+              "newSite"
+            ]
+          }
         ],
         "additionalProperties": false,
         "properties": {
@@ -15960,7 +16082,39 @@
           "siteId": {
             "type": "string",
             "minLength": 1,
-            "description": "必须属于 customerId"
+            "description": "必须为 customerId 下已启用的站点"
+          },
+          "newSite": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "region": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 200
+              },
+              "subregion": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 200
+              },
+              "timezone": {
+                "type": "string",
+                "description": "IANA 标识，缺省 UTC"
+              }
+            }
           },
           "reason": {
             "type": "string",

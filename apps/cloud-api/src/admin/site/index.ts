@@ -15,6 +15,7 @@ export type { SiteDto, SiteListOptions, SiteRecord, SiteStatus } from './reposit
 export {
   createSite,
   deactivateSite,
+  reactivateSite,
   deleteSite,
   isValidIanaTimezone,
   parseSiteCreate,

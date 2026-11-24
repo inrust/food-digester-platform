@@ -24,6 +24,8 @@ import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
 import type { DeviceView } from '../devices/types.js';
+import type { SiteStatus } from '../sites/types.js';
+import type { DeviceAssignmentInput } from './device-manage-api.js';
 import {
   ASSIGNMENT_STATUS_LABELS,
   CERTIFICATE_STATUS_LABELS,
@@ -41,6 +43,13 @@ import type {
   RetirementResultView,
   RotationRequestView,
 } from './types.js';
+type AssignmentSiteOption = FilterOption & {
+  readonly customerId: string;
+  readonly status?: SiteStatus;
+  readonly region?: string | null;
+  readonly subregion?: string | null;
+};
+
 export interface DeviceManagePageProps {
   readonly role: Role;
   /** 当前设备；null = 未加载完成。 */
@@ -56,13 +65,16 @@ export interface DeviceManagePageProps {
   readonly rotation: RotationRequestView | null;
   /** 分配表单的 Customer/Site 选项（site 选项携带所属 customerId）。 */
   readonly customers: readonly FilterOption[];
-  readonly sites: readonly (FilterOption & {
-    customerId: string;
-  })[];
+  readonly sites: readonly AssignmentSiteOption[];
+  readonly siteOptionsLoading?: boolean;
+  readonly siteOptionsError?: unknown;
+  readonly onRefreshSiteOptions?: () => void;
+  readonly onboardingAssignment?: boolean;
+  readonly onOpenSites?: () => void;
   readonly onBack: () => void;
   /** 操作成功后回源：重新加载设备详情与 Assignment 历史。 */
   readonly onRefresh: () => void;
-  readonly onAssign: (input: { customerId: string; siteId: string; reason?: string }) => Promise<DeviceAssignmentView>;
+  readonly onAssign: (input: DeviceAssignmentInput) => Promise<DeviceAssignmentView>;
   readonly onSuspend: (reason: string) => Promise<DeviceStatusResultView>;
   readonly onReactivate: (reason: string) => Promise<DeviceStatusResultView>;
   readonly onRetire: (reason: string) => Promise<RetirementResultView>;
@@ -85,6 +97,11 @@ export function DeviceManagePage({
   rotation,
   customers,
   sites,
+  siteOptionsLoading = false,
+  siteOptionsError,
+  onRefreshSiteOptions,
+  onboardingAssignment = false,
+  onOpenSites,
   onBack,
   onRefresh,
   onAssign,
@@ -104,17 +121,17 @@ export function DeviceManagePage({
   const [notice, setNotice] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
-  const runAction = async (execute: () => Promise<unknown>, successText: string) => {
+  const runAction = async (execute: () => Promise<unknown>, successText: string, assigning = false) => {
     // 防重复点击：在途请求直接忽略（后端幂等/条件更新兜底）
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     setPendingAction(null);
-    setAssignOpen(false);
     setActionError(null);
     setNotice(null);
     try {
       await execute();
+      if (assigning) setAssignOpen(false);
       setNotice(successText);
       // 操作后回源：设备状态与 Assignment 历史刷新（验收基准）
       onRefresh();
@@ -172,6 +189,11 @@ export function DeviceManagePage({
       </div>
 
       <div className="action-row">
+        {onOpenSites && hasPermission(role, 'site:read') ? (
+          <Button type="button" data-testid="manage-sites" onClick={onOpenSites}>
+            {translate('siteFlow.openDirectory')}
+          </Button>
+        ) : null}
         {hasPermission(role, 'media:read') ? (
           <Button
             type="button"
@@ -215,7 +237,7 @@ export function DeviceManagePage({
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && !assignOpen ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       <div className="detail-grid">
         <section
@@ -233,6 +255,10 @@ export function DeviceManagePage({
             <dd>{device.customer?.name ?? '—'}</dd>
             <dt>{translate('page.619bc67325a4')}</dt>
             <dd>{device.site?.name ?? '—'}</dd>
+            <dt>{translate('page.406e0f8c6852')}</dt>
+            <dd data-testid="manage-site-region">{device.site?.region ?? '—'}</dd>
+            <dt>{translate('page.ff0beacd69e2')}</dt>
+            <dd data-testid="manage-site-subregion">{device.site?.subregion ?? '—'}</dd>
             <dt>{translate('detail.device.heartbeat')}</dt>
             <dd>{device.lastHeartbeatAt === null ? '—' : <TimeText iso={device.lastHeartbeatAt} />}</dd>
           </dl>
@@ -251,16 +277,31 @@ export function DeviceManagePage({
           data-testid="lifecycle-actions"
           aria-label={translate('page.e4c42ba44ddc')}
         >
-          <h4>{translate('page.e4c42ba44ddc')}</h4>
+          <h4>{translate(onboardingAssignment ? 'siteFlow.businessAssignment' : 'page.e4c42ba44ddc')}</h4>
+          {onboardingAssignment && device.lifecycleStatus === 'OnboardingApproved' ? (
+            <div className="action-row" data-testid="onboarding-assignment-waiting">
+              <p>{translate('siteFlow.waitForOnboarding')}</p>
+              <Button type="button" onClick={onRefresh}>
+                {translate('common.refresh')}
+              </Button>
+            </div>
+          ) : null}
           <div className="action-row">
             <Button
               type="button"
               data-testid="action-assign"
               disabled={!assignGate.enabled || busy}
               {...(assignGate.reason !== null ? { title: assignGate.reason } : {})}
-              onClick={() => setAssignOpen(true)}
+              onClick={() => {
+                setActionError(null);
+                setAssignOpen(true);
+              }}
             >
-              {translate('page.9b3626b5d30f')}
+              {translate(
+                onboardingAssignment && device.lifecycleStatus === 'Onboarded'
+                  ? 'siteFlow.businessAssignment'
+                  : 'page.9b3626b5d30f',
+              )}
             </Button>
             <Button
               type="button"
@@ -592,18 +633,32 @@ export function DeviceManagePage({
         open={assignOpen}
         title={translate('page.37326f4772d8')}
         testid="assign-dialog"
-        onClose={() => setAssignOpen(false)}
+        onClose={() => {
+          if (!busy) {
+            setAssignOpen(false);
+            setActionError(null);
+          }
+        }}
       >
+        {actionError !== null ? <ErrorNotice error={actionError} /> : null}
         <AssignForm
           customers={customers}
           sites={sites}
           currentCustomerId={device.customer?.id ?? null}
           currentSiteId={device.site?.id ?? null}
-          busy={busy}
+          canCreate={hasPermission(role, 'site:write')}
+          loading={siteOptionsLoading}
+          error={siteOptionsError}
+          onRetry={onRefreshSiteOptions}
+          busy={busy || !assignGate.enabled}
           onSubmit={(input) =>
-            void runAction(async () => {
-              await onAssign(input);
-            }, translate('page.173f47097d59'))
+            void runAction(
+              async () => {
+                await onAssign(input);
+              },
+              translate('page.173f47097d59'),
+              true,
+            )
           }
         />
       </Modal>
@@ -659,23 +714,44 @@ function AssignForm({
   sites,
   currentCustomerId,
   currentSiteId,
+  canCreate,
+  loading,
+  error,
+  onRetry,
   busy,
   onSubmit,
 }: {
   readonly customers: readonly FilterOption[];
-  readonly sites: readonly (FilterOption & {
-    customerId: string;
-  })[];
+  readonly sites: readonly AssignmentSiteOption[];
   readonly currentCustomerId: string | null;
   readonly currentSiteId: string | null;
+  readonly canCreate: boolean;
+  readonly loading: boolean;
+  readonly error: unknown;
+  readonly onRetry: (() => void) | undefined;
   readonly busy: boolean;
-  readonly onSubmit: (input: { customerId: string; siteId: string; reason?: string }) => void;
+  readonly onSubmit: (input: DeviceAssignmentInput) => void;
 }) {
   const [customerId, setCustomerId] = useState(currentCustomerId ?? '');
   const [siteId, setSiteId] = useState(currentSiteId ?? '');
   const [reason, setReason] = useState('');
+  const [mode, setMode] = useState<'existing' | 'new'>('existing');
+  const [name, setName] = useState('');
+  const [region, setRegion] = useState('');
+  const [subregion, setSubregion] = useState('');
   const siteOptions = sites.filter((s) => s.customerId === customerId);
+  const creating = canCreate && mode === 'new';
+  const sameName = creating ? siteOptions.find((site) => site.label === name.trim()) : undefined;
+  const selected = siteOptions.find((site) => site.value === siteId);
+  const ready = creating
+    ? name.trim() !== '' && sameName === undefined
+    : Boolean(selected && selected.status !== 'SUSPENDED');
   const reasonTrimmed = reason.trim();
+  const siteFields = [
+    ['name', translate('page.e72ec84bc978'), name, setName],
+    ['region', translate('page.406e0f8c6852'), region, setRegion],
+    ['subregion', translate('page.ff0beacd69e2'), subregion, setSubregion],
+  ] as const;
   return (
     <div className="assign-form" data-testid="assign-form">
       <div className="dialog-field">
@@ -684,6 +760,7 @@ function AssignForm({
           id="assign-customer"
           data-testid="assign-customer"
           value={customerId}
+          disabled={busy}
           onChange={(event) => {
             setCustomerId(event.target.value);
             setSiteId('');
@@ -697,29 +774,99 @@ function AssignForm({
           ))}
         </select>
       </div>
-      <div className="dialog-field">
-        <label htmlFor="assign-site">{translate('page.b3f43665d556')}</label>
-        <select
-          id="assign-site"
-          data-testid="assign-site"
-          value={siteId}
-          disabled={customerId === ''}
-          onChange={(event) => setSiteId(event.target.value)}
-        >
-          <option value="">{translate('page.283600ae452c')}</option>
-          {siteOptions.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
+      {loading ? <p role="status">{translate('page.300ee3dee4dc')}</p> : null}
+      {error !== undefined ? (
+        <div>
+          <ErrorNotice error={error} />
+          {onRetry ? (
+            <Button type="button" data-testid="assign-options-retry" onClick={onRetry}>
+              {translate('detail.retry')}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {canCreate ? (
+        <div className="dialog-field">
+          <label htmlFor="assign-site-mode">{translate('siteFlow.source')}</label>
+          <select
+            id="assign-site-mode"
+            data-testid="assign-site-mode"
+            value={mode}
+            disabled={busy || !customerId}
+            onChange={(event) => setMode(event.target.value === 'new' ? 'new' : 'existing')}
+          >
+            <option value="existing">{translate('siteFlow.existing')}</option>
+            <option value="new">{translate('siteFlow.new')}</option>
+          </select>
+        </div>
+      ) : null}
+      {creating ? (
+        <>
+          {siteFields.map(([key, label, value, set]) => (
+            <div className="dialog-field" key={key}>
+              <label htmlFor={`assign-new-site-${key}`}>{label}</label>
+              <Input
+                id={`assign-new-site-${key}`}
+                data-testid={`assign-new-site-${key}`}
+                maxLength={200}
+                value={value}
+                disabled={busy}
+                onChange={(event) => set(event.target.value)}
+              />
+            </div>
           ))}
-        </select>
-      </div>
+          {sameName ? (
+            <div data-testid="assign-same-name">
+              <p>{translate(sameName.status === 'SUSPENDED' ? 'siteFlow.suspended' : 'siteFlow.sameName')}</p>
+              {sameName.status !== 'SUSPENDED' ? (
+                <Button
+                  type="button"
+                  data-testid="assign-reuse-site"
+                  disabled={busy}
+                  onClick={() => {
+                    setSiteId(sameName.value);
+                    setMode('existing');
+                  }}
+                >
+                  {translate('siteFlow.reuse', { name: sameName.label })}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="dialog-field">
+          <label htmlFor="assign-site">{translate('page.b3f43665d556')}</label>
+          <select
+            id="assign-site"
+            data-testid="assign-site"
+            value={siteId}
+            disabled={busy || customerId === ''}
+            onChange={(event) => setSiteId(event.target.value)}
+          >
+            <option value="">{translate('page.283600ae452c')}</option>
+            {siteOptions.map((s) => (
+              <option key={s.value} value={s.value} disabled={s.status === 'SUSPENDED'}>
+                {s.label}
+                {s.status === 'SUSPENDED' ? ` (${translate('page.6c7dcbb73a59')})` : ''}
+              </option>
+            ))}
+          </select>
+          {selected ? (
+            <p data-testid="assign-site-location">
+              {translate('siteFlow.location', { region: selected.region ?? '—', subregion: selected.subregion ?? '—' })}
+            </p>
+          ) : null}
+          {siteOptions.some((site) => site.status === 'SUSPENDED') ? <p>{translate('siteFlow.suspended')}</p> : null}
+        </div>
+      )}
       <div className="dialog-field">
         <label htmlFor="assign-reason">{translate('page.f4d149ac018b')}</label>
         <TextArea
           id="assign-reason"
           data-testid="assign-reason"
           value={reason}
+          disabled={busy}
           onChange={(event) => setReason(event.target.value)}
         />
       </div>
@@ -728,11 +875,13 @@ function AssignForm({
           type="button"
           className="primary-button"
           data-testid="assign-submit"
-          disabled={busy || customerId === '' || siteId === ''}
+          disabled={busy || loading || error !== undefined || customerId === '' || !ready}
           onClick={() =>
             onSubmit({
               customerId,
-              siteId,
+              ...(creating
+                ? { newSite: { name: name.trim(), region: region.trim() || null, subregion: subregion.trim() || null } }
+                : { siteId }),
               ...(reasonTrimmed !== '' ? { reason: reasonTrimmed } : {}),
             })
           }

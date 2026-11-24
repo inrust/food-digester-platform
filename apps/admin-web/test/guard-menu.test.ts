@@ -24,7 +24,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（B/T08 /business-settings；FE-05 /sites；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（B/T08 /business-settings；C/T10 站点由设备上下文入口承接；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
@@ -37,7 +37,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/contracts',
     '/settings',
     '/business-settings',
-    '/sites',
     '/audit-logs',
   ],
   PlatformOperator: [
@@ -49,7 +48,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
-    '/sites',
   ],
   Auditor: [
     '/dashboard',
@@ -60,7 +58,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/contracts',
     '/settings',
     '/business-settings',
-    '/sites',
     '/audit-logs',
   ],
   CustomerAdmin: [
@@ -71,17 +68,8 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/consumables',
     '/esg/overview',
     '/esg/devices',
-    '/sites',
   ],
-  CustomerViewer: [
-    '/dashboard',
-    '/devices/view',
-    '/devices/groups',
-    '/consumables',
-    '/esg/overview',
-    '/esg/devices',
-    '/sites',
-  ],
+  CustomerViewer: ['/dashboard', '/devices/view', '/devices/groups', '/consumables', '/esg/overview', '/esg/devices'],
 };
 
 test('设备侧栏采用原型四项，旧工作台路径保留共享读取权限', () => {

@@ -249,6 +249,15 @@ export function OnboardingReviewPanel({
               <ErrorNotice error={failure.error} onRefresh={() => onSelect(request.requestId)} />
             ) : null}
 
+            {canReview && request.status === 'APPROVED' ? (
+              <Button
+                type="button"
+                data-testid="onboarding-business-assignment"
+                onClick={() => onNavigate(`/devices/manage?serialNumber=${encodeURIComponent(request.serialNumber)}`)}
+              >
+                {translate('siteFlow.businessAssignment')}
+              </Button>
+            ) : null}
             {canReview && isReviewable(request.status) ? (
               <div className="dialog-actions">
                 <Button

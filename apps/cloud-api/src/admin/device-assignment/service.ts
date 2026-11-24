@@ -9,8 +9,8 @@
  * - Assignment 历史与 Authorization Window：device_assignments 每行即一段授权窗口
  *   （[assignedAt, endedAt)）；再分配时当前 ACTIVE 行闭合（ENDED + endedAt），新行 ACTIVE；
  * - 每次真实变更恰好生成一个 ASSIGNMENT_CHANGED Notification（经 Outbox，下行分发器投递）；
- * - 幂等：目标与当前 ACTIVE 分配相同 → 重放（无写入、无新通知）；并发首次分配撞部分唯一
- *   索引 → 回读胜出记录，同目标重放、异目标 409；
+ * - 幂等：相同目标重放无写入；设备行锁串行化并发分配，异目标冲突返回 409；
+ * - 内联新站点与分配同事务；现有站点必须启用，由行锁保护站点状态和删除约束；
  * - 功能边界：不自动创建 License（BE-LIC 任务）。
  *
  * 审计：DOM-03 audited（device.assignment.assign），SUCCESS 与业务同事务，失败记 FAILURE；
@@ -19,7 +19,11 @@
 import type { DbClient } from '@fdp/database';
 import { audited } from '@fdp/database';
 import { transitionLifecycle } from '@fdp/domain';
+import { AuthError, requirePermission } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
+import { createSite, parseSiteCreate } from '../site/service.js';
+import type { SiteCreateInput } from '../site/service.js';
+import { lockSite } from '../site/repository.js';
 import {
   assignmentConflict,
   assignmentNotFound,
@@ -33,12 +37,13 @@ export const ASSIGNABLE_LIFECYCLES = ['Onboarded', 'Assigned'] as const;
 
 const notificationTopic = (deviceId: string): string => `bnx/device/${deviceId}/notification`;
 
-export interface AssignDeviceInput {
+export type AssignDeviceInput = {
   readonly deviceId: string;
   readonly customerId: string;
-  readonly siteId: string;
   readonly reason?: string | undefined;
-}
+} & (
+  { readonly siteId: string; readonly newSite?: never } | { readonly siteId?: never; readonly newSite: SiteCreateInput }
+);
 
 export interface AssignmentView {
   readonly assignmentId: string;
@@ -91,10 +96,6 @@ interface AssignmentDelegate {
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
 }
 
-interface LookupDelegate {
-  findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string; customerId?: string } | null>;
-}
-
 interface StateHistoryDelegate {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
 }
@@ -139,12 +140,15 @@ function toView(
 
 /** 解析并校验分配请求体（跨 Customer Site 引用在此拒绝）。 */
 export function parseAssignInput(deviceId: string, body: unknown): AssignDeviceInput {
-  const input = parseStrictObject(body, ['customerId', 'siteId', 'reason'], assignmentValidationFailed);
+  const input = parseStrictObject(body, ['customerId', 'siteId', 'newSite', 'reason'], assignmentValidationFailed);
   const customerId =
     typeof input.customerId === 'string' && input.customerId.trim().length > 0 ? input.customerId.trim() : null;
   if (!customerId) throw assignmentValidationFailed('customerId is required');
   const siteId = typeof input.siteId === 'string' && input.siteId.trim().length > 0 ? input.siteId.trim() : null;
-  if (!siteId) throw assignmentValidationFailed('siteId is required');
+  if ((input.siteId === undefined) === (input.newSite === undefined)) {
+    throw assignmentValidationFailed('Provide exactly one of siteId and newSite');
+  }
+  if (!siteId && input.newSite === undefined) throw assignmentValidationFailed('siteId is required');
   const reason =
     input.reason === undefined || input.reason === null
       ? undefined
@@ -153,7 +157,14 @@ export function parseAssignInput(deviceId: string, body: unknown): AssignDeviceI
         : (() => {
             throw assignmentValidationFailed('reason must be a string');
           })();
-  return { deviceId, customerId, siteId, ...(reason !== undefined ? { reason } : {}) };
+  const scope = { deviceId, customerId, ...(reason !== undefined ? { reason } : {}) };
+  if (siteId) return { ...scope, siteId };
+  const newSite = parseStrictObject(
+    input.newSite,
+    ['name', 'region', 'subregion', 'timezone'],
+    assignmentValidationFailed,
+  );
+  return { ...scope, newSite: parseSiteCreate({ ...newSite, customerId }) };
 }
 
 async function loadCurrentAssignment(client: DbClient, deviceId: string): Promise<AssignmentRow | null> {
@@ -166,31 +177,59 @@ export async function assignDevice(
   input: AssignDeviceInput,
   now: () => Date = () => new Date(),
 ): Promise<AssignmentView> {
-  // 前置校验（事务外）：设备/Customer/Site 存在性与归属
   const device = await devices(rootClient).findFirst({ where: { id: input.deviceId } });
   if (!device) throw assignmentNotFound();
   if (!(ASSIGNABLE_LIFECYCLES as readonly string[]).includes(device.lifecycleStatus)) {
     throw assignmentStateNotAllowed(device.lifecycleStatus);
   }
-  const customers = (rootClient as unknown as Record<string, unknown>).customer as LookupDelegate;
-  const customer = await customers.findFirst({ where: { id: input.customerId, deletedAt: null } });
-  if (!customer) throw assignmentNotFound('The referenced customer does not exist');
-  const sites = (rootClient as unknown as Record<string, unknown>).site as LookupDelegate;
-  const site = await sites.findFirst({ where: { id: input.siteId, deletedAt: null } });
-  if (!site) throw assignmentNotFound('The referenced site does not exist');
-  if (site.customerId !== input.customerId) {
-    // 跨 Customer Site 被拒绝
-    throw assignmentValidationFailed('siteId does not belong to the given customerId');
-  }
-
-  // 幂等：目标与当前 ACTIVE 分配一致 → 重放，不产生写入/通知
-  const current = await loadCurrentAssignment(rootClient, input.deviceId);
-  if (current && current.customerId === input.customerId && current.siteId === input.siteId) {
-    return toView(current, device.lifecycleStatus, null, true);
-  }
+  if (input.newSite !== undefined) requirePermission(actor, 'site:write');
 
   const reason = input.reason?.trim() || null;
-  const execute = async (tx: DbClient): Promise<{ row: AssignmentRow; lifecycleStatus: string }> => {
+  const execute = async (tx: DbClient): Promise<AssignmentView> => {
+    await tx.$queryRaw`SELECT id FROM devices WHERE id = ${input.deviceId} FOR UPDATE`;
+    const fresh = await devices(tx).findFirst({ where: { id: input.deviceId } });
+    if (!fresh) throw assignmentNotFound();
+    if (!(ASSIGNABLE_LIFECYCLES as readonly string[]).includes(fresh.lifecycleStatus)) {
+      throw assignmentStateNotAllowed(fresh.lifecycleStatus);
+    }
+    if (device.lifecycleStatus === 'Onboarded' && actor.roles[0] !== 'PlatformSuperAdmin') {
+      throw new AuthError('FORBIDDEN', 'Only a platform administrator may make the first assignment');
+    }
+    const customer = await tx.customer.findFirst({
+      where: { id: input.customerId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!customer) throw assignmentNotFound('The referenced customer does not exist');
+
+    let siteId = input.siteId;
+    if (siteId !== undefined) {
+      await lockSite(tx, siteId);
+      const site = await tx.site.findFirst({
+        where: { id: siteId, deletedAt: null },
+        select: { customerId: true, status: true },
+      });
+      if (!site) throw assignmentNotFound('The referenced site does not exist');
+      if (site.customerId !== input.customerId) {
+        throw assignmentValidationFailed('siteId does not belong to the given customerId');
+      }
+      if (site.status !== 'ACTIVE') throw assignmentConflict('The site must be reactivated before assignment');
+      const current = await loadCurrentAssignment(tx, input.deviceId);
+      if (current && current.customerId === input.customerId && current.siteId === siteId) {
+        return toView(current, fresh.lifecycleStatus, null, true);
+      }
+    }
+
+    if (
+      fresh.lifecycleStatus !== device.lifecycleStatus ||
+      fresh.customerId !== device.customerId ||
+      fresh.siteId !== device.siteId
+    ) {
+      throw assignmentConflict('The device assignment changed concurrently; refresh and retry');
+    }
+    if (input.newSite !== undefined)
+      siteId = (await createSite(tx, actor, { ...input.newSite, customerId: input.customerId })).id;
+    if (siteId === undefined) throw assignmentValidationFailed('siteId is required');
+
     // 首次分配：DOM-01 Onboarded → Assigned（角色/前置由领域层强制）
     let toLifecycle: string = device.lifecycleStatus;
     if (device.lifecycleStatus === 'Onboarded') {
@@ -202,11 +241,11 @@ export async function assignDevice(
           actorId: actor.actorId,
           actorRole: actor.roles[0] as 'PlatformSuperAdmin' | 'PlatformOperator',
         },
-        { assignment: { customerId: input.customerId, siteId: input.siteId } },
+        { assignment: { customerId: input.customerId, siteId } },
       );
       const { count } = await devices(tx).updateMany({
         where: { id: device.id, lifecycleStatus: 'Onboarded' },
-        data: { customerId: input.customerId, siteId: input.siteId, lifecycleStatus: 'Assigned' },
+        data: { customerId: input.customerId, siteId, lifecycleStatus: 'Assigned' },
       });
       if (count === 0) throw assignmentConflict('The device state was changed concurrently; refresh and retry');
       toLifecycle = 'Assigned';
@@ -228,7 +267,7 @@ export async function assignDevice(
       // Assigned 同状态再分配：仅更新归属（无生命周期迁移）
       const { count } = await devices(tx).updateMany({
         where: { id: device.id, lifecycleStatus: 'Assigned' },
-        data: { customerId: input.customerId, siteId: input.siteId },
+        data: { customerId: input.customerId, siteId },
       });
       if (count === 0) throw assignmentConflict('The device state was changed concurrently; refresh and retry');
     }
@@ -242,7 +281,7 @@ export async function assignDevice(
       data: {
         deviceId: device.id,
         customerId: input.customerId,
-        siteId: input.siteId,
+        siteId,
         status: 'ACTIVE',
         assignedBy: actor.actorId,
         reason,
@@ -263,11 +302,11 @@ export async function assignDevice(
         },
       },
     });
-    return { row, lifecycleStatus: toLifecycle };
+    return toView(row, toLifecycle, ASSIGNMENT_CHANGED_NOTIFICATION, false);
   };
 
   try {
-    const result = await audited<{ row: AssignmentRow; lifecycleStatus: string }>(
+    return await audited(
       rootClient,
       {
         objectType: 'device',
@@ -277,24 +316,16 @@ export async function assignDevice(
         actorId: actor.actorId,
         actorRole: actor.roles[0],
         customerId: input.customerId,
-        afterValue: (r: unknown) => {
-          const { row, lifecycleStatus } = r as { row: AssignmentRow; lifecycleStatus: string };
-          return { assignmentId: row.id, customerId: row.customerId, siteId: row.siteId, lifecycleStatus };
+        auditSuccessWhen: (result) => !result.replayed,
+        afterValue: (result: unknown) => {
+          const { assignmentId, customerId, siteId, lifecycleStatus } = result as AssignmentView;
+          return { assignmentId, customerId, siteId, lifecycleStatus };
         },
       },
       execute,
     );
-    return toView(result.row, result.lifecycleStatus, ASSIGNMENT_CHANGED_NOTIFICATION, false);
   } catch (err) {
-    // 并发首次分配撞部分唯一索引（每设备仅一条 ACTIVE）：回读胜出记录幂等收口
-    if (isUniqueViolation(err)) {
-      const winner = await loadCurrentAssignment(rootClient, input.deviceId);
-      if (winner && winner.customerId === input.customerId && winner.siteId === input.siteId) {
-        const fresh = await devices(rootClient).findFirst({ where: { id: input.deviceId } });
-        return toView(winner, fresh?.lifecycleStatus ?? device.lifecycleStatus, null, true);
-      }
-      throw assignmentConflict('A conflicting assignment was created concurrently');
-    }
+    if (isUniqueViolation(err)) throw assignmentConflict('A conflicting assignment was created concurrently');
     throw err;
   }
 }

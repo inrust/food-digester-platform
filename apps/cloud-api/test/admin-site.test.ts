@@ -14,7 +14,12 @@ import { afterAll, beforeAll, describe, test } from 'vitest';
 import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { ADMIN_SITE_ERROR_HTTP_STATUS, createAdminSiteHandlers, toSiteDto } from '../src/index.js';
+import {
+  ADMIN_SITE_ERROR_HTTP_STATUS,
+  createAdminDeviceHandlers,
+  createAdminSiteHandlers,
+  toSiteDto,
+} from '../src/index.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import type { SiteRecord } from '../src/admin/site/repository.js';
 import { createTestDb } from './helpers.js';
@@ -429,4 +434,80 @@ describe('契约一致性', () => {
       assert.ok(!/@fdp\/aws-clients|@aws-sdk|aws-sdk/.test(source), `${file} 引用了 AWS 客户端`);
     }
   });
+});
+
+test('C/T10 R09 old unlinked sites can be searched and restored with scope, version and audit', async () => {
+  const a = await plantCustomer();
+  const b = await plantCustomer();
+  const old = await prisma.site.create({ data: { customerId: a.id, name: 'Legacy Line %', status: 'SUSPENDED' } });
+  await prisma.site.create({ data: { customerId: a.id, name: 'Legacy Line X' } });
+  await prisma.site.create({ data: { customerId: b.id, name: 'Legacy Line %', status: 'SUSPENDED' } });
+  const h = handlers();
+  const query = { keyword: 'line %', status: 'SUSPENDED' };
+  const list = await h.list(req(customerActor(a.id), { query }));
+  assert.deepEqual(
+    (list.body as { data: { id: string; deviceCount: number }[] }).data.map(({ id, deviceCount }) => [id, deviceCount]),
+    [[old.id, 0]],
+  );
+  const search = await h.list(req(operator, { query: { keyword: old.id } }));
+  assert.lengthOf((search.body as { data: unknown[] }).data, 1);
+  for (const actor of [auditor, customerActor(a.id), customerActor(b.id)]) {
+    assert.equal(
+      (await h.reactivate(req(actor, { params: { siteId: old.id }, headers: { 'If-Match': '1' } }))).status,
+      403,
+    );
+  }
+  const recover = (version: number) =>
+    h.reactivate(
+      req(operator, {
+        params: { siteId: old.id },
+        headers: { 'If-Match': String(version) },
+      }),
+    );
+  assert.equal((await h.reactivate(req(operator, { params: { siteId: old.id } }))).status, 400);
+  const results = await Promise.all([recover(1), recover(1)]);
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+  const restored = results.find((r) => r.status === 200)!;
+  assertOpenApiResponse('reactivateSite', 200, restored.body);
+  assert.equal((restored.body as DataBody).data.version, 2);
+  assert.equal((restored.body as DataBody).data.status, 'ACTIVE');
+  assert.equal((results.find((r) => r.status === 409)!.body as ErrorBody).error.code, 'VERSION_CONFLICT');
+  assert.equal(((await recover(2)).body as ErrorBody).error.code, 'CONFLICT');
+  assert.equal(
+    await prisma.auditLog.count({
+      where: { objectId: old.id, action: 'site.reactivate', customerId: a.id, result: 'SUCCESS' },
+    }),
+    1,
+  );
+});
+
+test('C/T10 R02 editing a shared site changes both device details and DEC-011 filters', async () => {
+  const customer = await plantCustomer();
+  const site = await prisma.site.create({
+    data: { customerId: customer.id, name: 'Shared', region: '旧区域', subregion: '旧子区' },
+  });
+  const devices = [await plantDevice(customer.id, site.id), await plantDevice(customer.id, site.id)];
+  const response = await handlers().update(
+    req(operator, {
+      params: { siteId: site.id },
+      headers: { 'If-Match': '1' },
+      body: { region: '新区域', subregion: 'T12' },
+    }),
+  );
+  assert.equal(response.status, 200);
+  assert.equal((response.body as DataBody).data.deviceCount, 2);
+  const h = createAdminDeviceHandlers({ client: prisma, now: () => NOW });
+  for (const device of devices) {
+    const detail = await h.detail(req(operator, { params: { deviceId: device.id } }));
+    assert.include((detail.body as DataBody).data.site, { id: site.id, region: '新区域', subregion: 'T12' });
+  }
+  const filter = (region: string, subregion: string) =>
+    h.list(req(operator, { query: { region, subregion, customerId: customer.id } }));
+  const found = await filter('新区域', 'T12');
+  assert.sameMembers(
+    (found.body as { data: { id: string }[] }).data.map((d) => d.id),
+    devices.map((d) => d.id),
+  );
+  const old = await filter('旧区域', '旧子区');
+  assert.deepEqual((old.body as { data: unknown[] }).data, []);
 });

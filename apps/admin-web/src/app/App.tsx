@@ -134,7 +134,9 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       ? null
       : location.pathname === '/customers' && verdict.kind === 'allow'
         ? '/contracts/customers'
-        : legacySettingsTarget(location.pathname, location.search, location.hash);
+        : location.pathname === '/sites' && verdict.kind === 'allow'
+          ? `/devices/sites${location.search}${location.hash}`
+          : legacySettingsTarget(location.pathname, location.search, location.hash);
   useEffect(() => {
     if (legacyTarget !== null) {
       navigate(legacyTarget, { replace: true });
@@ -207,7 +209,16 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <CustomersController api={services.api} session={session} toasts={toasts} />;
       break;
     case 'sites':
-      page = <SitesController key={sessionScope} api={services.api} session={session} toasts={toasts} />;
+      page = (
+        <SitesController
+          key={`${sessionScope}:${location.search}`}
+          api={services.api}
+          session={session}
+          toasts={toasts}
+          search={location.search}
+          onNavigate={navigate}
+        />
+      );
       break;
     case 'device-view':
       page = (

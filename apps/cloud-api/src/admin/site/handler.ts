@@ -20,7 +20,15 @@ import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
 import { AdminSiteError, siteNotFound, siteValidationFailed } from './errors.js';
 import { findSiteById, listSites, toSiteDto } from './repository.js';
-import { createSite, deactivateSite, deleteSite, parseSiteCreate, parseSiteUpdate, updateSite } from './service.js';
+import {
+  createSite,
+  deactivateSite,
+  deleteSite,
+  parseSiteCreate,
+  parseSiteUpdate,
+  reactivateSite,
+  updateSite,
+} from './service.js';
 import { parseStrictObject, rejectRequestBody } from '../shared/strict-object.js';
 
 export interface AdminSiteHandlerDeps {
@@ -34,6 +42,7 @@ export interface AdminSiteHandlers {
   detail(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   update(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   deactivate(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  reactivate(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   remove(req: AdminHttpRequest): Promise<AdminHttpResponse>;
 }
 
@@ -102,6 +111,7 @@ export function createAdminSiteHandlers(deps: AdminSiteHandlerDeps): AdminSiteHa
       region: req.query?.region,
       subregion: req.query?.subregion,
       status: req.query?.status,
+      keyword: req.query?.keyword,
       cursor: req.query?.cursor,
       limit: req.query?.limit,
     });
@@ -148,6 +158,18 @@ export function createAdminSiteHandlers(deps: AdminSiteHandlerDeps): AdminSiteHa
     },
   );
 
+  const reactivate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
+    { permission: 'site:write' },
+    async (req) => {
+      rejectRequestBody(req.body, siteValidationFailed);
+      const updated = await reactivateSite(deps.client, req.actor as ActorContext, {
+        siteId: requireSiteId(req),
+        ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
+      });
+      return { status: 200, body: { data: toSiteDto(updated), meta: meta(req) } };
+    },
+  );
+
   const remove = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'site:write' }, async (req) => {
     rejectRequestBody(req.body, siteValidationFailed);
     const deleted = await deleteSite(deps.client, req.actor as ActorContext, {
@@ -173,6 +195,7 @@ export function createAdminSiteHandlers(deps: AdminSiteHandlerDeps): AdminSiteHa
     detail: wrap(detail),
     update: wrap(update),
     deactivate: wrap(deactivate),
+    reactivate: wrap(reactivate),
     remove: wrap(remove),
   };
 }

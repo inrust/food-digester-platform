@@ -307,7 +307,8 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       operationId === 'getSite' ||
       operationId === 'updateSite' ||
       operationId === 'deleteSite' ||
-      operationId === 'deactivateSite'
+      operationId === 'deactivateSite' ||
+      operationId === 'reactivateSite'
     ) {
       const routedRequest: AdminHttpRequest = {
         ...request,
@@ -316,6 +317,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       if (operationId === 'getSite') return routes.sites.detail(routedRequest);
       if (operationId === 'updateSite') return routes.sites.update(routedRequest);
       if (operationId === 'deleteSite') return routes.sites.remove(routedRequest);
+      if (operationId === 'reactivateSite') return routes.sites.reactivate(routedRequest);
       return routes.sites.deactivate(routedRequest);
     }
     if (operationId === 'listDevices') return routes.devices.list(request);

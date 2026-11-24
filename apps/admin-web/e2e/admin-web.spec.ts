@@ -184,8 +184,8 @@ test('无 Token 安全回登录；五角色菜单和受限路由均由组合根�
     { role: 'PlatformSuperAdmin', visible: '合约查询及修改', forbidden: '/not-a-route' },
     { role: 'PlatformOperator', visible: '合约查询及修改', forbidden: '/settings' },
     { role: 'Auditor', visible: '业务设置', forbidden: '/contracts/new' },
-    { role: 'CustomerAdmin', visible: '站点管理', forbidden: '/settings' },
-    { role: 'CustomerViewer', visible: '站点管理', forbidden: '/customers' },
+    { role: 'CustomerAdmin', visible: '设备群管理', forbidden: '/settings' },
+    { role: 'CustomerViewer', visible: '设备群管理', forbidden: '/customers' },
   ];
   for (const item of cases) {
     const page = await qa05.newPage();
@@ -313,6 +313,7 @@ test('Onboarding 审批双击只提交一次，展示录入来源和证书状态
 
 test('CMP-11/12 详情加载和拒绝可重试，提交后从已拒绝标签读回', async ({ page }) => {
   await seedSession(page, 'PlatformSuperAdmin');
+  await page.route('**/api/v1/admin/sites**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
   const request = onboardingRequestFixture;
   let current: Omit<typeof request, 'rejectReason'> & { rejectReason: string | null } = request;
   let releaseRead!: () => void;
@@ -1526,7 +1527,7 @@ const layoutRoutes = [
   '/settings',
   '/business-settings',
   '/customers',
-  '/sites',
+  '/devices/sites',
   '/licenses',
   '/device-users',
   '/audit-logs',

@@ -7,6 +7,7 @@
  * - 操作后历史刷新（onRefresh 回源）；别名 If-Match 由 API 装配层验证；
  * - 证书摘要无私钥；轮换按钮表达为“请求轮换”。
  */
+import type { DeviceAssignmentInput } from '../src/pages/device-manage/device-manage-api.js';
 import { afterEach, assert, test } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -88,7 +89,7 @@ function renderPage(overrides: Partial<DeviceManagePageProps> = {}) {
   const calls = {
     back: 0,
     refreshed: 0,
-    assigned: [] as { customerId: string; siteId: string; reason?: string }[],
+    assigned: [] as DeviceAssignmentInput[],
     suspended: [] as string[],
     reactivated: [] as string[],
     retired: [] as string[],

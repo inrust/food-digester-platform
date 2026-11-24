@@ -73,6 +73,7 @@ export interface DeviceGroupsPageProps {
   };
   readonly onNavigate: (path: string) => void;
   readonly onOpenConfigurations?: () => void;
+  readonly onOpenSites?: () => void;
   /** FE-04 审批面板（嵌入本页“新增设备请求”区域）。 */
   readonly onboarding: OnboardingReviewPanelProps;
 }
@@ -113,6 +114,7 @@ export function DeviceGroupsPage({
   filterOptions,
   onNavigate,
   onOpenConfigurations,
+  onOpenSites,
   onboarding,
 }: DeviceGroupsPageProps) {
   // 草稿筛选：应用后才生效（device-group.button.search 语义）
@@ -128,11 +130,18 @@ export function DeviceGroupsPage({
     <div className="device-groups-page" data-testid="device-groups-page">
       <header className="page-header">
         <h1>{translate('design.page.device-group')}</h1>
-        {onOpenConfigurations !== undefined ? (
-          <Button type="button" data-testid="device-groups-configurations" onClick={onOpenConfigurations}>
-            {translate('deviceWorkbench.configurations')}
-          </Button>
-        ) : null}
+        <div className="action-row">
+          {onOpenSites !== undefined ? (
+            <Button type="button" data-testid="device-groups-sites" onClick={onOpenSites}>
+              {translate('siteFlow.openDirectory')}
+            </Button>
+          ) : null}
+          {onOpenConfigurations !== undefined ? (
+            <Button type="button" data-testid="device-groups-configurations" onClick={onOpenConfigurations}>
+              {translate('deviceWorkbench.configurations')}
+            </Button>
+          ) : null}
+        </div>
       </header>
       <FilterBar
         testId="device-filter-bar"

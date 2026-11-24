@@ -67,7 +67,10 @@ test('DeviceAssignment 视图封闭：授权窗口（assignedAt/endedAt）+ 幂�
   assert.deepEqual(a.properties.status.enum, ['ACTIVE', 'ENDED']);
   assert.deepEqual(a.properties.notification.enum, ['ASSIGNMENT_CHANGED', null]);
   const req = doc.components.schemas.AssignmentRequest;
-  assert.deepEqual(req.required.sort(), ['customerId', 'siteId']);
+  assert.deepEqual(req.required, ['customerId']);
+  assert.deepEqual(req.oneOf, [{ required: ['siteId'] }, { required: ['newSite'] }]);
+  assert.deepEqual(req.properties.newSite.required, ['name']);
+  assert.equal(req.properties.newSite.additionalProperties, false);
   assert.equal(req.additionalProperties, false);
 });
 

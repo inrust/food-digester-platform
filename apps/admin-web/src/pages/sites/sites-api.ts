@@ -6,6 +6,7 @@ import type { ApiClient } from '../../api/http-client.js';
 import type { SiteInput, SiteStatus, SiteView } from './types.js';
 
 export interface SiteListFilter {
+  readonly keyword?: string | null;
   readonly customerId?: string | null;
   readonly region?: string | null;
   readonly subregion?: string | null;
@@ -23,6 +24,7 @@ export async function fetchSites(
   options?: { cursor?: string | null; limit?: number },
 ): Promise<SiteList> {
   const params = new URLSearchParams();
+  if (filter?.keyword?.trim()) params.set('keyword', filter.keyword.trim());
   if (filter?.customerId) params.set('customerId', filter.customerId);
   if (filter?.region) params.set('region', filter.region);
   if (filter?.subregion) params.set('subregion', filter.subregion);
@@ -68,6 +70,22 @@ export async function deactivateSite(
     method: 'POST',
     ifMatch: version,
     body: { reason },
+  });
+  return response.data;
+}
+
+export async function reactivateSite(api: ApiClient, siteId: string, version: number): Promise<SiteView> {
+  const response = await api.request<{ data: SiteView }>(`/admin/sites/${encodeURIComponent(siteId)}/reactivate`, {
+    method: 'POST',
+    ifMatch: version,
+  });
+  return response.data;
+}
+
+export async function deleteSite(api: ApiClient, siteId: string, version: number): Promise<SiteView> {
+  const response = await api.request<{ data: SiteView }>(`/admin/sites/${encodeURIComponent(siteId)}`, {
+    method: 'DELETE',
+    ifMatch: version,
   });
   return response.data;
 }

@@ -20,13 +20,18 @@ function devicePath(deviceId: string): string {
   return `/admin/devices/${encodeURIComponent(deviceId)}`;
 }
 
+export type DeviceAssignmentInput = { customerId: string; reason?: string } & (
+  | { siteId: string; newSite?: never }
+  | { siteId?: never; newSite: { name: string; region: string | null; subregion: string | null } }
+);
+
 export async function assignDevice(
   api: ApiClient,
   deviceId: string,
-  input: { customerId: string; siteId: string; reason?: string },
+  input: DeviceAssignmentInput,
 ): Promise<DeviceAssignmentView> {
-  const body: Record<string, string> = { customerId: input.customerId, siteId: input.siteId };
-  if (input.reason !== undefined && input.reason !== '') body['reason'] = input.reason;
+  const { reason, ...site } = input;
+  const body = { ...site, ...(reason ? { reason } : {}) };
   const response = await api.request<{ data: DeviceAssignmentView }>(`${devicePath(deviceId)}/assignment`, {
     method: 'POST',
     body,

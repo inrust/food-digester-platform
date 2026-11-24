@@ -80,6 +80,7 @@ export interface DeviceViewPageProps {
   readonly pickerState?: DevicePickerState;
   readonly onRetryPicker?: () => void;
   readonly onApply: (deviceId: string) => void;
+  readonly onOpenSites?: () => void;
   readonly onRefreshConsole: () => void;
   readonly onLoadMoreActivities?: (cursor: string) => void;
 }
@@ -384,6 +385,7 @@ export function DeviceViewPage({
   onRetryPicker,
   onApply,
   onRefreshConsole,
+  onOpenSites,
   onLoadMoreActivities = () => {},
 }: DeviceViewPageProps) {
   const [scope, setScope] = useState<ScopeFilterValue>(EMPTY_SCOPE_FILTER);
@@ -391,11 +393,18 @@ export function DeviceViewPage({
     <div className="device-view-page" data-testid="device-view-page">
       <header className="page-header">
         <h1>{translate('design.page.device-view')}</h1>
-        {consoleState.status === 'ready' || consoleState.status === 'loading' ? (
-          <Button type="button" onClick={onRefreshConsole} disabled={consoleState.status === 'loading'}>
-            {translate('deviceConsole.refreshStatus')}
-          </Button>
-        ) : null}
+        <div className="action-row">
+          {onOpenSites && device && consoleState.status === 'ready' ? (
+            <Button type="button" data-testid="view-sites" onClick={onOpenSites}>
+              {translate('siteFlow.openDirectory')}
+            </Button>
+          ) : null}
+          {consoleState.status === 'ready' || consoleState.status === 'loading' ? (
+            <Button type="button" onClick={onRefreshConsole} disabled={consoleState.status === 'loading'}>
+              {translate('deviceConsole.refreshStatus')}
+            </Button>
+          ) : null}
+        </div>
       </header>
       <div data-testid="view-filter-bar">
         <DeviceScopePicker

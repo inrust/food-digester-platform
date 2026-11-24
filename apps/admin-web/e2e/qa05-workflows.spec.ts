@@ -67,6 +67,7 @@ for (const role of ROLES)
         ![
           '/devices/manage',
           '/customers',
+          '/sites',
           '/contracts/new',
           '/contracts/detail',
           '/ota/packages',

@@ -16,6 +16,7 @@ import type { DbClient } from '@fdp/database';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
 import { AdminAssignmentError, assignmentNotFound, assignmentValidationFailed } from './errors.js';
+import { AdminSiteError } from '../site/errors.js';
 import { assignDevice, listAssignmentHistory, parseAssignInput } from './service.js';
 
 export interface AdminDeviceAssignmentHandlerDeps {
@@ -44,7 +45,7 @@ function requireDeviceId(req: AdminHttpRequest): string {
 }
 
 function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse {
-  if (err instanceof AuthError || err instanceof AdminAssignmentError) {
+  if (err instanceof AuthError || err instanceof AdminAssignmentError || err instanceof AdminSiteError) {
     const message = SENSITIVE_LEAK_PATTERN.test(err.message) ? 'The request failed' : err.message;
     return { status: err.httpStatus, body: { error: { code: err.code, message, requestId: req.requestId } } };
   }

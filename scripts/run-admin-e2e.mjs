@@ -188,6 +188,8 @@ export const REQUIRED_TITLES = [
   'B/T08 R18 old settings links follow destination permissions and keep device context',
   'C/T09 R12 same-name customers remain distinct and existing and new inputs are explicit',
   'C/T09 R12 R16 duplicate recovery opens the saved draft and makes the customer available for onboarding',
+  'C/T10 R02 R16 onboarding waits for the device and retries site creation within business assignment',
+  'C/T10 R02 R09 R16 contextual site maintenance restores and removes old sites and refreshes device geography',
 ];
 function reportSpecs(report) {
   const specs = [];

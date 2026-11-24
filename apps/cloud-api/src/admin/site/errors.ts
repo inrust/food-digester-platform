@@ -56,6 +56,10 @@ export function siteAlreadySuspended(): AdminSiteError {
   return new AdminSiteError('CONFLICT', 'The site is already suspended');
 }
 
+export function siteAlreadyActive(): AdminSiteError {
+  return new AdminSiteError('CONFLICT', 'The site is already active');
+}
+
 /** 409：存在关联设备，禁止删除（受约束删除的明确错误）。 */
 export function siteDeleteConstrained(message: string): AdminSiteError {
   return new AdminSiteError('CONFLICT', message);

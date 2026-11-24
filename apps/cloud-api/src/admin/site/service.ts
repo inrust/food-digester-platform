@@ -13,13 +13,15 @@ import type { DbClient } from '@fdp/database';
 import { audited, recordAudit, withTransaction } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import {
+  siteAlreadyActive,
   siteAlreadySuspended,
   siteCustomerNotFound,
   siteDeleteConstrained,
   siteNotFound,
   siteValidationFailed,
+  siteVersionConflict,
 } from './errors.js';
-import { countSiteDevices, createSiteRecord, findSiteById, updateSiteWithVersion } from './repository.js';
+import { countSiteDevices, createSiteRecord, findSiteById, lockSite, updateSiteWithVersion } from './repository.js';
 import type { SiteRecord } from './repository.js';
 import { parseStrictObject } from '../shared/strict-object.js';
 
@@ -84,6 +86,8 @@ function auditSnapshot(record: SiteRecord): Record<string, unknown> {
     customerId: record.customerId,
     name: record.name,
     status: record.status,
+    region: record.region,
+    subregion: record.subregion,
     timezone: record.timezone,
     version: record.version,
   };
@@ -213,6 +217,7 @@ export async function updateSite(
       objectType: 'site',
       objectId: input.siteId,
       action: 'site.update',
+      customerId: (result: unknown) => (result as SiteRecord).customerId,
       ...auditActor(actor),
       beforeValue: { version: input.ifMatchVersion },
       afterValue: (result: unknown) => auditSnapshot(result as SiteRecord),
@@ -225,20 +230,20 @@ export async function updateSite(
   );
 }
 
-export async function deactivateSite(
+async function setSiteStatus(
   rootClient: DbClient,
   actor: ActorContext,
-  input: SiteWriteInput & { reason?: string | undefined },
+  input: SiteWriteInput & { reason: string | null },
+  status: 'ACTIVE' | 'SUSPENDED',
 ): Promise<SiteRecord> {
-  const reason = input.reason?.trim() || null;
-  if (!reason) throw siteValidationFailed('The reason is required when deactivating a site');
   return audited<SiteRecord>(
     rootClient,
     {
       objectType: 'site',
       objectId: input.siteId,
-      action: 'site.deactivate',
-      reason,
+      action: status === 'ACTIVE' ? 'site.reactivate' : 'site.deactivate',
+      reason: input.reason,
+      customerId: (result: unknown) => (result as SiteRecord).customerId,
       ...auditActor(actor),
       beforeValue: { version: input.ifMatchVersion },
       afterValue: (result: unknown) => auditSnapshot(result as SiteRecord),
@@ -246,10 +251,29 @@ export async function deactivateSite(
     async (tx) => {
       const current = await findSiteById(tx, input.siteId);
       if (!current) throw siteNotFound();
-      if (current.status !== 'ACTIVE') throw siteAlreadySuspended();
-      return updateSiteWithVersion(tx, input.siteId, input.ifMatchVersion, { status: 'SUSPENDED' });
+      if (current.version !== input.ifMatchVersion) throw siteVersionConflict();
+      if (current.status === status) throw status === 'ACTIVE' ? siteAlreadyActive() : siteAlreadySuspended();
+      return updateSiteWithVersion(tx, input.siteId, input.ifMatchVersion, { status });
     },
   );
+}
+
+export async function deactivateSite(
+  rootClient: DbClient,
+  actor: ActorContext,
+  input: SiteWriteInput & { reason?: string | undefined },
+): Promise<SiteRecord> {
+  const reason = input.reason?.trim();
+  if (!reason) throw siteValidationFailed('The reason is required when deactivating a site');
+  return setSiteStatus(rootClient, actor, { ...input, reason }, 'SUSPENDED');
+}
+
+export async function reactivateSite(
+  rootClient: DbClient,
+  actor: ActorContext,
+  input: SiteWriteInput,
+): Promise<SiteRecord> {
+  return setSiteStatus(rootClient, actor, { ...input, reason: null }, 'ACTIVE');
 }
 
 /** 软删除：有关联设备时返回明确的 409 错误；V1 不做物理删除。 */
@@ -264,13 +288,16 @@ export async function deleteSite(
       objectType: 'site',
       objectId: input.siteId,
       action: 'site.delete',
+      customerId: (result: unknown) => (result as SiteRecord).customerId,
       ...auditActor(actor),
       beforeValue: { version: input.ifMatchVersion },
       afterValue: (result: unknown) => ({ ...auditSnapshot(result as SiteRecord), deleted: true }),
     },
     async (tx) => {
+      await lockSite(tx, input.siteId);
       const current = await findSiteById(tx, input.siteId);
       if (!current) throw siteNotFound();
+      if (current.version !== input.ifMatchVersion) throw siteVersionConflict();
       const deviceCount = await countSiteDevices(tx, input.siteId);
       if (deviceCount > 0) {
         throw siteDeleteConstrained(`The site has ${deviceCount} associated device(s) and cannot be deleted`);

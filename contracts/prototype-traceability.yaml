@@ -101,7 +101,7 @@
         { "id": "device-group.button.search", "kind": "button", "name": "搜索", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices" } },
         { "id": "device-group.button.reset", "kind": "button", "name": "重置", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
         { "id": "device-group.column.seq", "kind": "table-column", "name": "序号", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
-        { "id": "device-group.column.region", "kind": "table-column", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011：Region 为 Site 属性，从 Site 派生", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.region" } },
+        { "id": "device-group.column.region", "kind": "table-column", "name": "设备区域", "disposition": "Adapt", "basis": "DEC-011：Region 为 Site 属性，从 Site 派生；C/T10 可从设备及接入上下文维护站点", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.region" } },
         { "id": "device-group.column.subregion", "kind": "table-column", "name": "设备子区域", "disposition": "Adapt", "basis": "DEC-011", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "site.subregion" } },
         { "id": "device-group.column.deviceId", "kind": "table-column", "name": "设备唯一ID", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "id" } },
         { "id": "device-group.column.alias", "kind": "table-column", "name": "设备别名", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices", "field": "alias" } },
@@ -116,7 +116,7 @@
         { "id": "device-group.req.column.creator", "kind": "table-column", "name": "新增设备请求-录入人", "disposition": "Defer", "basis": "BE-ONB-02 当前正式 OpenAPI 不提供 requestedBy；设备自主提交不能伪造管理员录入人，待业务定义来源后再采用" },
         { "id": "device-group.req.column.requestDate", "kind": "table-column", "name": "新增设备请求-申请日期", "disposition": "Adapt", "basis": "BE-ONB-02：使用申请记录 createdAt 作为申请日期", "source": { "taskId": "BE-ONB-02", "api": "listOnboardingRequests", "field": "createdAt" } },
         { "id": "device-group.req.button.detail", "kind": "button", "name": "请求-详细信息", "disposition": "Adopt", "source": { "taskId": "BE-ONB-02", "api": "getOnboardingRequest" } },
-        { "id": "device-group.req.button.accept", "kind": "button", "name": "请求-接受", "disposition": "Adapt", "basis": "BE-ONB-02：仅 PlatformSuperAdmin，If-Match 防重复审批，写审计", "source": { "taskId": "BE-ONB-02", "api": "approveOnboardingRequest" } },
+        { "id": "device-group.req.button.accept", "kind": "button", "name": "请求-接受", "disposition": "Adapt", "basis": "BE-ONB-02：仅 PlatformSuperAdmin，If-Match 防重复审批，写审计；C/T10 设备完成接入后进入业务分配", "source": { "taskId": "BE-ONB-02", "api": "approveOnboardingRequest" } },
         { "id": "device-group.req.button.reject", "kind": "button", "name": "请求-拒绝", "disposition": "Adapt", "basis": "BE-ONB-02：拒绝强制填写原因", "source": { "taskId": "BE-ONB-02", "api": "rejectOnboardingRequest" } }
       ]
     },

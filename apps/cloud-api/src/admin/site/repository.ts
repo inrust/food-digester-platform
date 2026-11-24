@@ -95,7 +95,13 @@ export async function findSiteById(client: DbClient, id: string): Promise<SiteRe
   return sites(client).findFirst({ where: { id, deletedAt: null }, include: DEVICE_COUNT_INCLUDE });
 }
 
+/** Serialize site assignment with checks that precede a site write. */
+export async function lockSite(client: DbClient, id: string): Promise<void> {
+  await client.$queryRaw`SELECT id FROM sites WHERE id = ${id} FOR UPDATE`;
+}
+
 export interface SiteListOptions {
+  readonly keyword?: string | undefined;
   readonly customerId?: string | undefined;
   readonly region?: string | undefined;
   readonly subregion?: string | undefined;
@@ -116,6 +122,11 @@ export async function listSites(client: DbClient, options: SiteListOptions): Pro
   if (options.region) where.region = options.region;
   if (options.subregion) where.subregion = options.subregion;
   if (options.status) where.status = options.status;
+  const keyword = options.keyword?.trim();
+  if (keyword) {
+    const literal = keyword.replace(/[\\%_]/g, '\\$&');
+    where.OR = [{ id: keyword }, { name: { contains: literal, mode: 'insensitive' } }];
+  }
   if (after) where.id = { gt: after };
   const rows = await sites(client).findMany({
     where,

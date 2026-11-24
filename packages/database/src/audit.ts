@@ -90,7 +90,9 @@ export async function recordAudit(client: DbClient, entry: AuditEntry): Promise<
 
 // ---------- 管理写操作拦截器 ----------
 
-export interface AuditedOperation {
+export interface AuditedOperation<T = unknown> {
+  /** Replays without business writes can skip the success record. */
+  readonly auditSuccessWhen?: (result: T) => boolean;
   readonly objectType: string;
   readonly objectId: string;
   readonly action: string;
@@ -114,19 +116,20 @@ export interface AuditedOperation {
  */
 export async function audited<T>(
   client: DbClient,
-  op: AuditedOperation,
+  op: AuditedOperation<T>,
   fn: (tx: DbClient) => Promise<T>,
   observe = false,
 ): Promise<T> {
   if (!isRootClient(client)) {
     throw new DbError('audited() 必须使用根 PrismaClient，禁止在事务内嵌套');
   }
-  const { customerId, ...operation } = op;
+  const { customerId, auditSuccessWhen, ...operation } = op;
   try {
     return await withTransaction(
       client,
       async (tx) => {
         const result = await fn(tx);
+        if (auditSuccessWhen && !auditSuccessWhen(result)) return result;
         const afterValue = typeof op.afterValue === 'function' ? op.afterValue(result) : op.afterValue;
         const scopedCustomer = typeof customerId === 'function' ? customerId(result) : customerId;
         const write = () =>
