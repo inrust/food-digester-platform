@@ -54,9 +54,14 @@ export async function createDeviceUser(
   return response.data;
 }
 
-export async function fetchDeviceUser(api: ApiClient, deviceUserId: string): Promise<DeviceUserDetailView> {
+export async function fetchDeviceUser(
+  api: ApiClient,
+  deviceUserId: string,
+  signal?: AbortSignal,
+): Promise<DeviceUserDetailView> {
   const response = await api.request<{ data: DeviceUserDetailView }>(
     `/admin/device-users/${encodeURIComponent(deviceUserId)}`,
+    signal === undefined ? undefined : { signal },
   );
   return response.data;
 }

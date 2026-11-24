@@ -92,7 +92,7 @@
       },
       {
         "file": "admin-device-user-api.json",
-        "sha256": "ca121f0ef3e23cc1a4bc46b30e0a67a6b4f2e2234aba7736085c73ae52504d90",
+        "sha256": "c3f9aa2f940c34e43a7f04b5e1fdb2ab67afea2f3534459ed064c82d628ad278",
         "status": "implemented"
       },
       {
@@ -5138,7 +5138,7 @@
           "admin"
         ],
         "operationId": "listDeviceUsers",
-        "summary": "设备操作员列表（Customer/Region/Subregion/Device/status/keyword 筛选；含 ACTIVE 分配设备数）",
+        "summary": "设备操作员列表（含所属客户名称及 ACTIVE 分配设备数）",
         "security": [
           {
             "CognitoJwt": []
@@ -5235,7 +5235,7 @@
           "admin"
         ],
         "operationId": "getDeviceUser",
-        "summary": "设备操作员详情（含分配历史；跨 Customer → 404）",
+        "summary": "设备操作员详情（含所属客户名称和分配历史；跨 Customer → 404）",
         "security": [
           {
             "CognitoJwt": []
@@ -16857,7 +16857,7 @@
           }
         }
       },
-      "AdminDeviceUserApi__DeviceUser": {
+      "AdminDeviceUserApi__DeviceUserFields": {
         "type": "object",
         "required": [
           "deviceUserId",
@@ -16869,7 +16869,6 @@
           "createdAt",
           "updatedAt"
         ],
-        "additionalProperties": false,
         "properties": {
           "deviceUserId": {
             "type": "string",
@@ -16909,10 +16908,25 @@
           }
         }
       },
+      "AdminDeviceUserApi__DeviceUser": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserFields"
+          }
+        ],
+        "unevaluatedProperties": false
+      },
+      "AdminDeviceUserApi__DeviceUserCustomerName": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "根据授权可见设备用户的 customerId 查询其未软删除的所属客户，空白或不可用时为 null。旧版响应可能省略。"
+      },
       "AdminDeviceUserApi__DeviceUserListItem": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUser"
+            "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserFields"
           },
           {
             "type": "object",
@@ -16920,13 +16934,17 @@
               "activeDeviceCount"
             ],
             "properties": {
+              "customerName": {
+                "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserCustomerName"
+              },
               "activeDeviceCount": {
                 "type": "integer",
                 "minimum": 0
               }
             }
           }
-        ]
+        ],
+        "unevaluatedProperties": false
       },
       "AdminDeviceUserApi__DeviceUserAssignment": {
         "type": "object",
@@ -16969,7 +16987,7 @@
       "AdminDeviceUserApi__DeviceUserDetail": {
         "allOf": [
           {
-            "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUser"
+            "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserFields"
           },
           {
             "type": "object",
@@ -16978,6 +16996,9 @@
               "syncStates"
             ],
             "properties": {
+              "customerName": {
+                "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserCustomerName"
+              },
               "assignments": {
                 "type": "array",
                 "items": {
@@ -16992,7 +17013,8 @@
               }
             }
           }
-        ]
+        ],
+        "unevaluatedProperties": false
       },
       "AdminDeviceUserApi__DeviceUserSyncState": {
         "type": "object",

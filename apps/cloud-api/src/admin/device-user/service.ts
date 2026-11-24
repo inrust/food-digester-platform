@@ -47,7 +47,11 @@ export interface DeviceUserView {
   readonly updatedAt: string;
 }
 
-export interface DeviceUserListItemView extends DeviceUserView {
+interface DeviceUserReadView extends DeviceUserView {
+  readonly customerName: string | null;
+}
+
+export interface DeviceUserListItemView extends DeviceUserReadView {
   readonly activeDeviceCount: number;
 }
 
@@ -59,7 +63,7 @@ export interface DeviceUserAssignmentView {
   readonly revokedAt: string | null;
 }
 
-export interface DeviceUserDetailView extends DeviceUserView {
+export interface DeviceUserDetailView extends DeviceUserReadView {
   readonly assignments: readonly DeviceUserAssignmentView[];
   readonly syncStates: readonly DeviceUserSyncStateView[];
 }
@@ -496,6 +500,16 @@ export interface ListDeviceUsersFilter {
   readonly keyword?: string | undefined;
 }
 
+/** Resolve names only for customer IDs already obtained from authorized device-user rows. */
+async function loadCustomerNames(client: DbClient, customerIds: readonly string[]): Promise<Map<string, string>> {
+  if (customerIds.length === 0) return new Map();
+  const customers = await client.customer.findMany({
+    where: { id: { in: [...new Set(customerIds)] }, deletedAt: null },
+    select: { id: true, name: true },
+  });
+  return new Map(customers.map(({ id, name }) => [id, name.trim()]));
+}
+
 /** 列表（device-user:read）：Customer 租户隔离；返回 ACTIVE 分配设备数。 */
 export async function listDeviceUsers(
   deps: DeviceUserDeps,
@@ -505,7 +519,8 @@ export async function listDeviceUsers(
   if (filter.status !== undefined && !['ACTIVE', 'DISABLED'].includes(filter.status)) {
     throw deviceUserValidationFailed('status must be ACTIVE or DISABLED');
   }
-  const scopedCustomer = actor.actorType === 'customer' ? (actor.customerId ?? '__none__') : filter.customerId;
+  const scopedCustomer = actor.actorType === 'customer' ? actor.customerId : filter.customerId;
+  if (scopedCustomer === null) return [];
   const hasTopologyFilter =
     filter.region !== undefined || filter.subregion !== undefined || filter.deviceId !== undefined;
   let matchingDeviceIds: readonly string[] | undefined;
@@ -551,7 +566,15 @@ export async function listDeviceUsers(
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 200,
   });
-  return rows.map((r) => ({ ...toView(r), activeDeviceCount: r.assignments.length }));
+  const customerNames = await loadCustomerNames(
+    deps.client,
+    rows.map((row) => row.customerId),
+  );
+  return rows.map((row) => ({
+    ...toView(row),
+    customerName: customerNames.get(row.customerId) || null,
+    activeDeviceCount: row.assignments.length,
+  }));
 }
 
 /** 详情（device-user:read）：含分配历史（ACTIVE/REVOKED）；跨 Customer → 404。 */
@@ -619,7 +642,13 @@ export async function getDeviceUser(
       });
     }
   }
-  return { ...toView(row), assignments: rows.map(toAssignmentView), syncStates: [...latestByDevice.values()] };
+  const customerNames = await loadCustomerNames(deps.client, [row.customerId]);
+  return {
+    ...toView(row),
+    customerName: customerNames.get(row.customerId) || null,
+    assignments: rows.map(toAssignmentView),
+    syncStates: [...latestByDevice.values()],
+  };
 }
 
 // ---------- Sync 读取路径（BE-SYNC-01 消费） ----------

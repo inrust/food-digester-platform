@@ -46,7 +46,7 @@
       "get": {
         "tags": ["admin"],
         "operationId": "listDeviceUsers",
-        "summary": "设备操作员列表（Customer/Region/Subregion/Device/status/keyword 筛选；含 ACTIVE 分配设备数）",
+        "summary": "设备操作员列表（含所属客户名称及 ACTIVE 分配设备数）",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           {
@@ -92,7 +92,7 @@
       "get": {
         "tags": ["admin"],
         "operationId": "getDeviceUser",
-        "summary": "设备操作员详情（含分配历史；跨 Customer → 404）",
+        "summary": "设备操作员详情（含所属客户名称和分配历史；跨 Customer → 404）",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "deviceUserId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
@@ -323,7 +323,7 @@
           "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
         }
       },
-      "DeviceUser": {
+      "DeviceUserFields": {
         "type": "object",
         "required": [
           "deviceUserId",
@@ -335,7 +335,6 @@
           "createdAt",
           "updatedAt"
         ],
-        "additionalProperties": false,
         "properties": {
           "deviceUserId": { "type": "string", "minLength": 1 },
           "customerId": { "type": "string", "minLength": 1 },
@@ -347,15 +346,27 @@
           "updatedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" }
         }
       },
+      "DeviceUser": {
+        "allOf": [{ "$ref": "#/components/schemas/DeviceUserFields" }],
+        "unevaluatedProperties": false
+      },
+      "DeviceUserCustomerName": {
+        "type": ["string", "null"],
+        "description": "根据授权可见设备用户的 customerId 查询其未软删除的所属客户，空白或不可用时为 null。旧版响应可能省略。"
+      },
       "DeviceUserListItem": {
         "allOf": [
-          { "$ref": "#/components/schemas/DeviceUser" },
+          { "$ref": "#/components/schemas/DeviceUserFields" },
           {
             "type": "object",
             "required": ["activeDeviceCount"],
-            "properties": { "activeDeviceCount": { "type": "integer", "minimum": 0 } }
+            "properties": {
+              "customerName": { "$ref": "#/components/schemas/DeviceUserCustomerName" },
+              "activeDeviceCount": { "type": "integer", "minimum": 0 }
+            }
           }
-        ]
+        ],
+        "unevaluatedProperties": false
       },
       "DeviceUserAssignment": {
         "type": "object",
@@ -371,16 +382,18 @@
       },
       "DeviceUserDetail": {
         "allOf": [
-          { "$ref": "#/components/schemas/DeviceUser" },
+          { "$ref": "#/components/schemas/DeviceUserFields" },
           {
             "type": "object",
             "required": ["assignments", "syncStates"],
             "properties": {
+              "customerName": { "$ref": "#/components/schemas/DeviceUserCustomerName" },
               "assignments": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserAssignment" } },
               "syncStates": { "type": "array", "items": { "$ref": "#/components/schemas/DeviceUserSyncState" } }
             }
           }
-        ]
+        ],
+        "unevaluatedProperties": false
       },
       "DeviceUserSyncState": {
         "type": "object",

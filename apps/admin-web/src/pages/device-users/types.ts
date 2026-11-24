@@ -19,7 +19,12 @@ export interface DeviceUserView {
   readonly updatedAt: string;
 }
 
-export interface DeviceUserListItemView extends DeviceUserView {
+export interface DeviceUserReadView extends DeviceUserView {
+  /** Older management APIs can omit this field. Null means the name is unavailable. */
+  readonly customerName?: string | null;
+}
+
+export interface DeviceUserListItemView extends DeviceUserReadView {
   readonly activeDeviceCount: number;
 }
 
@@ -31,7 +36,7 @@ export interface DeviceUserAssignmentView {
   readonly revokedAt: string | null;
 }
 
-export interface DeviceUserDetailView extends DeviceUserView {
+export interface DeviceUserDetailView extends DeviceUserReadView {
   readonly assignments: readonly DeviceUserAssignmentView[];
   readonly syncStates?: readonly {
     readonly deviceId: string;
@@ -56,3 +61,9 @@ export interface RevokeResultView {
   readonly deviceUserId: string;
   readonly deviceIds: readonly string[];
 }
+
+export type DeviceUserDetailState =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'error'; readonly error: unknown }
+  | { readonly kind: 'ready'; readonly detail: DeviceUserDetailView };

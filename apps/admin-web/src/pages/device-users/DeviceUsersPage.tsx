@@ -18,36 +18,23 @@ import { Modal } from '../../components/Modal.js';
 import { TimeText } from '../../components/TimeText.js';
 import { NumberText } from '../../components/LocaleValue.js';
 import type { FilterOption } from '../../components/ScopeFilter.js';
+import { DeviceUserAccountDetails } from './DeviceUserAccountDetails.js';
 import {
   DEVICE_USER_ASSIGNMENT_STATUS_LABELS,
   DEVICE_USER_STATUS_LABELS,
   DEVICE_USER_STATUS_OPTIONS,
   canAssignDeviceUser,
   canWriteDeviceUser,
+  deviceUserCustomerLabel,
   validateDeviceUserCreate,
 } from './device-user-state.js';
 import type {
   AssignResultView,
-  DeviceUserDetailView,
+  DeviceUserDetailState,
   DeviceUserListItemView,
   DeviceUserView,
   RevokeResultView,
 } from './types.js';
-export type DeviceUserDetailState =
-  | {
-      readonly kind: 'none';
-    }
-  | {
-      readonly kind: 'loading';
-    }
-  | {
-      readonly kind: 'error';
-      readonly error: unknown;
-    }
-  | {
-      readonly kind: 'ready';
-      readonly detail: DeviceUserDetailView;
-    };
 export interface DeviceUserFilter {
   readonly customerId: string | null;
   readonly region: string | null;
@@ -86,6 +73,7 @@ export interface DeviceUsersPageProps {
   readonly appliedFilter: DeviceUserFilter;
   readonly onApplyFilter: (filter: DeviceUserFilter) => void;
   readonly onRefresh: () => void;
+  readonly onRefreshDetail: () => void;
   readonly detail: DeviceUserDetailState;
   readonly onSelect: (deviceUserId: string) => void;
   readonly onCloseDetail: () => void;
@@ -120,6 +108,7 @@ export function DeviceUsersPage({
   appliedFilter,
   onApplyFilter,
   onRefresh,
+  onRefreshDetail,
   detail,
   onSelect,
   onCloseDetail,
@@ -154,6 +143,7 @@ export function DeviceUsersPage({
     ),
   ];
   const detailView = detail.kind === 'ready' ? detail.detail : null;
+  const authorizedCustomers = fixedCustomerId === null ? customerOptions : [];
   const runAction = async (execute: () => Promise<unknown>, successText: string) => {
     // 防重复点击：在途请求直接忽略（后端 If-Match/幂等兜底）
     if (inFlight.current) return;
@@ -347,6 +337,7 @@ export function DeviceUsersPage({
               <tr>
                 <th scope="col">{translate('page.a1aaf352cb07')}</th>
                 <th scope="col">{translate('page.c10bbf5ddd2d')}</th>
+                <th scope="col">{translate('page.467c1137f479')}</th>
                 <th scope="col">{translate('page.62e951a692ff')}</th>
                 <th scope="col">{translate('page.08eb0e60ad1a')}</th>
                 <th scope="col">{translate('page.928728223d5a')}</th>
@@ -359,6 +350,7 @@ export function DeviceUsersPage({
                 <tr key={row.deviceUserId} data-testid={`device-user-row-${row.deviceUserId}`}>
                   <td>{row.username}</td>
                   <td>{row.displayName ?? '—'}</td>
+                  <td>{deviceUserCustomerLabel(row, authorizedCustomers)}</td>
                   <td>{DEVICE_USER_STATUS_LABELS[row.status]}</td>
                   <td>
                     <NumberText value={row.activeDeviceCount} />
@@ -388,7 +380,7 @@ export function DeviceUsersPage({
           {translate('page.300ee3dee4dc')}
         </div>
       ) : null}
-      {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefresh} /> : null}
+      {detail.kind === 'error' ? <ErrorNotice error={detail.error} onRefresh={onRefreshDetail} /> : null}
 
       {detailView !== null ? (
         <aside
@@ -399,29 +391,14 @@ export function DeviceUsersPage({
           <header className="page-header">
             <h3>{translate('page.eac30b08be59')}</h3>
           </header>
-          <section className="detail-card" aria-label={translate('detail.deviceUser.account')}>
-            <h4>{translate('detail.deviceUser.account')}</h4>
-            <dl>
-              <dt>{translate('page.a1aaf352cb07')}</dt>
-              <dd data-testid="detail-username">{detailView.username}</dd>
-              <dt>{translate('page.c10bbf5ddd2d')}</dt>
-              <dd>{detailView.displayName ?? '—'}</dd>
-              <dt>{translate('page.467c1137f479')}</dt>
-              <dd>{detailView.customerId}</dd>
-              <dt>{translate('page.62e951a692ff')}</dt>
-              <dd data-testid="detail-status">{DEVICE_USER_STATUS_LABELS[detailView.status]}</dd>
-              <dt>{translate('page.928728223d5a')}</dt>
-              <dd data-testid="detail-version">v{detailView.version}</dd>
-              <dt>{translate('page.093dea88c930')}</dt>
-              <dd>
-                <TimeText iso={detailView.updatedAt} />
-              </dd>
-            </dl>
-          </section>
+          <DeviceUserAccountDetails user={detailView} authorizedCustomers={authorizedCustomers} />
 
           <section className="detail-card" aria-label={translate('page.f3ea6d345e2a')}>
             <h4>{translate('page.f3ea6d345e2a')}</h4>
             <div className="detail-actions">
+              <Button type="button" data-testid="device-user-detail-refresh" onClick={onRefreshDetail}>
+                {translate('detail.deviceUser.refresh')}
+              </Button>
               <Button type="button" onClick={onCloseDetail}>
                 {translate('page.6c14bd7f6f9e')}
               </Button>

@@ -45,6 +45,8 @@ export const ZH_CN: Readonly<Record<string, string>> = {
   'detail.user.viewFull': '查看全文',
   'detail.user.profile': '平台用户资料',
   'detail.deviceUser.account': '账号信息',
+  'detail.deviceUser.customerUnavailable': '客户名称不可用',
+  'detail.deviceUser.refresh': '刷新详情',
   'detail.deviceUser.confirmation': '快照与应用确认',
   'detail.deviceUser.publishedAt': '投递时间',
   'detail.deviceUser.lastSyncAt': '设备上报的最近同步时间',

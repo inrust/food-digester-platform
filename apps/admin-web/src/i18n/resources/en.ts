@@ -43,6 +43,8 @@ export const EN: Readonly<Record<string, string>> = {
   'detail.user.viewFull': 'View full values',
   'detail.user.profile': 'Platform user details',
   'detail.deviceUser.account': 'Account information',
+  'detail.deviceUser.customerUnavailable': 'Customer name unavailable',
+  'detail.deviceUser.refresh': 'Refresh details',
   'detail.deviceUser.confirmation': 'Snapshot and application confirmation',
   'detail.deviceUser.publishedAt': 'Delivery time',
   'detail.deviceUser.lastSyncAt': 'Last sync time reported by the device',

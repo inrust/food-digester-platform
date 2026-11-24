@@ -48,7 +48,6 @@ import { DeviceManagePage } from '../pages/device-manage/DeviceManagePage.js';
 import type { DeviceAssignmentView, RetirementRecordView, RotationRequestView } from '../pages/device-manage/types.js';
 import {
   createDeviceUser,
-  fetchDeviceUser,
   fetchDeviceUsers,
   updateDeviceUser,
   disableDeviceUser,
@@ -57,11 +56,11 @@ import {
 } from '../pages/device-users/device-users-api.js';
 import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../pages/device-users/DeviceUsersPage.js';
 import type {
-  DeviceUserDetailState,
   DeviceUserFilter,
   DeviceUserTopologyOption,
   DeviceUsersPageProps,
 } from '../pages/device-users/DeviceUsersPage.js';
+import { useDeviceUserDetail } from '../pages/device-users/use-device-user-detail.js';
 import type { DeviceUserListItemView } from '../pages/device-users/types.js';
 import {
   fetchDevice,
@@ -574,54 +573,45 @@ function useDeviceUsersPageProps({
   readonly session: SessionSnapshot;
 }): DeviceUsersPageProps {
   const fixedCustomerId = session.customerId;
+  const role = roleOf(session);
+  const canReadCustomerDirectory = fixedCustomerId === null && hasPermission(role, 'customer:read');
   const [filter, setFilter] = useState<DeviceUserFilter>({ ...EMPTY_DEVICE_USER_FILTER, customerId: fixedCustomerId });
   const [list, setList] = useState<{
     rows: readonly DeviceUserListItemView[] | null;
     error?: unknown;
   }>({ rows: null });
-  const [detail, setDetail] = useState<DeviceUserDetailState>({ kind: 'none' });
+  const { detail, openDetail, closeDetail, refreshDetail } = useDeviceUserDetail(api);
   const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
   const [topologyOptions, setTopologyOptions] = useState<readonly DeviceUserTopologyOption[]>([]);
   const [assignableDevices, setAssignableDevices] = useState<readonly FilterOption[]>([]);
-  const selected = useRef<{ id: string } | null>(null);
+  const latestList = useRef(0);
   const loadList = useCallback(async () => {
+    const request = ++latestList.current;
     const customerId = fixedCustomerId ?? filter.customerId;
     setList({ rows: null });
     try {
-      setList({
-        rows: await fetchDeviceUsers(api, {
-          ...(customerId ? { customerId } : {}),
-          ...(filter.status ? { status: filter.status } : {}),
-          ...(filter.keyword ? { keyword: filter.keyword } : {}),
-          ...(filter.region ? { region: filter.region } : {}),
-          ...(filter.subregion ? { subregion: filter.subregion } : {}),
-          ...(filter.deviceId ? { deviceId: filter.deviceId } : {}),
-        }),
+      const rows = await fetchDeviceUsers(api, {
+        ...(customerId ? { customerId } : {}),
+        ...(filter.status ? { status: filter.status } : {}),
+        ...(filter.keyword ? { keyword: filter.keyword } : {}),
+        ...(filter.region ? { region: filter.region } : {}),
+        ...(filter.subregion ? { subregion: filter.subregion } : {}),
+        ...(filter.deviceId ? { deviceId: filter.deviceId } : {}),
       });
+      if (request === latestList.current) setList({ rows });
     } catch (error) {
-      setList({ rows: [], error });
+      if (request === latestList.current) setList({ rows: [], error });
     }
   }, [api, filter, fixedCustomerId]);
-  const loadDetail = useCallback(
-    async (id: string) => {
-      const selection = { id };
-      selected.current = selection;
-      setDetail({ kind: 'loading' });
-      try {
-        const next = await fetchDeviceUser(api, id);
-        if (selected.current === selection) setDetail({ kind: 'ready', detail: next });
-      } catch (error) {
-        if (selected.current === selection) setDetail({ kind: 'error', error });
-      }
-    },
-    [api],
-  );
   useEffect(() => {
     void loadList();
+    return () => {
+      latestList.current += 1;
+    };
   }, [loadList]);
   useEffect(() => {
     let active = true;
-    const customerRequest = fixedCustomerId === null ? fetchCustomers(api, { limit: 100 }) : null;
+    const customerRequest = canReadCustomerDirectory ? fetchCustomers(api, { limit: 100 }) : null;
     void Promise.allSettled([
       customerRequest ?? Promise.resolve(null),
       collectAll((cursor) =>
@@ -654,17 +644,24 @@ function useDeviceUsersPageProps({
     return () => {
       active = false;
     };
-  }, [api, fixedCustomerId]);
+  }, [api, fixedCustomerId, canReadCustomerDirectory]);
   const versionFor = (id: string) => {
     if (detail.kind !== 'ready' || detail.detail.deviceUserId !== id) throw new Error(translate('ui.70dfcb6f13f4'));
     return detail.detail.version;
   };
   const refresh = () => {
     void loadList();
-    if (selected.current !== null) void loadDetail(selected.current.id);
+    refreshDetail();
   };
+  const customerDeviceIds = new Set(
+    detail.kind === 'ready'
+      ? topologyOptions
+          .filter((device) => device.customerId === detail.detail.customerId)
+          .map((device) => device.deviceId)
+      : [],
+  );
   return {
-    role: roleOf(session),
+    role,
     fixedCustomerId,
     customerOptions,
     topologyOptions,
@@ -672,13 +669,11 @@ function useDeviceUsersPageProps({
     appliedFilter: filter,
     onApplyFilter: (next) => setFilter({ ...next, customerId: fixedCustomerId ?? next.customerId }),
     onRefresh: refresh,
+    onRefreshDetail: refreshDetail,
     detail,
-    onSelect: (id) => void loadDetail(id),
-    onCloseDetail: () => {
-      selected.current = null;
-      setDetail({ kind: 'none' });
-    },
-    assignableDevices,
+    onSelect: (id) => void openDetail(id),
+    onCloseDetail: closeDetail,
+    assignableDevices: assignableDevices.filter((device) => customerDeviceIds.has(device.value)),
     onCreate: (input) =>
       createDeviceUser(api, fixedCustomerId === null ? input : { ...input, customerId: fixedCustomerId }),
     onUpdate: (id, input) => updateDeviceUser(api, id, versionFor(id), input),

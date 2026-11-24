@@ -81,3 +81,9 @@
 Operator 不具备 `device-user:read`、配置时序由服务端裁决均是正式权限/校验边界，不作为未决缺陷。
 
 仓库内 Gate 收敛证据：[DEC-018 / FE-09 Gate 收敛记录](../audit/DEC-018-FE-09-Gate收敛记录-2026-09-14.md)。
+
+### CMP A/T04（R10）设备用户归属
+
+- 创建请求和设备分配继续使用 `customerId`。列表和详情从已授权设备用户的同一归属读取 `customerName`，账号资料 `displayName` 与设备分配独立。客户角色只读回本租户归属，详情刷新重新读取当前名称。
+- 旧管理 API 若省略名称，平台页面仅按同一 ID 匹配已获授权的客户目录。名称为空、客户已软删除或无目录条目时显示“客户名称不可用”。
+- 后续设备上下文可复用 `useDeviceUserDetail`、`DeviceUserAccountDetails` 和 `deviceUserCustomerLabel`。加载下一条详情、刷新或关闭时取消旧请求。设备上下文的归属校验仍由 T07 的路由和服务端负责。

@@ -78,8 +78,8 @@ test('七个端点齐备且 Cognito 认证；写操作强制 If-Match', () => {
 });
 
 test('Schema 封闭：管理 DTO 无 PHC；写接口只受控接收 writeOnly password', () => {
-  const user = doc.components.schemas.DeviceUser;
-  assert.equal(user.additionalProperties, false);
+  const user = doc.components.schemas.DeviceUserFields;
+  assert.equal(doc.components.schemas.DeviceUser.unevaluatedProperties, false);
   assert.ok(
     !JSON.stringify(user).includes('verifierValue') && !JSON.stringify(user).includes('verifierSalt'),
     'DTO 不得含验证材料',
@@ -96,6 +96,19 @@ test('Schema 封闭：管理 DTO 无 PHC；写接口只受控接收 writeOnly pa
   assert.deepEqual(doc.components.schemas.ReasonRequest.required, ['reason']);
   assert.deepEqual(doc.components.schemas.AssignmentRequest.required.sort(), ['deviceIds', 'reason'].sort());
   assert.deepEqual(doc.components.schemas.DeviceUserAssignment.properties.status.enum, ['ACTIVE', 'REVOKED']);
+});
+
+test('R10 读取契约在所属客户 ID 之外兼容返回名称，写入仍按 ID', () => {
+  const schemas = doc.components.schemas;
+  assert.deepEqual(schemas.DeviceUserCustomerName.type, ['string', 'null']);
+  assert.ok(schemas.DeviceUserFields.required.includes('customerId'));
+  for (const view of [schemas.DeviceUserListItem, schemas.DeviceUserDetail]) {
+    assert.equal(view.unevaluatedProperties, false);
+    assert.equal(view.allOf[0].$ref, '#/components/schemas/DeviceUserFields');
+    assert.equal(view.allOf[1].properties.customerName.$ref, '#/components/schemas/DeviceUserCustomerName');
+    assert.ok(!view.allOf[1].required.includes('customerName'));
+  }
+  assert.ok(!('customerName' in schemas.DeviceUserCreateRequest.properties));
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

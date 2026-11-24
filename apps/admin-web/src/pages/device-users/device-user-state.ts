@@ -7,7 +7,8 @@ import { translate } from '../../i18n/i18n.js';
  */
 import { hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
-import type { DeviceUserStatus } from './types.js';
+import type { FilterOption } from '../../components/ScopeFilter.js';
+import type { DeviceUserReadView, DeviceUserStatus } from './types.js';
 export const DEVICE_USER_STATUS_LABELS: Readonly<Record<DeviceUserStatus, string>> = {
   get ACTIVE() {
     return translate('page.f78d037abccd');
@@ -25,6 +26,17 @@ export const DEVICE_USER_ASSIGNMENT_STATUS_LABELS: Readonly<Record<string, strin
     return translate('ui.61063ba81b3c');
   },
 };
+/** Older APIs omit the name, so use only a supplied, authorized directory entry for the same ID. */
+export function deviceUserCustomerLabel(
+  user: Pick<DeviceUserReadView, 'customerId' | 'customerName'>,
+  authorizedCustomers: readonly FilterOption[] = [],
+): string {
+  const name =
+    user.customerName === undefined
+      ? authorizedCustomers.find((customer) => customer.value === user.customerId)?.label
+      : user.customerName;
+  return name?.trim() || translate('detail.deviceUser.customerUnavailable');
+}
 /** 创建校验：username 1..64；password 必填（仅长度边界，复杂度策略由服务端裁决）。 */
 export function validateDeviceUserCreate(input: { username: string; password: string }): string | null {
   const username = input.username.trim();

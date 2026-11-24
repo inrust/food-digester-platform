@@ -46,6 +46,7 @@ test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐
   const row = {
     deviceUserId: 'du-viewer',
     customerId: 'cust-a',
+    customerName: '自有租户客户',
     username: 'own-device-user',
     displayName: '本租户设备用户',
     status: 'ACTIVE',
@@ -69,6 +70,7 @@ test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐
   await expect(page.getByTestId('device-user-row-du-viewer')).toContainText('本租户设备用户');
   await page.getByTestId('device-user-detail-du-viewer').click();
   await expect(page.getByTestId('detail-version')).toHaveText('v1');
+  await expect(page.getByTestId('detail-customer')).toHaveText('自有租户客户');
   for (const id of [
     'device-user-create',
     'device-user-edit',
@@ -83,6 +85,87 @@ test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐
   expect(requests.every((request) => request.method === 'GET')).toBe(true);
   qa05.proof.viewerOwnRead = true;
   qa05.proof.viewerReadOnly = true;
+});
+
+test('A/T04 R10 设备用户创建、列表与详情刷新按同一客户归属读回', async ({ qa05 }) => {
+  const page = await qa05.newPage();
+  await seedSession(page, 'PlatformSuperAdmin');
+  const customerId = 'cust-t04-id';
+  const customerName = '设备服务客户';
+  const account = {
+    deviceUserId: 'device-user-t04',
+    customerId,
+    customerName,
+    username: 't04-night',
+    displayName: '夜班操作账号',
+    status: 'ACTIVE',
+    version: 1,
+    activeDeviceCount: 1,
+    createdAt: '2026-11-24T00:00:00Z',
+    updatedAt: '2026-11-24T00:00:00Z',
+  };
+  const deviceAssignment = {
+    assignmentId: 'assignment-t04',
+    deviceId: 'device-t04',
+    status: 'ACTIVE',
+    assignedAt: '2026-11-24T00:00:00Z',
+    revokedAt: null,
+  };
+  let created = false;
+  let detailReads = 0;
+  await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/customers**', (route) =>
+    json(route, { data: [{ id: customerId, name: customerName, status: 'ACTIVE' }], meta: { nextCursor: null } }),
+  );
+  await page.route('**/api/v1/admin/device-users**', (route) => {
+    const request = route.request();
+    if (request.method() === 'POST') {
+      expect(created).toBe(false);
+      expect(request.postDataJSON()).toEqual({
+        customerId,
+        username: account.username,
+        displayName: account.displayName,
+        password: 'local-t04-fixture',
+      });
+      created = true;
+      return json(route, { data: account }, 201);
+    }
+    if (new URL(request.url()).pathname.endsWith('/device-user-t04')) {
+      detailReads += 1;
+      return json(route, {
+        data: {
+          ...account,
+          customerName: detailReads === 1 ? customerName : '客户已更名',
+          assignments: [deviceAssignment],
+          syncStates: [],
+        },
+      });
+    }
+    return json(route, { data: created ? [account] : [] });
+  });
+  await page.goto('/device-users');
+  await page.getByTestId('device-user-create').click();
+  await page
+    .getByTestId('device-user-create-form')
+    .getByLabel('所属客户', { exact: true })
+    .selectOption({ label: customerName });
+  await page.getByTestId('create-username').fill(account.username);
+  await page.getByTestId('create-display-name').fill(account.displayName);
+  await page.getByTestId('create-password').fill('local-t04-fixture');
+  await page.getByTestId('create-user-submit').click();
+
+  const row = page.getByTestId('device-user-row-device-user-t04');
+  await expect(row).toContainText(customerName);
+  await expect(row).toContainText(account.displayName);
+  await row.getByTestId('device-user-detail-device-user-t04').click();
+  await expect(page.getByTestId('detail-customer')).toHaveText(customerName);
+  await expect(page.getByTestId('detail-display-name')).toHaveText(account.displayName);
+  await expect(page.getByTestId('device-user-assignments')).toContainText(deviceAssignment.deviceId);
+  await page.getByTestId('device-user-detail-refresh').click();
+  await expect(page.getByTestId('detail-customer')).toHaveText('客户已更名');
+  await expect(page.getByTestId('detail-username')).toHaveText(account.username);
+  expect(detailReads).toBe(2);
+  await page.close();
 });
 
 test('无 Token 安全回登录；五角色菜单和受限路由均由组合根守卫', async ({ qa05 }) => {

@@ -504,7 +504,7 @@ describe('契约一致性', () => {
     const h = handlers();
     const customerId = await plantCustomer();
     const u = await createUser(h, customerId);
-    assert.deepEqual(Object.keys(u).sort(), [...api.components.schemas.DeviceUser.required].sort());
+    assert.deepEqual(Object.keys(u).sort(), [...api.components.schemas.DeviceUserFields.required].sort());
     // 脱敏：DB 行有 PHC，DTO 无
     const row = await prisma.deviceUser.findFirst({ where: { id: u.deviceUserId as string } });
     assert.match(row?.passwordHash ?? '', /^\$argon2id\$v=19\$m=32768,t=3,p=1\$/);
@@ -519,4 +519,90 @@ describe('契约一致性', () => {
       assert.ok(!/@fdp\/aws-clients|@aws-sdk|aws-sdk/.test(source), `${file} 引用了 AWS 客户端`);
     }
   });
+});
+
+test('A/T04 R10 客户名称按已授权的持久化归属读取，与账号及设备分配独立', async () => {
+  const h = handlers();
+  const customerId = await plantCustomer();
+  const foreignId = await plantCustomer();
+  const customerName = '受控客户-设备服务';
+  const displayName = '夜班操作账号';
+  await prisma.customer.update({ where: { id: customerId }, data: { name: customerName } });
+
+  const created = await h.create(
+    req(superAdmin, {
+      body: { customerId, username: 't04-night', displayName, password: DEVICE_PASSWORD },
+    }),
+  );
+  assert.equal(created.status, 201);
+  assertOpenApiResponse('createDeviceUser', 201, created.body);
+  const deviceUserId = (created.body as DataBody).data.deviceUserId as string;
+  const params = { deviceUserId };
+  const stored = await prisma.deviceUser.findUniqueOrThrow({ where: { id: deviceUserId } });
+  assert.equal(stored.customerId, customerId);
+  assert.equal(stored.displayName, displayName);
+
+  const deviceId = await plantDevice(customerId);
+  assert.equal(
+    (
+      await h.assign(
+        writeReq(superAdmin, 1, {
+          params,
+          body: { deviceIds: [deviceId], reason: 'T04 归属回归' },
+        }),
+      )
+    ).status,
+    201,
+  );
+  const foreignUser = await createUser(h, foreignId, 't04-foreign');
+  const viewer: ActorContext = {
+    ...superAdmin,
+    actorType: 'customer',
+    actorId: 't04-viewer',
+    customerId,
+    roles: ['CustomerViewer'],
+  };
+  const scopeList = await h.list(req(viewer, { query: { customerId: foreignId } }));
+  assert.equal(scopeList.status, 200);
+  assertOpenApiResponse('listDeviceUsers', 200, scopeList.body);
+  const [row] = (scopeList.body as ListBody).data;
+  assert.equal(row?.deviceUserId, deviceUserId);
+  assert.equal(row?.customerName, customerName);
+  assert.equal(row?.activeDeviceCount, 1);
+
+  const detail = await h.detail(req(viewer, { params }));
+  assert.equal(detail.status, 200);
+  assertOpenApiResponse('getDeviceUser', 200, detail.body);
+  const view = (detail.body as DataBody).data;
+  assert.equal(view.customerId, customerId);
+  assert.equal(view.customerName, customerName);
+  assert.equal(view.displayName, displayName);
+  assert.equal((view.assignments as { deviceId: string }[])[0]?.deviceId, deviceId);
+  assert.equal((await h.detail(req(operator, { params }))).status, 403);
+  const foreign = await h.detail(req(viewer, { params: { deviceUserId: foreignUser.deviceUserId as string } }));
+  assert.equal(foreign.status, 404);
+  assert.notProperty(foreign.body, 'data');
+
+  await prisma.customer.update({ where: { id: customerId }, data: { name: '客户更名' } });
+  const refreshed = await h.detail(req(superAdmin, { params }));
+  assert.equal((refreshed.body as DataBody).data.customerName, '客户更名');
+  const refreshedList = await h.list(req(superAdmin, { query: { customerId } }));
+  assert.equal((refreshedList.body as ListBody).data[0]?.customerName, '客户更名');
+
+  const legacyAccount = await prisma.deviceUser.create({ data: { customerId: foreignId, username: 't04-legacy' } });
+  const legacyAccountView = await h.detail(req(superAdmin, { params: { deviceUserId: legacyAccount.id } }));
+  assert.equal(legacyAccountView.status, 200);
+  assertOpenApiResponse('getDeviceUser', 200, legacyAccountView.body);
+  assert.equal((legacyAccountView.body as DataBody).data.displayName, null);
+  assert.ok((legacyAccountView.body as DataBody).data.customerName);
+  assert.deepEqual((legacyAccountView.body as DataBody).data.assignments, []);
+
+  await prisma.customer.update({ where: { id: customerId }, data: { deletedAt: NOW } });
+  const legacyDetail = await h.detail(req(superAdmin, { params }));
+  const legacyList = await h.list(req(superAdmin, { query: { customerId } }));
+  assertOpenApiResponse('getDeviceUser', 200, legacyDetail.body);
+  assertOpenApiResponse('listDeviceUsers', 200, legacyList.body);
+  assert.equal((legacyDetail.body as DataBody).data.customerName, null);
+  assert.equal((legacyList.body as ListBody).data[0]?.customerName, null);
+  assert.equal((legacyDetail.body as DataBody).data.customerId, customerId);
 });

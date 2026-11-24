@@ -8,9 +8,10 @@
  * - Auditor 只读；CustomerAdmin 固定 customerId。
  */
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, renderHook, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
+import { DeviceUsersController } from '../src/app/feature-controllers.js';
 import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../src/pages/device-users/DeviceUsersPage.js';
 import type { DeviceUsersPageProps } from '../src/pages/device-users/DeviceUsersPage.js';
 import {
@@ -20,6 +21,7 @@ import {
   revokeDeviceUser,
   updateDeviceUser,
 } from '../src/pages/device-users/device-users-api.js';
+import { useDeviceUserDetail } from '../src/pages/device-users/use-device-user-detail.js';
 import type { DeviceUserDetailView, DeviceUserListItemView } from '../src/pages/device-users/types.js';
 
 afterEach(cleanup);
@@ -93,6 +95,7 @@ function renderPage(overrides: Partial<DeviceUsersPageProps> = {}) {
     onRefresh: () => {
       calls.refreshed += 1;
     },
+    onRefreshDetail: () => {},
     detail: { kind: 'none' },
     onSelect: (id) => calls.selected.push(id),
     onCloseDetail: () => {},
@@ -396,4 +399,111 @@ test('API 装配：写操作携 If-Match=version；password 仅在 create/update
   assert.equal(calls[4]?.path, '/admin/device-users/du-1/assignments/revoke');
   assert.equal(calls[4]?.options.ifMatch, 6);
   assert.deepEqual(calls[4]?.options.body, { deviceIds: ['dev-1'], reason: '移交' });
+});
+
+test('R10 列表和旧版详情以客户名称展示归属，并分别展示账号和设备', () => {
+  renderPage({ detail: { kind: 'ready', detail: DETAIL } });
+  const row = screen.getByTestId('device-user-row-du-001');
+  const detail = screen.getByTestId('device-user-detail');
+  assert.ok(within(row).getByText('示例客户'));
+  assert.ok(within(detail).getByText('示例客户'));
+  assert.ok(within(detail).getByText('一号操作员'));
+  assert.ok(within(detail).getByText('operator01'));
+  assert.ok(within(screen.getByTestId('device-user-assignments')).getByText('dev-001'));
+  assert.equal(within(detail).queryByText('cust-1'), null);
+});
+
+test('R10 名称不可用时显示缺省提示，客户角色的旧版响应不读取平台目录', () => {
+  const { unmount } = renderPage({
+    detail: { kind: 'ready', detail: { ...DETAIL, customerName: null } },
+    list: { rows: [{ ...LIST_ITEM, customerName: '权威客户名称' }] },
+  });
+  assert.equal(screen.getByTestId('detail-customer').textContent, '客户名称不可用');
+  assert.ok(within(screen.getByTestId('device-user-row-du-001')).getByText('权威客户名称'));
+  unmount();
+  renderPage({
+    role: 'CustomerViewer',
+    fixedCustomerId: LIST_ITEM.customerId,
+    detail: { kind: 'ready', detail: DETAIL },
+  });
+  assert.equal(screen.getByTestId('detail-customer').textContent, '客户名称不可用');
+  assert.equal(within(screen.getByTestId('device-user-detail')).queryByText('示例客户'), null);
+});
+
+test('R10 旧详情请求在切换、刷新或关闭之后不得覆盖当前归属', async () => {
+  type Pending = {
+    signal?: AbortSignal | undefined;
+    resolve: (view: DeviceUserDetailView) => void;
+  };
+  const requests: Pending[] = [];
+  const api: ApiClient = {
+    request: <T,>(_path: string, options?: ApiRequestOptions) =>
+      new Promise<T>((resolve) =>
+        requests.push({
+          signal: options?.signal,
+          resolve: (data) => resolve({ data } as T),
+        }),
+      ),
+  };
+  const { result } = renderHook(() => useDeviceUserDetail(api));
+  act(() => {
+    void result.current.openDetail('du-001');
+  });
+  act(() => {
+    void result.current.openDetail('du-002');
+  });
+  assert.equal(requests[0]?.signal?.aborted, true);
+  const second = { ...DETAIL, deviceUserId: 'du-002', customerId: 'cust-2', customerName: '客户 B' };
+  await act(async () => requests[1]?.resolve(second));
+  await act(async () => requests[0]?.resolve({ ...DETAIL, customerName: '客户 A' }));
+  assert.deepEqual(result.current.detail, { kind: 'ready', detail: second });
+
+  act(() => result.current.refreshDetail());
+  act(() => result.current.refreshDetail());
+  assert.equal(requests[2]?.signal?.aborted, true);
+  const renamed = { ...second, customerName: '客户 B 更名' };
+  await act(async () => requests[3]?.resolve(renamed));
+  await act(async () => requests[2]?.resolve(second));
+  assert.deepEqual(result.current.detail, { kind: 'ready', detail: renamed });
+
+  act(() => result.current.refreshDetail());
+  act(() => result.current.closeDetail());
+  await act(async () => requests[4]?.resolve(second));
+  assert.deepEqual(result.current.detail, { kind: 'none' });
+});
+
+test('R10 迟到的列表请求不会替换当前筛选及客户标签', async () => {
+  const user = userEvent.setup();
+  let finishSlow!: (result: { data: DeviceUserListItemView[] }) => void;
+  const slowResponse = new Promise<{ data: DeviceUserListItemView[] }>((resolve) => {
+    finishSlow = resolve;
+  });
+  let slowRequested = false;
+  const api: ApiClient = {
+    request: async <T,>(path: string) => {
+      if (path.endsWith('?keyword=slow')) {
+        slowRequested = true;
+        return (await slowResponse) as T;
+      }
+      if (path.endsWith('?keyword=fast')) {
+        return { data: [{ ...LIST_ITEM, customerName: '当前客户' }] } as T;
+      }
+      return { data: [], meta: { nextCursor: null } } as T;
+    },
+  };
+  render(
+    <DeviceUsersController api={api} session={{ username: 't04', roles: ['PlatformSuperAdmin'], customerId: null }} />,
+  );
+  const keyword = screen.getByTestId('device-user-keyword');
+  const search = screen.getByTestId('device-user-search');
+  await user.type(keyword, 'slow');
+  await user.click(search);
+  assert.equal(slowRequested, true);
+  await user.clear(keyword);
+  await user.type(keyword, 'fast');
+  await user.click(search);
+  await screen.findByText('当前客户');
+  await act(async () => finishSlow({ data: [{ ...LIST_ITEM, customerName: '迟到的客户' }] }));
+  assert.ok(screen.getByText('当前客户'));
+  assert.equal(screen.queryByText('迟到的客户'), null);
 });
