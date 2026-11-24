@@ -114,6 +114,10 @@ describe('完整链路：未处理→正在处理→完成处理', () => {
     assert.equal(c.customerId, customerId);
     assert.equal(c.replayed, false);
     assert.equal(c.version, 1);
+    const application = { note: '余量不足', source: 'RECORDED' };
+    const handling = { note: '已派单', source: 'RECORDED' };
+    const completion = { note: '已更换碳滤网', source: 'RECORDED' };
+    assert.deepEqual(c.stageNotes, { request: application });
     const requestId = c.requestId as string;
 
     // 列表/详情可见
@@ -127,6 +131,7 @@ describe('完整链路：未处理→正在处理→完成处理', () => {
     assert.equal((processing.body as DataBody).data.status, 'PROCESSING');
     assert.equal((processing.body as DataBody).data.processedBy, 'op-1');
     assert.equal((processing.body as DataBody).data.version, 2);
+    assert.deepEqual((processing.body as DataBody).data.stageNotes, { request: application, processing: handling });
 
     // 完成 PROCESSING→COMPLETED（completedAt + processNote）
     const completed = await h.complete(
@@ -136,6 +141,8 @@ describe('完整链路：未处理→正在处理→完成处理', () => {
     const done = (completed.body as DataBody).data;
     assert.equal(done.status, 'COMPLETED');
     assert.equal(done.processNote, '已更换碳滤网');
+    assert.deepEqual(done.stageNotes, { request: application, processing: handling, completion });
+    assertOpenApiResponse('completeConsumableRequest', 200, completed.body);
     assert.equal(done.completedAt, NOW.toISOString());
     assert.equal(done.version, 3);
 
@@ -151,6 +158,10 @@ describe('完整链路：未处理→正在处理→完成处理', () => {
     // 终态行保留（可再查询）
     const kept = await h.detail(req(auditor, { params: { requestId } }));
     assert.equal((kept.body as DataBody).data.status, 'COMPLETED');
+    assert.deepEqual((kept.body as DataBody).data.stageNotes, done.stageNotes);
+    const list = await h.list(req(auditor, { query: { deviceId } }));
+    assert.deepEqual((list.body as ListBody).data[0]?.stageNotes, done.stageNotes);
+    assertOpenApiResponse('listConsumableRequests', 200, list.body);
   });
 
   test('跳级/重复处理/终态迁移 409；缺 If-Match 400；If-Match 漂移 409 VERSION_CONFLICT；缺强制备注 400', async () => {
@@ -193,6 +204,10 @@ describe('完整链路：未处理→正在处理→完成处理', () => {
     const cancelled = await h.cancel(writeReq(superAdmin, 1, { params: { requestId }, body: { note: '误报' } }));
     assert.equal(cancelled.status, 200);
     assert.equal((cancelled.body as DataBody).data.status, 'CANCELLED');
+    assert.deepEqual((cancelled.body as DataBody).data.stageNotes, {
+      request: { note: '余量不足', source: 'RECORDED' },
+      cancellation: { note: '误报', source: 'RECORDED' },
+    });
     assert.equal(
       (await h.process(writeReq(superAdmin, 2, { params: { requestId }, body: {} }))).status,
       409,
@@ -210,11 +225,14 @@ describe('幂等与冲突', () => {
     const firstId = (first.body as DataBody).data.requestId as string;
 
     // 重复申请 → 200 replayed=true 返回现有记录，无新行/审计
-    const dup = await createReq(h, deviceId, 'CARBON_FILTER');
+    const dup = await h.create(
+      req(superAdmin, { body: { deviceId, consumableType: 'CARBON_FILTER', note: '重复申请' } }),
+    );
     assert.equal(dup.status, 200);
     const d = (dup.body as DataBody).data;
     assert.equal(d.requestId, firstId);
     assert.equal(d.replayed, true);
+    assert.deepEqual(d.stageNotes, { request: { note: '余量不足', source: 'RECORDED' } });
     assert.equal(await prisma.consumableRequest.count({ where: { deviceId, consumableType: 'CARBON_FILTER' } }), 1);
     assert.equal(
       await prisma.auditLog.count({
@@ -321,7 +339,7 @@ describe('契约一致性', () => {
     const data = (created.body as DataBody).data;
     assert.deepEqual(
       Object.keys(data).sort(),
-      [...api.components.schemas.ConsumableRequest.required, 'replayed'].sort(),
+      [...api.components.schemas.ConsumableRequest.required, 'stageNotes', 'replayed'].sort(),
     );
   });
 
@@ -332,4 +350,42 @@ describe('契约一致性', () => {
       assert.ok(!/@fdp\/aws-clients|@aws-sdk|aws-sdk/.test(source), `${file} 引用了 AWS 客户端`);
     }
   });
+});
+
+test('R20 旧字段原样读回并在新版更新前留存；并发完成和取消只有胜方写入备注', async () => {
+  const h = handlers();
+  const { deviceId, customerId } = await plantDevice();
+  const old = await prisma.consumableRequest.create({
+    data: {
+      customerId: customerId!,
+      deviceId,
+      consumableType: 'CARBON_FILTER',
+      requestedBy: 'old',
+      processNote: '旧来源未确认',
+    },
+  });
+  const params = { requestId: old.id };
+  const legacy = await h.detail(req(auditor, { params }));
+  assert.deepEqual((legacy.body as DataBody).data.stageNotes, { legacy: ['旧来源未确认'] });
+  const processing = await h.process(writeReq(operator, 1, { params, body: { note: '现场处理中' } }));
+  assert.equal(processing.status, 200);
+  const outcomes = await Promise.all([
+    h.complete(writeReq(operator, 2, { params, body: { note: '更换结束' } })),
+    h.cancel(writeReq(superAdmin, 2, { params, body: { note: '更换已取消' } })),
+  ]);
+  assert.deepEqual(outcomes.map((response) => response.status).sort(), [200, 409]);
+  const stored = await prisma.consumableRequest.findUniqueOrThrow({ where: { id: old.id } });
+  const winner = stored.status === 'COMPLETED' ? 'completion' : 'cancellation';
+  const winnerNote = winner === 'completion' ? '更换结束' : '更换已取消';
+  assert.equal(stored.version, 3);
+  assert.deepEqual(stored.stageNotes, {
+    legacy: ['旧来源未确认'],
+    processing: { note: '现场处理中', source: 'RECORDED' },
+    [winner]: { note: winnerNote, source: 'RECORDED' },
+  });
+  assert.equal(stored.processNote, winnerNote);
+  assert.equal(
+    (await auditCount(old.id, 'consumable.request.complete')) + (await auditCount(old.id, 'consumable.request.cancel')),
+    1,
+  );
 });

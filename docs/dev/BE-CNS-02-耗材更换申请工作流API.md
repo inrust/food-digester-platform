@@ -13,7 +13,7 @@
 | 幂等 | 同设备同耗材存在开放申请（PENDING/PROCESSING）时重复创建 → 200 返回现有记录 `replayed=true`（无写入/审计）；部分唯一索引 `consumable_requests_one_open_per_device_type`（migration `20260829110000`）并发兜底（P2002 → 重读幂等） |
 | 状态迁移 | If-Match 乐观锁（version 条件更新，漂移 → 409 VERSION_CONFLICT）+ 状态条件（并发漂移 → 409）；complete/cancel 强制备注；DOM-03 审计（create/process/complete/cancel 各一次） |
 | 授权 | 创建/处理/完成/取消仅授权角色（device:write = PlatformSuperAdmin/PlatformOperator）；查询 device:read + Customer 租户隔离（跨 Customer 详情 → 404，不泄露存在性） |
-| 历史字段 | requestedBy/requestedAt/source（固定 ADMIN，协议冻结前仅管理端）/processedBy/processNote/completedAt；终态行保留可查询 |
+| 历史字段 | requestedBy/requestedAt/source（固定 ADMIN，协议冻结前仅管理端）/processedBy/stageNotes/processNote/completedAt；终态行保留可查询 |
 | 功能边界 | 原型未定义设备侧申请 Topic → 仅管理端创建；不实现工单派遣、库存、物流或短信联系 |
 
 ## 2. 端点
@@ -24,14 +24,14 @@
 | `GET /api/v1/admin/consumable-requests` | `device:read` | 列表（customerId/deviceId/status/consumableType 筛选；Customer 强制本 Customer） |
 | `GET .../{requestId}` | `device:read` | 详情（跨 Customer → 404） |
 | `POST .../{requestId}/process` | `device:write` | PENDING→PROCESSING（If-Match；记录 processedBy） |
-| `POST .../{requestId}/complete` | `device:write` | PROCESSING→COMPLETED（If-Match + 强制处理备注；记录 completedAt） |
+| `POST .../{requestId}/complete` | `device:write` | PROCESSING→COMPLETED（If-Match + 完成备注必填；记录 completedAt） |
 | `POST .../{requestId}/cancel` | `device:write` | PENDING/PROCESSING→CANCELLED（If-Match + 强制原因） |
 
 ## 3. 验收基准与证据（vitest + PGlite）
 
 | 验收基准 | 测试 | 结果 |
 |---|---|---|
-| “未处理→正在处理→完成处理”完整可复验 | 创建 PENDING（source=ADMIN/requestedBy/requestedAt）→ process（processedBy）→ complete（processNote/completedAt）；版本递增；终态可再查询 | ✅ |
+| “未处理→正在处理→完成处理”完整可复验 | 创建 PENDING（source=ADMIN/requestedBy/requestedAt）→ process（processedBy）→ complete（stageNotes.completion/completedAt）；版本递增；终态可再查询 | ✅ |
 | 跳级、重复处理失败 | PENDING→COMPLETED 409；COMPLETED→PROCESSING/重复完成 409；终态不可迁移 409 | ✅ |
 | 重复申请幂等 | 开放申请重复创建 200 replayed=true 返回现有记录（无新行/新审计）；PROCESSING 仍幂等；不同耗材互不影响；完成后可再申请 | ✅ |
 | If-Match | 缺失 400；漂移 409 VERSION_CONFLICT；写被拒无审计污染 | ✅ |
@@ -44,5 +44,12 @@
 ## 4. 未决风险
 
 - 申请来源固定 ADMIN（DEC-008 边界：设备侧申请 Topic 协议冻结前不开放）；
-- 取消/完成备注统一入 `processNote` 字段（Schema 无独立取消原因列）；审计 reason 保留完整语义；
+- 阶段备注使用 `stageNotes`，同时兼容原 `processNote`。审计 reason 继续记录单次操作的备注。
 - 无独立状态历史表（历史 = 终态行 + 审计日志，与 DEC-009 审计模型一致）。
+
+### CMP A/T05（R20）分阶段备注
+
+- 创建后的 `stageNotes.request` 属于申请。处理选填 `processing`，完成必填 `completion`，取消必填 `cancellation`。状态、版本、阶段备注与原审计在同一事务更新。旧字段 `processNote` 继续提供最近一次实际填写的备注，用于旧客户端读回。
+- 新操作保存 `RECORDED`。迁移只从唯一匹配的成功审计恢复阶段备注，标记 `AUDIT` 并保留审计 ID。旧创建审计用同一事务的精确数据库时间及客户、设备、耗材、申请人匹配，旧迁移审计用工单 ID、状态及前后版本匹配。空白、失败、冲突或无法唯一对应的证据不分配阶段。旧字段中尚未在阶段备注出现的文本保留在 `stageNotes.legacy`，标记为阶段未确认。
+- 版本切换先加列和回填，再上新版 API 与前端。旧 API 仅写旧字段时仍保留旧审计，新 API 读回该字段作为未确认历史备注，并在下一次新阶段写入前保存它。相同迁移中的数据回填可重跑以恢复旧写入的可靠审计，已有阶段记录优先。
+- 管理创建仍由现有入口提交 `ADMIN` 来源。T12 可在设备认证和申请标识校验之后复用工单持久化与阶段备注。

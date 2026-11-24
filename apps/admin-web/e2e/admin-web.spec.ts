@@ -938,8 +938,9 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
   await seedSession(page, 'PlatformSuperAdmin');
   const pii = '13800000000';
   let contactRequests = 0;
-  let requestStatus: 'PENDING' | 'PROCESSING' = 'PENDING';
+  let requestStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' = 'PENDING';
   let duplicateMutations = 0;
+  let completionWrites = 0;
   const statusRow = {
     deviceId: 'dev-fe18',
     serialNumber: 'SN-FE18',
@@ -980,10 +981,16 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
     source: 'ADMIN',
     requestedBy: 'admin',
     requestedAt: '2026-09-10T00:00:00Z',
-    processedBy: requestStatus === 'PROCESSING' ? 'admin' : null,
-    processNote: null,
-    completedAt: null,
-    version: requestStatus === 'PROCESSING' ? 2 : 1,
+    processedBy: requestStatus === 'PENDING' ? null : 'admin',
+    processNote:
+      requestStatus === 'COMPLETED' ? '更换结果完成' : requestStatus === 'PROCESSING' ? '已安排上门' : '检测余量不足',
+    stageNotes: {
+      request: { note: '检测余量不足', source: 'RECORDED' },
+      ...(requestStatus !== 'PENDING' ? { processing: { note: '已安排上门', source: 'RECORDED' } } : {}),
+      ...(requestStatus === 'COMPLETED' ? { completion: { note: '更换结果完成', source: 'RECORDED' } } : {}),
+    },
+    completedAt: requestStatus === 'COMPLETED' ? '2026-09-10T01:00:00Z' : null,
+    version: requestStatus === 'COMPLETED' ? 3 : requestStatus === 'PROCESSING' ? 2 : 1,
     createdAt: '2026-09-10T00:00:00Z',
     updatedAt: '2026-09-10T00:00:00Z',
   });
@@ -1006,8 +1013,17 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
     const path = new URL(httpRequest.url()).pathname;
     if (path.endsWith('/request-fe18/process')) {
       duplicateMutations += 1;
+      expect(httpRequest.headers()['if-match']).toBe('1');
+      expect(httpRequest.postDataJSON()).toEqual({ note: '已安排上门' });
       await new Promise((resolve) => setTimeout(resolve, 100));
       requestStatus = 'PROCESSING';
+      return json(route, { data: request() });
+    }
+    if (path.endsWith('/request-fe18/complete')) {
+      expect(httpRequest.headers()['if-match']).toBe('2');
+      expect(httpRequest.postDataJSON()).toEqual({ note: '更换结果完成' });
+      completionWrites += 1;
+      requestStatus = 'COMPLETED';
       return json(route, { data: request() });
     }
     return json(route, { data: [request()] });
@@ -1028,14 +1044,36 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
   await expect(page.getByTestId('consumable-contact-info-dev-fe18')).toContainText(pii);
   expect(contactRequests).toBe(1);
 
+  await page.setViewportSize({ width: 375, height: 812 });
   await page.getByTestId('consumable-process-request-fe18').click();
+  const dialog = page.getByTestId('consumable-action-form');
+  const noteField = dialog.getByTestId('consumable-action-note');
+  await expect(dialog).toContainText('工单将进入“处理中”');
+  await expect(dialog.getByLabel('处理备注（选填）')).toBeVisible();
+  await expect(noteField).toBeInViewport();
+  await noteField.fill('已安排上门');
   await page.getByTestId('consumable-action-submit').evaluate((button: HTMLButtonElement) => {
     button.click();
     button.click();
   });
   await expect.poll(() => duplicateMutations).toBe(1);
   await expect(page.getByTestId('consumable-request-status-request-fe18')).toContainText('处理中');
-  await expect(page.getByTestId('consumable-complete-request-fe18')).toBeVisible();
+  await expect(page.getByTestId('action-notice')).toContainText('更换完成后可关闭工单');
+  await page.getByTestId('consumable-complete-request-fe18').click();
+  await expect(dialog).toContainText('工单将关闭并标记为“已完成”');
+  await expect(dialog.getByLabel('完成备注（必填）')).toBeVisible();
+  await expect(dialog.getByTestId('consumable-action-submit')).toBeDisabled();
+  const box = await dialog.getByTestId('consumable-action-submit').boundingBox();
+  expect(box?.x).toBeGreaterThanOrEqual(0);
+  expect((box?.x ?? 0) + (box?.width ?? 375)).toBeLessThanOrEqual(375);
+  await noteField.fill('更换结果完成');
+  await dialog.getByTestId('consumable-action-submit').click();
+  await expect(page.getByTestId('consumable-request-status-request-fe18')).toContainText('已完成');
+  await expect(page.getByTestId('action-notice')).toContainText('已完成并关闭');
+  const notes = page.getByTestId('consumable-request-notes-request-fe18');
+  await expect(notes.locator('dt')).toHaveText(['申请备注', '处理备注', '完成备注']);
+  await expect(notes.locator('dd')).toHaveText(['检测余量不足', '已安排上门', '更换结果完成']);
+  expect(completionWrites).toBe(1);
 });
 
 test('CMP T02 R07 R08 启停、失败重试、刷新和成功 Toast 自动消失', async ({ page }) => {

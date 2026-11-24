@@ -49,6 +49,15 @@ export interface ConsumableStatusView {
 
 export type ConsumableRequestStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED';
 
+export type ConsumableRequestNoteStage = 'request' | 'processing' | 'completion' | 'cancellation';
+export type ConsumableRequestStageNote =
+  | { readonly note: string; readonly source: 'RECORDED' }
+  | { readonly note: string; readonly source: 'AUDIT'; readonly auditId: string };
+
+export type ConsumableRequestStageNotes = Readonly<
+  Partial<Record<ConsumableRequestNoteStage, ConsumableRequestStageNote>> & { legacy?: readonly string[] }
+>;
+
 export interface ConsumableRequestView {
   readonly requestId: string;
   readonly customerId: string;
@@ -61,6 +70,8 @@ export interface ConsumableRequestView {
   readonly requestedAt: string;
   readonly processedBy: string | null;
   readonly processNote: string | null;
+  /** Older API responses only include processNote. */
+  readonly stageNotes?: ConsumableRequestStageNotes;
   readonly completedAt: string | null;
   /** 乐观锁版本（状态迁移 If-Match 回传）。 */
   readonly version: number;

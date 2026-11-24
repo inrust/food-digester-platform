@@ -35,6 +35,14 @@ export interface ConsumableRequestDeps {
   readonly now?: () => Date;
 }
 
+type NoteStage = 'request' | 'processing' | 'completion' | 'cancellation';
+export type ConsumableRequestStageNote =
+  | { readonly note: string; readonly source: 'RECORDED' }
+  | { readonly note: string; readonly source: 'AUDIT'; readonly auditId: string };
+export type ConsumableRequestStageNotes = Readonly<
+  Partial<Record<NoteStage, ConsumableRequestStageNote>> & { legacy?: readonly string[] }
+>;
+
 export interface ConsumableRequestView {
   readonly requestId: string;
   readonly customerId: string;
@@ -46,6 +54,7 @@ export interface ConsumableRequestView {
   readonly requestedAt: string;
   readonly processedBy: string | null;
   readonly processNote: string | null;
+  readonly stageNotes: ConsumableRequestStageNotes;
   readonly completedAt: string | null;
   readonly version: number;
   readonly createdAt: string;
@@ -63,6 +72,7 @@ interface RequestRow {
   readonly requestedAt: Date;
   readonly processedBy: string | null;
   readonly processNote: string | null;
+  readonly stageNotes: ConsumableRequestStageNotes | null;
   readonly completedAt: Date | null;
   readonly version: number;
   readonly createdAt: Date;
@@ -80,6 +90,20 @@ function requests(client: DbClient): RequestDelegate {
   return (client as unknown as Record<string, unknown>).consumableRequest as RequestDelegate;
 }
 
+function stageNotesFor(row: RequestRow): ConsumableRequestStageNotes {
+  const notes = row.stageNotes ?? {};
+  const { legacy = [], ...stages } = notes;
+  const latestNote = row.processNote;
+  if (
+    latestNote === null ||
+    legacy.includes(latestNote) ||
+    Object.values(stages).some((entry) => entry.note === latestNote)
+  )
+    return notes;
+  // An older server may have written only the legacy field after the migration.
+  return { ...notes, legacy: [...legacy, latestNote] };
+}
+
 function toView(row: RequestRow): ConsumableRequestView {
   return {
     requestId: row.id,
@@ -92,6 +116,7 @@ function toView(row: RequestRow): ConsumableRequestView {
     requestedAt: row.requestedAt.toISOString(),
     processedBy: row.processedBy,
     processNote: row.processNote,
+    stageNotes: stageNotesFor(row),
     completedAt: row.completedAt?.toISOString() ?? null,
     version: row.version,
     createdAt: row.createdAt.toISOString(),
@@ -123,11 +148,20 @@ export interface CreateConsumableRequestResult {
   readonly replayed: boolean;
 }
 
-/** 创建更换申请（device:write）：幂等（开放申请重复 → replayed）；设备须已分配 Customer。 */
-export async function createConsumableRequest(
+/** The admin entry point binds origin to the authenticated actor. */
+export function createConsumableRequest(
   deps: ConsumableRequestDeps,
   actor: ActorContext,
   input: CreateConsumableRequestInput,
+): Promise<CreateConsumableRequestResult> {
+  return createOpenRequest(deps, input, { source: 'ADMIN', ...auditActor(actor) });
+}
+
+/** T12 can reuse persistence after authenticating the device and resolving its request identity. */
+async function createOpenRequest(
+  deps: ConsumableRequestDeps,
+  input: CreateConsumableRequestInput,
+  origin: { readonly source: 'ADMIN' | 'DEVICE'; readonly actorId: string; readonly actorRole?: string },
 ): Promise<CreateConsumableRequestResult> {
   const consumableType = assertKnownConsumableType(input.consumableType);
   const device = await (
@@ -161,9 +195,20 @@ export async function createConsumableRequest(
         objectId: input.deviceId,
         action: 'consumable.request.create',
         reason: input.note ?? null,
-        ...auditActor(actor),
+        actorId: origin.actorId,
+        ...(origin.actorRole !== undefined ? { actorRole: origin.actorRole } : {}),
         customerId: device.customerId,
-        afterValue: { deviceId: input.deviceId, consumableType, status: 'PENDING' },
+        afterValue: (result: unknown) => {
+          const view = result as ConsumableRequestView;
+          return {
+            requestId: view.requestId,
+            deviceId: view.deviceId,
+            consumableType,
+            status: view.status,
+            source: view.source,
+            version: view.version,
+          };
+        },
       },
       async (tx) => {
         const row = await requests(tx).create({
@@ -172,9 +217,10 @@ export async function createConsumableRequest(
             deviceId: input.deviceId,
             consumableType,
             status: 'PENDING',
-            source: 'ADMIN',
-            requestedBy: actor.actorId,
+            source: origin.source,
+            requestedBy: origin.actorId,
             processNote: input.note ?? null,
+            stageNotes: input.note === undefined ? {} : { request: { note: input.note, source: 'RECORDED' } },
           },
         });
         return toView(row);
@@ -196,15 +242,21 @@ export async function createConsumableRequest(
 export interface TransitionRequestInput {
   readonly requestId: string;
   readonly ifMatchVersion: number;
-  /** 处理备注（complete/cancel 强制；process 可选）。 */
+  /** 当前阶段备注（完成和取消必填，处理选填）。 */
   readonly note?: string | undefined;
 }
+
+const TRANSITION_NOTE_STAGE = {
+  PROCESSING: 'processing',
+  COMPLETED: 'completion',
+  CANCELLED: 'cancellation',
+} as const satisfies Record<Exclude<ConsumableRequestStatus, 'PENDING'>, NoteStage>;
 
 async function transition(
   deps: ConsumableRequestDeps,
   actor: ActorContext,
   input: TransitionRequestInput,
-  to: ConsumableRequestStatus,
+  to: keyof typeof TRANSITION_NOTE_STAGE,
   action: string,
 ): Promise<ConsumableRequestView> {
   const at = deps.now?.() ?? new Date();
@@ -227,7 +279,13 @@ async function transition(
       if (!current) throw consumableNotFound();
       assertConsumableRequestTransition(current.status as ConsumableRequestStatus, to);
       const data: Record<string, unknown> = { status: to, processedBy: actor.actorId };
-      if (input.note !== undefined) data.processNote = input.note;
+      if (input.note !== undefined) {
+        data.processNote = input.note;
+        data.stageNotes = {
+          ...stageNotesFor(current),
+          [TRANSITION_NOTE_STAGE[to]]: { note: input.note, source: 'RECORDED' },
+        };
+      }
       if (to === 'COMPLETED') data.completedAt = at;
       const { count } = await requests(tx).updateMany({
         where: { id: input.requestId, version: input.ifMatchVersion, status: current.status },
@@ -254,14 +312,14 @@ export async function processConsumableRequest(
   return transition(deps, actor, input, 'PROCESSING', 'consumable.request.process');
 }
 
-/** PROCESSING→COMPLETED（授权角色；强制处理备注；记录 completedAt）。 */
+/** PROCESSING→COMPLETED（授权角色；完成备注必填；记录 completedAt）。 */
 export async function completeConsumableRequest(
   deps: ConsumableRequestDeps,
   actor: ActorContext,
   input: TransitionRequestInput,
 ): Promise<ConsumableRequestView> {
   if (!input.note || input.note.trim().length === 0) {
-    throw consumableValidationFailed('processNote is required when completing a request');
+    throw consumableValidationFailed('A completion note is required when completing a request');
   }
   return transition(deps, actor, input, 'COMPLETED', 'consumable.request.complete');
 }

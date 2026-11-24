@@ -286,6 +286,25 @@ export const EN: Readonly<Record<string, string>> = {
   'deviceOperate.quick.configuration': 'Configuration',
   'deviceOperate.quick.unavailable': 'Why actions are unavailable',
   'consumables.searchDevices': 'Find a device by name, serial number, or ID',
+  'consumables.stageNotes': 'Notes by stage',
+  'consumables.requestNote': 'Request note',
+  'consumables.processingNote': 'Processing note',
+  'consumables.completionNote': 'Completion note',
+  'consumables.cancellationNote': 'Cancellation note',
+  'consumables.legacyNote': 'Historical note (stage unconfirmed)',
+  'consumables.auditRecovered': 'Recovered from audit',
+  'consumables.processDescription':
+    'Confirm to move the request to In Progress. You can add a processing note about the plan or progress.',
+  'consumables.processOptional': 'Processing note (optional)',
+  'consumables.processSuccess': 'Request {id} is in progress. Close it once the replacement is complete.',
+  'consumables.completeDescription':
+    'Confirm to close the request and mark it Completed. A completion note with the replacement result is required.',
+  'consumables.completeRequired': 'Completion note (required)',
+  'consumables.completeSuccess': 'Request {id} was completed and closed. The completion note was saved.',
+  'consumables.cancelDescription':
+    'Confirm to close the request and mark it Cancelled. Enter the reason for cancellation.',
+  'consumables.cancelRequired': 'Cancellation reason (required)',
+  'consumables.cancelSuccess': 'Request {id} was cancelled. The cancellation reason was saved.',
   'consumables.noEligibleDevices': 'No devices are eligible for a replacement request.',
   'consumables.noMatchingDevices': 'No eligible devices match this search.',
   'consumables.deviceUnavailable':

@@ -8,7 +8,7 @@
  *   （complete/cancel 强制）；跳级不渲染按钮；重复创建幂等（replayed 提示）。
  */
 import { afterEach, assert, test } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError } from '../src/api/errors.js';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
@@ -286,6 +286,76 @@ test('处理→完成全流程：操作携带 version + 备注（complete 强制
   assert.deepEqual(calls.completed, [{ id: 'req-002', note: '已更换碳包', version: 3 }]);
   assert.equal(validateRequestNote('', true)?.includes('必填'), true);
   assert.equal(validateRequestNote('ok', false), null);
+});
+
+test('R20 阶段备注分别标记，审计恢复与未确认历史文本可辨认', () => {
+  renderPage({
+    requests: {
+      rows: [
+        makeRequest({
+          requestId: 'cancelled-with-notes',
+          status: 'CANCELLED',
+          processNote: '取消详情',
+          stageNotes: {
+            request: { note: '申请详情', source: 'AUDIT', auditId: 'audit-request' },
+            processing: { note: '处理详情', source: 'RECORDED' },
+            cancellation: { note: '取消详情', source: 'RECORDED' },
+            legacy: ['无法确认阶段的旧值'],
+          },
+        }),
+        makeRequest({ requestId: 'old-response', status: 'COMPLETED', processNote: '旧 API 文本' }),
+      ],
+    },
+  });
+  const notes = screen.getByTestId('consumable-request-notes-cancelled-with-notes');
+  assert.deepEqual(
+    [...notes.querySelectorAll('dt')].map((label) => label.textContent),
+    ['申请备注 (审计恢复)', '处理备注', '取消备注', '历史备注（阶段未确认）'],
+  );
+  assert.deepEqual(
+    [...notes.querySelectorAll('dd')].map((note) => note.textContent),
+    ['申请详情', '处理详情', '取消详情', '无法确认阶段的旧值'],
+  );
+  const old = screen.getByTestId('consumable-request-notes-old-response');
+  assert.ok(old.textContent?.includes('历史备注（阶段未确认）'));
+  assert.ok(old.textContent?.includes('旧 API 文本'));
+  assert.equal(screen.queryByTestId('consumable-cancel-cancelled-with-notes'), null);
+});
+
+test.each(['VERSION_CONFLICT', 'CONFLICT'])('R20 工单确认对话框遇到 %s 后可刷新回源', async (code) => {
+  const user = userEvent.setup();
+  let calls = 0;
+  const { calls: pageCalls } = renderPage({
+    onComplete: async () => {
+      calls += 1;
+      throw new ApiClientError(409, code, 'version changed', 't05-version');
+    },
+  });
+  await user.click(screen.getByTestId('consumable-complete-req-002'));
+  const dialog = screen.getByTestId('consumable-action-form');
+  await user.type(within(dialog).getByTestId('consumable-action-note'), '完成说明');
+  const submit = within(dialog).getByTestId('consumable-action-submit') as HTMLButtonElement;
+  await user.click(submit);
+  const refresh = await within(dialog).findByRole('button', { name: '刷新' });
+  assert.equal(submit.disabled, true);
+  await user.click(refresh);
+  assert.equal(calls, 1);
+  assert.equal(pageCalls.refreshed, 1);
+  assert.equal(screen.queryByTestId('consumable-action-form'), null);
+});
+
+test('R20 取消确认要求独立原因，成功后说明已取消', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderPage();
+  await user.click(screen.getByTestId('consumable-cancel-req-002'));
+  const dialog = screen.getByTestId('consumable-action-form');
+  const submit = within(dialog).getByTestId('consumable-action-submit') as HTMLButtonElement;
+  assert.equal(submit.disabled, true);
+  assert.ok(dialog.textContent?.includes('工单将关闭'));
+  await user.type(within(dialog).getByLabelText('取消原因（必填）'), '重复申请转为取消');
+  await user.click(submit);
+  assert.deepEqual(calls.cancelled, [{ id: 'req-002', note: '重复申请转为取消', version: 3 }]);
+  assert.ok((await screen.findByTestId('action-notice')).textContent?.includes('取消原因已保存'));
 });
 
 test('创建申请：成功提示；开放申请重复创建幂等（replayed 提示）', async () => {

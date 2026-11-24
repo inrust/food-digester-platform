@@ -635,7 +635,8 @@ model ConsumableRequest {
   requestedBy    String    @map("requested_by")
   requestedAt    DateTime  @default(now()) @map("requested_at") @db.Timestamptz
   processedBy    String?   @map("processed_by")
-  processNote    String?   @map("process_note")
+  processNote    String?   @map("process_note") // Latest provided note for legacy readers
+  stageNotes     Json?     @map("stage_notes") // Stage-specific notes with provenance
   completedAt    DateTime? @map("completed_at") @db.Timestamptz
   version        Int       @default(1)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz

@@ -1,5 +1,5 @@
 import { FilterBar } from '../../components/FilterBar.js';
-import { Button, Input } from '../../components/ui.js';
+import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
  * FE-18 耗材状态与更换申请页（/consumables）：耗材列表 + 更换申请两区域。
@@ -37,6 +37,7 @@ import type { ConsumableThresholdSource, ConsumableThresholds, RequestAction } f
 import type {
   ConsumableContactView,
   ConsumableRequestCreateResult,
+  ConsumableRequestNoteStage,
   ConsumableRequestStatus,
   ConsumableRequestView,
   ConsumableStatusView,
@@ -80,6 +81,68 @@ type ActionTarget = {
   readonly action: RequestAction;
   readonly request: ConsumableRequestView;
 };
+const REQUEST_NOTE_STAGES = [
+  'request',
+  'processing',
+  'completion',
+  'cancellation',
+] as const satisfies readonly ConsumableRequestNoteStage[];
+const REQUEST_NOTE_LABELS = {
+  request: 'consumables.requestNote',
+  processing: 'consumables.processingNote',
+  completion: 'consumables.completionNote',
+  cancellation: 'consumables.cancellationNote',
+} as const satisfies Record<ConsumableRequestNoteStage, string>;
+const REQUEST_ACTION_COPY = {
+  process: {
+    description: 'consumables.processDescription',
+    noteLabel: 'consumables.processOptional',
+    success: 'consumables.processSuccess',
+  },
+  complete: {
+    description: 'consumables.completeDescription',
+    noteLabel: 'consumables.completeRequired',
+    success: 'consumables.completeSuccess',
+  },
+  cancel: {
+    description: 'consumables.cancelDescription',
+    noteLabel: 'consumables.cancelRequired',
+    success: 'consumables.cancelSuccess',
+  },
+} as const;
+
+function RequestNotes({ request }: { readonly request: ConsumableRequestView }) {
+  const stages = REQUEST_NOTE_STAGES.flatMap((stage) => {
+    const entry = request.stageNotes?.[stage];
+    return entry === undefined ? [] : [{ stage, ...entry }];
+  });
+  const legacy =
+    request.stageNotes?.legacy ??
+    (request.stageNotes === undefined && request.processNote !== null ? [request.processNote] : []);
+  if (stages.length === 0 && legacy.length === 0) return '—';
+  return (
+    <dl className="consumable-request-notes" data-testid={`consumable-request-notes-${request.requestId}`}>
+      {stages.map(({ stage, note, source }) => (
+        <div key={stage}>
+          <dt>
+            {translate(REQUEST_NOTE_LABELS[stage])}
+            {source === 'AUDIT' ? ` (${translate('consumables.auditRecovered')})` : ''}
+          </dt>
+          <dd>{note}</dd>
+        </div>
+      ))}
+      {legacy.length > 0 ? (
+        <div>
+          <dt>{translate('consumables.legacyNote')}</dt>
+          {legacy.map((note) => (
+            <dd key={note}>{note}</dd>
+          ))}
+        </div>
+      ) : null}
+    </dl>
+  );
+}
+
 type RequestDeviceOptions =
   | { readonly kind: 'loading' }
   | { readonly kind: 'ready'; readonly options: readonly FilterOption[] }
@@ -226,8 +289,15 @@ export function ConsumablesPage({
     deviceLoad.current += 1;
     setCreateOpen(false);
   };
-  const noteRequired = action?.action !== 'process';
+  const actionCopy = action === null ? null : REQUEST_ACTION_COPY[action.action];
+  const noteRequired = action !== null && action.action !== 'process';
   const noteError = action !== null ? validateRequestNote(actionNote, noteRequired) : null;
+  const conflictCode = actionError instanceof ApiClientError ? actionError.code : null;
+  const refreshAfterConflict = () => {
+    setAction(null);
+    setActionError(null);
+    onRefresh();
+  };
   const loadContact = async (deviceId: string) => {
     setContacts((current) => ({ ...current, [deviceId]: { kind: 'loading' } }));
     try {
@@ -254,21 +324,17 @@ export function ConsumablesPage({
       setBusy(false);
     }
   };
-  const submitAction = () =>
-    runAction(async () => {
-      if (action === null) return '';
+  const submitAction = () => {
+    if (action === null || actionCopy === null || noteError !== null) return;
+    return runAction(async () => {
       const note = actionNote.trim();
-      if (action.action === 'process') {
-        await onProcess(action.request.requestId, note === '' ? null : note, action.request.version);
-        return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.97930c3c7beb'));
-      }
-      if (action.action === 'complete') {
-        await onComplete(action.request.requestId, note, action.request.version);
-        return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.e99b48a29bdf'));
-      }
-      await onCancel(action.request.requestId, note, action.request.version);
-      return translate('page.bfdd7ddce562') + ' ' + action.request.requestId + (' ' + translate('page.a5ffdc95eeb0'));
+      const { requestId, version } = action.request;
+      if (action.action === 'process') await onProcess(requestId, note === '' ? null : note, version);
+      if (action.action === 'complete') await onComplete(requestId, note, version);
+      if (action.action === 'cancel') await onCancel(requestId, note, version);
+      return translate(actionCopy.success, { id: requestId });
     });
+  };
   const submitCreate = () => {
     const { deviceId, consumableType, note } = createDraft;
     if (!canWrite || !deviceEligible || consumableType === '') return;
@@ -315,7 +381,7 @@ export function ConsumablesPage({
           {notice}
         </p>
       ) : null}
-      {actionError !== null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
+      {actionError !== null && action === null ? <ErrorNotice error={actionError} onRefresh={onRefresh} /> : null}
 
       <section data-testid="consumable-status-section" aria-label={translate('page.93b5ce3195e0')}>
         <p className="field-hint" data-testid="consumable-threshold-source">
@@ -661,7 +727,11 @@ export function ConsumablesPage({
               },
               { key: 'requestedBy', header: translate('page.880ab989a872'), render: (req) => req.requestedBy },
               { key: 'processedBy', header: translate('page.3e132a2a8e75'), render: (req) => req.processedBy ?? '—' },
-              { key: 'processNote', header: translate('page.9019638102fb'), render: (req) => req.processNote ?? '—' },
+              {
+                key: 'stageNotes',
+                header: translate('consumables.stageNotes'),
+                render: (req) => <RequestNotes request={req} />,
+              },
               {
                 key: 'completedAt',
                 header: translate('page.754a8a2e2dba'),
@@ -685,6 +755,7 @@ export function ConsumablesPage({
                           {...(denied !== null ? { title: denied } : {})}
                           onClick={() => {
                             setAction({ action: requestAction, request: req });
+                            setActionError(null);
                             setActionNote('');
                           }}
                         >
@@ -713,21 +784,32 @@ export function ConsumablesPage({
             : ''
         }
         testid="consumable-action-form"
-        onClose={() => setAction(null)}
+        onClose={() => {
+          if (busy) return;
+          setAction(null);
+          setActionError(null);
+        }}
       >
-        {action !== null ? (
+        {actionCopy !== null && action !== null ? (
           <div>
-            <p className="field-hint">
-              If-Match：v{action.request.version}；
-              {action.action === 'process' ? translate('page.4c3750f2c04b') : translate('page.3ed45d0380ff')}
-              {translate('page.ff917d9f5ac3')}
+            <p className="field-hint" id="consumable-action-description">
+              {translate(actionCopy.description)}
             </p>
+            {actionError !== null ? <ErrorNotice error={actionError} onRefresh={refreshAfterConflict} /> : null}
+            {conflictCode === 'CONFLICT' ? (
+              <Button type="button" onClick={refreshAfterConflict}>
+                {translate('common.refresh')}
+              </Button>
+            ) : null}
             <div className="dialog-field">
-              <label htmlFor="consumable-action-note">{translate('page.9019638102fb')}</label>
-              <Input
+              <label htmlFor="consumable-action-note">{translate(actionCopy.noteLabel)}</label>
+              <TextArea
                 id="consumable-action-note"
                 data-testid="consumable-action-note"
+                aria-describedby="consumable-action-description"
+                rows={3}
                 maxLength={500}
+                required={noteRequired}
                 value={actionNote}
                 onChange={(event) => setActionNote(event.target.value)}
               />
@@ -742,7 +824,9 @@ export function ConsumablesPage({
                 type="button"
                 className="primary-button"
                 data-testid="consumable-action-submit"
-                disabled={busy || noteError !== null}
+                disabled={
+                  busy || noteError !== null || conflictCode === 'CONFLICT' || conflictCode === 'VERSION_CONFLICT'
+                }
                 onClick={() => void submitAction()}
               >
                 {translate('page.b56d9ac6c5a0')}
@@ -831,7 +915,7 @@ export function ConsumablesPage({
           </select>
         </div>
         <div className="dialog-field">
-          <label htmlFor="consumable-create-note">{translate('page.bf243804ac18')}</label>
+          <label htmlFor="consumable-create-note">{translate('consumables.requestNote')}</label>
           <Input
             id="consumable-create-note"
             data-testid="consumable-create-note"

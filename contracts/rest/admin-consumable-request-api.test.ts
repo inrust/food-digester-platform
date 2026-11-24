@@ -97,6 +97,23 @@ test('Schema 封闭：四态枚举/source 固定 ADMIN/幂等 replayed/完整历
   assert.deepEqual(doc.components.schemas.RequestNoteRequiredBody.required, ['note'], '完成/取消强制备注');
 });
 
+test('R20 新旧读契约兼容并保留独立阶段及审计来源', () => {
+  const { ConsumableRequest, ConsumableRequestStageNotes, ConsumableRequestStageNote, ConsumableRequestCreate } =
+    doc.components.schemas;
+  assert.ok(!ConsumableRequest.required.includes('stageNotes'));
+  assert.equal(ConsumableRequest.properties.stageNotes.$ref, '#/components/schemas/ConsumableRequestStageNotes');
+  assert.deepEqual(Object.keys(ConsumableRequestStageNotes.properties), [
+    'request',
+    'processing',
+    'completion',
+    'cancellation',
+    'legacy',
+  ]);
+  assert.deepEqual(ConsumableRequestStageNote.properties.source.enum, ['RECORDED', 'AUDIT']);
+  assert.deepEqual(ConsumableRequestStageNote.then.required, ['auditId']);
+  assert.ok(!('source' in ConsumableRequestCreate.properties));
+});
+
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {
   const refs = collectRefs(doc);
   assert.ok(refs.length > 0);

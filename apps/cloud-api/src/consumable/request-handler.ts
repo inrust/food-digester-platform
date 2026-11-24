@@ -8,7 +8,7 @@
  * - GET  /api/v1/admin/consumable-requests                  列表（customerId/deviceId/status/consumableType）
  * - GET  /api/v1/admin/consumable-requests/{requestId}      详情（跨 Customer → 404）
  * - POST /api/v1/admin/consumable-requests/{requestId}/process   PENDING→PROCESSING（If-Match）
- * - POST /api/v1/admin/consumable-requests/{requestId}/complete  PROCESSING→COMPLETED（If-Match + 强制处理备注）
+ * - POST /api/v1/admin/consumable-requests/{requestId}/complete  PROCESSING→COMPLETED（If-Match + 完成备注必填）
  * - POST /api/v1/admin/consumable-requests/{requestId}/cancel    PENDING/PROCESSING→CANCELLED（If-Match + 强制原因）
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */

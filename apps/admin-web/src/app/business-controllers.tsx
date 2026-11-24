@@ -394,12 +394,15 @@ export function ConsumablesController({
     () => (fixedCustomerId === null ? requestFilter : { ...requestFilter, customerId: fixedCustomerId }),
     [fixedCustomerId, requestFilter],
   );
+  const latestLoad = useRef(0);
   const load = useCallback(async () => {
+    const generation = ++latestLoad.current;
     setStatus((old) => ({ ...old, loading: true, error: undefined }));
     const [statusResult, requestResult] = await Promise.allSettled([
       listConsumableStatus(api, statusQuery, { cursor: statusCursor, limit: 50 }),
       listConsumableRequests(api, requestQuery),
     ]);
+    if (generation !== latestLoad.current) return;
     setStatus(
       statusResult.status === 'fulfilled'
         ? { rows: statusResult.value.items, loading: false, nextCursor: statusResult.value.nextCursor }
@@ -409,7 +412,12 @@ export function ConsumablesController({
       requestResult.status === 'fulfilled' ? { rows: requestResult.value } : { rows: [], error: requestResult.reason },
     );
   }, [api, requestQuery, statusCursor, statusQuery]);
-  useEffect(() => void load(), [load]);
+  useEffect(() => {
+    void load();
+    return () => {
+      latestLoad.current += 1;
+    };
+  }, [load]);
   useEffect(() => {
     if (!canReadSettings(role)) return;
     let active = true;

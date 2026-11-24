@@ -112,7 +112,7 @@ export async function processConsumableRequest(
   return response.data;
 }
 
-/** 完成处理（PROCESSING→COMPLETED；处理备注强制）。 */
+/** 完成处理（PROCESSING→COMPLETED；完成备注必填）。 */
 export async function completeConsumableRequest(
   api: ApiClient,
   requestId: string,

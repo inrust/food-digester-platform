@@ -42,7 +42,7 @@
       },
       {
         "file": "admin-consumable-request-api.json",
-        "sha256": "ea0170144292e045a07d2cb7a8796bd29035ee510ae8c300eadac6520b46e9f5",
+        "sha256": "f9e1d7edb02ccf8df5b2968d2b121315ee7379555c696ca9075b07dc763d14a1",
         "status": "implemented"
       },
       {
@@ -2108,7 +2108,7 @@
           "admin"
         ],
         "operationId": "processConsumableRequest",
-        "summary": "开始处理（PENDING→PROCESSING，If-Match；仅授权角色）",
+        "summary": "开始处理（PENDING→PROCESSING，If-Match；处理备注选填）",
         "security": [
           {
             "CognitoJwt": []
@@ -2184,7 +2184,7 @@
           "admin"
         ],
         "operationId": "completeConsumableRequest",
-        "summary": "完成处理（PROCESSING→COMPLETED，If-Match + 强制处理备注；记录 completedAt）",
+        "summary": "完成处理（PROCESSING→COMPLETED，If-Match + 完成备注必填；记录 completedAt）",
         "security": [
           {
             "CognitoJwt": []
@@ -13543,7 +13543,79 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 500,
-            "description": "处理备注/取消原因（强制）"
+            "description": "完成备注或取消原因（按操作必填）"
+          }
+        }
+      },
+      "AdminConsumableRequestApi__ConsumableRequestStageNote": {
+        "type": "object",
+        "required": [
+          "note",
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "RECORDED",
+              "AUDIT"
+            ],
+            "description": "随阶段操作保存，或由唯一匹配的历史成功审计恢复。"
+          },
+          "auditId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "if": {
+          "properties": {
+            "source": {
+              "const": "AUDIT"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "auditId"
+          ]
+        },
+        "else": {
+          "not": {
+            "required": [
+              "auditId"
+            ]
+          }
+        }
+      },
+      "AdminConsumableRequestApi__ConsumableRequestStageNotes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/AdminConsumableRequestApi__ConsumableRequestStageNote"
+          },
+          "processing": {
+            "$ref": "#/components/schemas/AdminConsumableRequestApi__ConsumableRequestStageNote"
+          },
+          "completion": {
+            "$ref": "#/components/schemas/AdminConsumableRequestApi__ConsumableRequestStageNote"
+          },
+          "cancellation": {
+            "$ref": "#/components/schemas/AdminConsumableRequestApi__ConsumableRequestStageNote"
+          },
+          "legacy": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            },
+            "description": "旧字段保留的文本，缺少可确认阶段的审计证据。"
           }
         }
       },
@@ -13619,7 +13691,12 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "旧客户端读取的最近一次填写的备注。其值可能来自任一阶段。"
+          },
+          "stageNotes": {
+            "$ref": "#/components/schemas/AdminConsumableRequestApi__ConsumableRequestStageNotes",
+            "description": "分阶段备注与来源。尚未填写或无法可靠确认的阶段省略，旧 API 可能省略整个字段。"
           },
           "completedAt": {
             "type": [
