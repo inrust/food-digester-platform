@@ -51,7 +51,8 @@ export interface ContractDetailPageProps {
   /** 每设备 License 摘要（独立授权轴；DEC-007 并列展示，不联动修改）。 */
   readonly licenses?: Readonly<Record<string, DeviceLicenseSummaryView | null>>;
   readonly licenseError?: unknown;
-  readonly onOpenLicense: (licenseId: string) => void;
+  readonly onOpenLicense: (licenseId: string, deviceId?: string) => void;
+  readonly onOpenLicenses?: () => void;
   readonly onListAvailable: () => Promise<readonly AvailableDeviceView[]>;
   readonly onEdit: (input: ContractUpdateInput, version: number) => Promise<ContractView>;
   readonly onActivate: (reason: string, version: number) => Promise<ContractView>;
@@ -84,6 +85,7 @@ export function ContractDetailPage({
   licenses,
   licenseError,
   onOpenLicense,
+  onOpenLicenses,
   onListAvailable,
   onEdit,
   onActivate,
@@ -350,6 +352,11 @@ export function ContractDetailPage({
         <div className="page-header">
           <h4>{translate('page.b113e4704c10')}</h4>
           <span className="action-row">
+            {onOpenLicenses ? (
+              <Button type="button" data-testid="contract-open-licenses" onClick={onOpenLicenses}>
+                {translate('cmpT07.openLicenses')}
+              </Button>
+            ) : null}
             <Button
               type="button"
               data-testid="contract-bind-open"
@@ -442,7 +449,10 @@ export function ContractDetailPage({
                       </span>
                     </td>
                     <td>
-                      <LicenseSummary summary={licenses?.[device.deviceId] ?? null} onOpen={onOpenLicense} />
+                      <LicenseSummary
+                        summary={licenses?.[device.deviceId] ?? null}
+                        onOpen={(id) => onOpenLicense(id, device.deviceId)}
+                      />
                     </td>
                     <td>
                       {formatServicePeriod(association.validFrom, association.validTo)}（

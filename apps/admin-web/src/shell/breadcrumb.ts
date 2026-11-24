@@ -9,6 +9,7 @@ import {
   deviceGroupsReturnPath,
   deviceWorkbenchId,
   groupFiltersFromContext,
+  uniqueQueryId,
   withGroupFilters,
 } from '../router/device-navigation.js';
 import { findRoute } from '../router/routes.js';
@@ -24,6 +25,15 @@ export function breadcrumbsFor(path: string, search = ''): Crumb[] {
   const route = findRoute(path);
   if (route === null) return [{ i18nKey: 'common.pageNotFound', path: null }];
 
+  const contractId = path === '/licenses' ? uniqueQueryId(search, 'contractId') : null;
+  if (contractId) {
+    return [
+      { i18nKey: 'menu.group.contract', path: null },
+      { i18nKey: 'menu.contract-modify', path: '/contracts' },
+      { i18nKey: 'menu.contract-detail', path: `/contracts/detail?contractId=${encodeURIComponent(contractId)}` },
+      { i18nKey: 'menu.licenses', path: null },
+    ];
+  }
   const scopeId = deviceWorkbenchId(path, search);
   if (scopeId) {
     return [

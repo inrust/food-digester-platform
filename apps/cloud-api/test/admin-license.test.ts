@@ -568,3 +568,128 @@ describe('契约一致性', () => {
     }
   });
 });
+
+test('B/T07 R15 enforces the live contract, device, customer and version on each scoped operation', async () => {
+  const h = handlers();
+  const subject = await plantAssignedDevice();
+  const peer = await plantAssignedDevice();
+  const foreign = await plantAssignedDevice();
+  await prisma.device.update({ where: { id: peer.deviceId }, data: { customerId: subject.customerId, siteId: null } });
+  const startAt = new Date(NOW.getTime() - DAY_MS);
+  const endAt = new Date(NOW.getTime() + DAY_MS);
+  const contract = await prisma.contract.create({
+    data: {
+      contractNumber: 'T07-LIC',
+      name: 'T07 contract',
+      customerId: subject.customerId,
+      startAt,
+      endAt,
+      status: 'EFFECTIVE',
+      createdBy: superAdmin.actorId,
+    },
+  });
+  const binding = {
+    contractId: contract.id,
+    deviceId: subject.deviceId,
+    customerId: subject.customerId,
+    validFrom: startAt,
+    validTo: endAt,
+  };
+  const first = await prisma.contractDevice.create({ data: binding });
+  const contractQuery = { contractId: contract.id };
+  const scope = { ...contractQuery, scopeDeviceId: subject.deviceId, associationId: first.id };
+  const body = {
+    deviceId: subject.deviceId,
+    validFrom: startAt.toISOString(),
+    validTo: endAt.toISOString(),
+    entitlements: ['REMOTE_CONTROL'],
+  };
+
+  const peerLicense = await createDraft(h, peer.deviceId, endAt);
+  const foreignLicense = await createDraft(h, foreign.deviceId, endAt);
+  const created = await h.create(req(operator, { query: scope, body }));
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assertOpenApiResponse('createLicense', created.status, created.body);
+  const params = { licenseId: (created.body as { data: { licenseId: string } }).data.licenseId };
+
+  const result = await h.list(req(auditor, { query: contractQuery }));
+  assert.equal(result.status, 200);
+  assertOpenApiResponse('listLicenses', result.status, result.body);
+  assert.deepEqual(
+    (result.body as { data: { licenseId: string }[] }).data.map((row) => row.licenseId),
+    [params.licenseId],
+  );
+  for (const licenseId of [String(peerLicense.licenseId), String(foreignLicense.licenseId)]) {
+    assert.equal((await h.detail(req(operator, { params: { licenseId }, query: contractQuery }))).status, 404);
+    assert.equal((await h.history(req(auditor, { params: { licenseId }, query: contractQuery }))).status, 404);
+  }
+  assert.equal((await h.list(req(customerAdmin, { query: contractQuery }))).status, 403);
+
+  const discovered = await h.list(req(operator, { query: { scopeDeviceId: subject.deviceId } }));
+  assert.equal((discovered.body as { meta: { scope: { contractId: string } } }).meta.scope.contractId, contract.id);
+  const legacy = await h.list(req(operator, { query: { scopeDeviceId: peer.deviceId } }));
+  assert.equal((legacy.body as { meta: { scope: { contractId: string | null } } }).meta.scope.contractId, null);
+  assert.equal(
+    (await h.issue(req(operator, { params, query: { scopeDeviceId: subject.deviceId }, headers: { 'If-Match': '1' } })))
+      .status,
+    409,
+  );
+  assert.equal((await h.issue(req(auditor, { params, query: scope, headers: { 'If-Match': '1' } }))).status, 403);
+  assert.equal((await h.issue(req(operator, { params, query: scope }))).status, 400);
+
+  await prisma.contractDevice.update({ where: { id: first.id }, data: { status: 'ENDED', endedAt: NOW } });
+  assert.equal((await h.detail(req(operator, { params, query: scope }))).status, 404);
+  const rebound = await prisma.contractDevice.create({ data: binding });
+  assert.equal((await h.issue(req(operator, { params, query: scope, headers: { 'If-Match': '1' } }))).status, 409);
+  const query = { ...scope, associationId: rebound.id };
+  const [one, two] = await Promise.all([
+    h.issue(req(operator, { params, query, headers: { 'If-Match': '1' } })),
+    h.issue(req(operator, { params, query, headers: { 'If-Match': '1' } })),
+  ]);
+  assert.deepEqual([one.status, two.status].sort(), [200, 409]);
+  assert.equal((await h.activate(req(operator, { params, query, headers: { 'If-Match': '1' } }))).status, 409);
+  const history = await h.history(req(auditor, { params, query }));
+  assert.equal(history.status, 200);
+  assertOpenApiResponse('listLicenseHistory', history.status, history.body);
+  assert.equal(await prisma.licenseHistory.count({ where: { licenseId: params.licenseId, toStatus: 'Issued' } }), 1);
+
+  await prisma.contract.update({ where: { id: contract.id }, data: { endAt: NOW } });
+  assert.equal((await h.activate(req(operator, { params, query, headers: { 'If-Match': '2' } }))).status, 404);
+  await prisma.contract.update({ where: { id: contract.id }, data: { status: 'TERMINATED' } });
+  assert.equal((await h.activate(req(operator, { params, query, headers: { 'If-Match': '2' } }))).status, 404);
+  const active = await h.activate(
+    req(operator, {
+      params,
+      query: { scopeDeviceId: subject.deviceId },
+      headers: { 'If-Match': '2' },
+    }),
+  );
+  assert.equal(active.status, 200, JSON.stringify(active.body));
+  const legacyScope = { scopeDeviceId: subject.deviceId };
+  const expiring = await h.evaluate(req(operator, { params }));
+  assert.equal((expiring.body as DataBody).data.status, 'ExpiringSoon');
+  const renewed = await h.renew(
+    req(operator, {
+      params,
+      query: legacyScope,
+      headers: { 'If-Match': '4' },
+      body: { newValidTo: new Date(NOW.getTime() + 20 * DAY_MS).toISOString() },
+    }),
+  );
+  assert.equal(renewed.status, 200, JSON.stringify(renewed.body));
+  assert.equal((renewed.body as DataBody).data.status, 'Renewed');
+  assert.equal((await h.evaluate(req(operator, { params }))).status, 200);
+  const revoked = await h.revoke(
+    req(operator, {
+      params,
+      query: legacyScope,
+      headers: { 'If-Match': '6' },
+      body: { reason: 'Legacy scope fixture' },
+    }),
+  );
+  assert.equal(revoked.status, 200, JSON.stringify(revoked.body));
+  assert.equal((revoked.body as DataBody).data.status, 'Revoked');
+  const oldHistory = await h.history(req(auditor, { params, query: legacyScope }));
+  assert.equal(oldHistory.status, 200);
+  assert.isTrue((oldHistory.body as { data: { toStatus: string }[] }).data.some((row) => row.toStatus === 'Revoked'));
+});

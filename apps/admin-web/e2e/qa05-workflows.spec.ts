@@ -70,6 +70,8 @@ for (const role of ROLES)
           '/ota/packages',
           '/ota/campaigns',
           '/configurations',
+          '/licenses',
+          '/device-users',
           '/alarms',
           '/media',
         ].includes(p),
@@ -98,13 +100,13 @@ for (const role of ROLES)
     if (role === 'PlatformSuperAdmin' || role === 'CustomerAdmin') {
       const readsBeforeSettings = deviceUserReads.length;
       await page.goto('/settings');
-      const deviceUsers = page.getByTestId('settings-device-users-link');
-      await expect(deviceUsers).toHaveAttribute('href', '/device-users');
+      await expect(page.getByTestId('settings-device-users-link')).toHaveCount(0);
       await expect(page.getByTestId('device-users-page')).toHaveCount(0);
       expect(deviceUserReads).toHaveLength(readsBeforeSettings);
       if (role === 'CustomerAdmin') await expect(page.getByTestId('tab-business-settings')).toHaveCount(0);
-      await deviceUsers.click();
-      await expect(page).toHaveURL(/\/device-users$/);
+      await page.goto('/devices/manage?deviceId=dev-p0');
+      await page.getByTestId('manage-device-users').click();
+      await expect(page).toHaveURL(/\/device-users\?deviceId=dev-p0$/);
       await expect(page.getByTestId('device-user-create')).toBeEnabled();
       await expect.poll(() => deviceUserReads.length).toBe(readsBeforeSettings + 1);
     }
@@ -122,7 +124,7 @@ for (const role of ROLES)
       ['/ota/campaigns', 'campaign-create-open', platform.slice(0, 2), false],
     ] as [string, string, string[], boolean][]) {
       if (!routes.find(([p]) => p === path)![1].includes(role)) continue;
-      await page.goto(path);
+      await page.goto(path === '/licenses' || path === '/device-users' ? `${path}?deviceId=dev-p0` : path);
       const button = page.getByTestId(id);
       if (allowed.includes(role)) await expect(button).toBeEnabled();
       else if (hidden) await expect(button).toHaveCount(0);

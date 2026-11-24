@@ -11,6 +11,7 @@ import { afterEach, assert, test } from 'vitest';
 import { act, cleanup, render, renderHook, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
+import { p0Device } from '../e2e/qa05-api-fixtures.js';
 import { DeviceUsersController } from '../src/app/feature-controllers.js';
 import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../src/pages/device-users/DeviceUsersPage.js';
 import type { DeviceUsersPageProps } from '../src/pages/device-users/DeviceUsersPage.js';
@@ -481,18 +482,29 @@ test('R10 迟到的列表请求不会替换当前筛选及客户标签', async (
   let slowRequested = false;
   const api: ApiClient = {
     request: async <T,>(path: string) => {
-      if (path.endsWith('?keyword=slow')) {
+      if (new URLSearchParams(path.split('?')[1]).get('keyword') === 'slow') {
         slowRequested = true;
         return (await slowResponse) as T;
       }
-      if (path.endsWith('?keyword=fast')) {
-        return { data: [{ ...LIST_ITEM, customerName: '当前客户' }] } as T;
+      if (new URLSearchParams(path.split('?')[1]).get('keyword') === 'fast') {
+        return { data: [{ ...LIST_ITEM, activeDeviceCount: 1, customerName: '当前客户' }] } as T;
       }
       return { data: [], meta: { nextCursor: null } } as T;
     },
   };
   render(
-    <DeviceUsersController api={api} session={{ username: 't04', roles: ['PlatformSuperAdmin'], customerId: null }} />,
+    <DeviceUsersController
+      api={api}
+      session={{ username: 't04', roles: ['PlatformSuperAdmin'], customerId: null }}
+      device={{
+        ...p0Device,
+        customer: { id: 'cust-1', name: '客户' },
+        operationalStatus: 'Active',
+        connectivity: 'ONLINE',
+        certificate: null,
+      }}
+      linkedUserId={null}
+    />,
   );
   const keyword = screen.getByTestId('device-user-keyword');
   const search = screen.getByTestId('device-user-search');
@@ -503,7 +515,7 @@ test('R10 迟到的列表请求不会替换当前筛选及客户标签', async (
   await user.type(keyword, 'fast');
   await user.click(search);
   await screen.findByText('当前客户');
-  await act(async () => finishSlow({ data: [{ ...LIST_ITEM, customerName: '迟到的客户' }] }));
+  await act(async () => finishSlow({ data: [{ ...LIST_ITEM, activeDeviceCount: 1, customerName: '迟到的客户' }] }));
   assert.ok(screen.getByText('当前客户'));
   assert.equal(screen.queryByText('迟到的客户'), null);
 });

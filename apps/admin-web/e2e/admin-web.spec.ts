@@ -39,10 +39,10 @@ test('H-01 API 拒绝停用会话后清除浏览器会话并返回登录', async
   qa05.proof.disabledSessionLogout = true;
 });
 
-test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏', async ({ page, qa05 }) => {
+test('M-01 CustomerViewer 从设备详情查询设备用户详情，全部写入口隐藏', async ({ page, qa05 }) => {
   await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
   await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
-  await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await routeP0Apis(page);
   const row = {
     deviceUserId: 'du-viewer',
     customerId: 'cust-a',
@@ -51,22 +51,28 @@ test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐
     displayName: '本租户设备用户',
     status: 'ACTIVE',
     version: 1,
-    activeDeviceCount: 0,
+    activeDeviceCount: 1,
     createdAt: '2026-10-04T00:00:00Z',
     updatedAt: '2026-10-04T00:00:00Z',
   };
-  const requests: { method: string; customerId: string | null }[] = [];
+  const requests: { method: string; deviceId: string | null }[] = [];
   await page.route('**/api/v1/admin/device-users**', (route) => {
     const url = new URL(route.request().url());
-    requests.push({ method: route.request().method(), customerId: url.searchParams.get('customerId') });
+    requests.push({ method: route.request().method(), deviceId: url.searchParams.get('scopeDeviceId') });
     return json(route, {
-      data: url.pathname.endsWith('/du-viewer') ? { ...row, assignments: [], syncStates: [] } : [row],
+      data: url.pathname.endsWith('/du-viewer')
+        ? {
+            ...row,
+            assignments: [{ assignmentId: 'm01-assign', deviceId: 'dev-p0', status: 'ACTIVE' }],
+            syncStates: [],
+          }
+        : [row],
       meta: { nextCursor: null },
     });
   });
-  await page.goto('/dashboard');
-  await page.getByRole('link', { name: '设备用户', exact: true }).click();
-  await expect(page).toHaveURL(/\/device-users$/);
+  await page.goto('/devices/manage?deviceId=dev-p0');
+  await page.getByTestId('manage-device-users').click();
+  await expect(page).toHaveURL(/\/device-users\?deviceId=dev-p0$/);
   await expect(page.getByTestId('device-user-row-du-viewer')).toContainText('本租户设备用户');
   await page.getByTestId('device-user-detail-du-viewer').click();
   await expect(page.getByTestId('detail-version')).toHaveText('v1');
@@ -81,7 +87,7 @@ test('M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐
   ]) {
     await expect(page.getByTestId(id)).toHaveCount(0);
   }
-  expect(requests.some((request) => request.customerId === 'cust-a')).toBe(true);
+  expect(requests.every((request) => request.deviceId === 'dev-p0')).toBe(true);
   expect(requests.every((request) => request.method === 'GET')).toBe(true);
   qa05.proof.viewerOwnRead = true;
   qa05.proof.viewerReadOnly = true;
@@ -113,12 +119,14 @@ test('A/T04 R10 设备用户创建、列表与详情刷新按同一客户归属�
   };
   let created = false;
   let detailReads = 0;
-  await page.route('**/api/v1/admin/devices**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
-  await page.route('**/api/v1/admin/customers**', (route) =>
-    json(route, { data: [{ id: customerId, name: customerName, status: 'ACTIVE' }], meta: { nextCursor: null } }),
+  await page.route('**/api/v1/admin/devices/device-t04', (route) =>
+    json(route, {
+      data: { ...p0Device, id: 'device-t04', customer: { id: customerId, name: customerName } },
+    }),
   );
   await page.route('**/api/v1/admin/device-users**', (route) => {
     const request = route.request();
+    expect(new URL(request.url()).searchParams.get('scopeDeviceId')).toBe('device-t04');
     if (request.method() === 'POST') {
       expect(created).toBe(false);
       expect(request.postDataJSON()).toEqual({
@@ -128,7 +136,7 @@ test('A/T04 R10 设备用户创建、列表与详情刷新按同一客户归属�
         password: 'local-t04-fixture',
       });
       created = true;
-      return json(route, { data: account }, 201);
+      return json(route, { data: { ...account, assignedDeviceId: 'device-t04' } }, 201);
     }
     if (new URL(request.url()).pathname.endsWith('/device-user-t04')) {
       detailReads += 1;
@@ -143,12 +151,9 @@ test('A/T04 R10 设备用户创建、列表与详情刷新按同一客户归属�
     }
     return json(route, { data: created ? [account] : [] });
   });
-  await page.goto('/device-users');
+  await page.goto('/device-users?deviceId=device-t04');
   await page.getByTestId('device-user-create').click();
-  await page
-    .getByTestId('device-user-create-form')
-    .getByLabel('所属客户', { exact: true })
-    .selectOption({ label: customerName });
+  await expect(page.getByTestId('create-user-customer')).toHaveCount(0);
   await page.getByTestId('create-username').fill(account.username);
   await page.getByTestId('create-display-name').fill(account.displayName);
   await page.getByTestId('create-password').fill('local-t04-fixture');
@@ -636,7 +641,7 @@ test('FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、�
   await expect(page.getByTestId('device-manage-page')).toContainText('P0 设备');
 
   await page.setViewportSize({ width: 768, height: 900 });
-  await page.goto('/licenses');
+  await page.goto('/licenses?deviceId=dev-p0');
   await expect(page.getByTestId('licenses-page')).toBeVisible();
   await expect(page.getByRole('button', { name: '下一页' })).toBeEnabled();
   const nextPage = page.waitForRequest((request) => request.url().includes('cursor=p1-next'));
@@ -649,7 +654,7 @@ test('FE-06 至 FE-10 六个生产路由可运行，并覆盖成功、空态、�
   await expect(page.getByTestId('config-empty')).toBeVisible();
 
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/device-users');
+  await page.goto('/device-users?deviceId=dev-p0');
   await expect(page.getByTestId('device-users-page')).toBeVisible();
   await expect(page.getByText('暂无设备用户')).toBeVisible();
   expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);
@@ -1384,7 +1389,24 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith('/lic-fe17/history')) return json(route, { data: [] });
     if (path.endsWith('/lic-fe17')) return json(route, { data: license });
-    return json(route, { data: [license], meta: { nextCursor: null } });
+    return json(route, {
+      data: [license],
+      meta: {
+        nextCursor: null,
+        scope: {
+          contractId: 'con-fe17',
+          devices: [
+            {
+              deviceId: license.deviceId,
+              customerId: license.customerId,
+              associationId: association.associationId,
+              label: device.alias,
+              canCreate: true,
+            },
+          ],
+        },
+      },
+    });
   });
   await page.route('**/api/v1/admin/contracts/con-fe17**', (route) => {
     const request = route.request();
@@ -1432,7 +1454,7 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
   await expect(page.getByTestId('contract-associations')).toContainText('dev-bound');
   await expect(page.getByTestId('license-summary')).toContainText('授权有效');
   await page.getByTestId('license-summary-open').click();
-  await expect(page).toHaveURL(/\/licenses\?licenseId=lic-fe17$/);
+  await expect(page).toHaveURL(/\/licenses\?contractId=con-fe17&deviceId=dev-bound&licenseId=lic-fe17$/);
   await expect(page.getByTestId('license-id')).toContainText('lic-fe17');
   await expect(page.getByRole('region', { name: '能力授权（Entitlement）' })).toContainText('已启用');
   await expect(page.getByTestId('license-history')).toBeVisible();

@@ -332,6 +332,28 @@ export const EN: Readonly<Record<string, string>> = {
   'menu.device-view': 'View Devices',
   'menu.device-operate': 'Operate Devices',
   'menu.device-group': 'Device Groups',
+  'cmpT07.contractScope': 'Contract license scope {id}',
+  'cmpT07.chooseLicenseContext':
+    'Open Contract Details to manage licenses for its devices. For a device without an applicable contract, open Device Details.',
+  'cmpT07.chooseContract': 'Go to Contracts',
+  'cmpT07.openLicenses': 'Manage licenses',
+  'cmpT07.openDeviceUsers': 'Manage device users',
+  'cmpT07.chooseDeviceUsers': 'Choose a device, then open Device Users from its management details.',
+  'cmpT07.assignExisting': 'Assign an existing account',
+  'cmpT07.accountWideEdits':
+    'Editing, resetting the password, or disabling this account affects all its assigned devices.',
+  'cmpT07.disableAccount': 'Disable the entire account',
+  'cmpT07.revokeDevice': 'Remove from this device',
+  'cmpT07.createAndAssign':
+    'Saving creates the account and assigns it to this device. If assignment fails, creation is rolled back and you can retry.',
+  'cmpT07.retryCreate':
+    'Re-enter the password to retry. If the submission outcome is unknown, refresh the device user list first.',
+  'cmpT07.createdAndAssigned': 'The account was created and assigned to this device.',
+  'cmpT07.createdWithoutAssignment':
+    'The account was created without a device assignment. Use Assign an existing account to continue.',
+  'cmpT07.noEligibleUsers': 'This customer has no accounts available for assignment to this device.',
+  'cmpT07.chooseUser': 'Select an account',
+  'cmpT07.disableAccountDescription': 'Disabling {username} stops the account from being used on all assigned devices.',
   'deviceWorkbench.chooseDevice': 'Choose a device in Device Groups',
   'deviceWorkbench.openMedia': 'View device media',
   'deviceWorkbench.openAlarms': 'View device alarms and events',

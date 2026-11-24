@@ -125,9 +125,6 @@ export function canManageUsers(role: Role): boolean {
 export function canReadUsers(role: Role): boolean {
   return hasPermission(role, 'user:read');
 }
-export function canReadDeviceUsers(role: Role): boolean {
-  return hasPermission(role, 'device-user:read');
-}
 export function canReadSettings(role: Role): boolean {
   return hasPermission(role, 'settings:read');
 }

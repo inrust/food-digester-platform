@@ -306,6 +306,14 @@ export async function bindContractDevices(
         afterValue: { deviceIds, validFrom: validFrom.toISOString(), validTo: validTo.toISOString() },
       },
       async (tx) => {
+        for (const id of [...deviceIds].sort()) {
+          await tx.$queryRaw`SELECT id FROM devices WHERE id = ${id} FOR UPDATE`;
+        }
+        await tx.$queryRaw`SELECT id FROM contracts WHERE id = ${contractId} FOR UPDATE`;
+        const current = await loadContract(tx, contractId);
+        assertContractAssociatable(current.status as ContractStatus);
+        assertAssociationWindow(current, validFrom, validTo);
+        await loadAndCheckDevices(tx, current, deviceIds);
         const created: ContractDeviceAssociationView[] = [];
         for (const deviceId of deviceIds) {
           const row = await associations(tx).create({
@@ -379,6 +387,9 @@ export async function unbindContractDevices(
       afterValue: { unbound: deviceIds },
     },
     async (tx) => {
+      for (const id of [...deviceIds].sort()) {
+        await tx.$queryRaw`SELECT id FROM devices WHERE id = ${id} FOR UPDATE`;
+      }
       // 闭合窗口：validTo = max(now, validFrom)（未来生效的关联解绑后为空区间，不再占排他约束）
       for (const row of active) {
         const closeAt = row.validFrom.getTime() > now.getTime() ? row.validFrom : now;

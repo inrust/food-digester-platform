@@ -45,6 +45,7 @@ export interface DeviceUserView {
   readonly version: number;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly assignedDeviceId?: string;
 }
 
 interface DeviceUserReadView extends DeviceUserView {
@@ -178,6 +179,37 @@ async function loadUser(client: DbClient, actor: ActorContext, deviceUserId: str
   return row;
 }
 
+async function loadUserDevice(client: DbClient, actor: ActorContext, deviceId: string) {
+  const device = await client.device.findFirst({
+    where: { id: deviceId, ...(actor.actorType === 'customer' ? { customerId: actor.customerId ?? '' } : {}) },
+    select: { id: true, customerId: true, lifecycleStatus: true },
+  });
+  if (!device?.customerId) throw deviceUserNotFound();
+  return { ...device, customerId: device.customerId };
+}
+
+async function assertUserDevice(
+  tx: DbClient,
+  actor: ActorContext,
+  deviceId: string | undefined,
+  customerId: string,
+  deviceUserId?: string,
+): Promise<void> {
+  if (deviceId === undefined) return;
+  await tx.$queryRaw`SELECT id FROM devices WHERE id = ${deviceId} FOR UPDATE`;
+  const device = await loadUserDevice(tx, actor, deviceId);
+  if (device.customerId !== customerId) throw deviceUserNotFound();
+  if (deviceUserId === undefined) {
+    if (device.lifecycleStatus === 'Retired') throw deviceUserConflict('The device is retired');
+  } else {
+    const active = await tx.deviceUserAssignment.findFirst({
+      where: { deviceId, deviceUserId, customerId, status: 'ACTIVE' },
+      select: { id: true },
+    });
+    if (!active) throw deviceUserNotFound();
+  }
+}
+
 function auditActor(actor: ActorContext): { actorId: string; actorRole: string } {
   return { actorId: actor.actorId, actorRole: actor.roles[0] };
 }
@@ -229,6 +261,7 @@ async function bumpVersion(
 // ---------- 创建 ----------
 
 export interface CreateDeviceUserInput {
+  readonly deviceId?: string;
   /** 平台角色必传；Customer 角色强制本 Customer（忽略入参）。 */
   readonly customerId?: string | undefined;
   readonly username: string;
@@ -244,7 +277,10 @@ export async function createDeviceUser(
   actor: ActorContext,
   input: CreateDeviceUserInput,
 ): Promise<DeviceUserView> {
-  const customerId = actor.actorType === 'customer' ? (actor.customerId ?? undefined) : input.customerId;
+  const device = input.deviceId === undefined ? undefined : await loadUserDevice(deps.client, actor, input.deviceId);
+  if (device && input.customerId !== undefined && input.customerId !== device.customerId) throw deviceUserNotFound();
+  const customerId =
+    device?.customerId ?? (actor.actorType === 'customer' ? (actor.customerId ?? undefined) : input.customerId);
   if (!customerId) throw deviceUserValidationFailed('customerId is required');
   if (input.username.trim().length === 0 || input.username.trim().length > 64) {
     throw deviceUserValidationFailed('username must be 1~64 characters');
@@ -267,9 +303,14 @@ export async function createDeviceUser(
         reason: input.reason ?? null,
         ...auditActor(actor),
         customerId,
-        afterValue: { username: input.username.trim(), status: 'ACTIVE' },
+        afterValue: {
+          username: input.username.trim(),
+          status: 'ACTIVE',
+          ...(device ? { assignedDeviceId: device.id } : {}),
+        },
       },
       async (tx) => {
+        await assertUserDevice(tx, actor, device?.id, customerId);
         const row = await users(tx).create({
           data: {
             customerId,
@@ -279,7 +320,12 @@ export async function createDeviceUser(
             status: 'ACTIVE',
           },
         });
-        return toView(row);
+        if (!device) return toView(row);
+        await assignments(tx).create({
+          data: { deviceUserId: row.id, deviceId: device.id, customerId, status: 'ACTIVE' },
+        });
+        await enqueueUsersChanged(tx, device.id, row.id, row.version);
+        return { ...toView(row), assignedDeviceId: device.id };
       },
     );
   } catch (err) {
@@ -293,6 +339,7 @@ export async function createDeviceUser(
 // ---------- 修改 / 停用 ----------
 
 export interface DeviceUserWriteInput {
+  readonly deviceId?: string;
   readonly deviceUserId: string;
   readonly ifMatchVersion: number;
   readonly reason: string;
@@ -325,6 +372,7 @@ export async function updateDeviceUser(
       afterValue: { status: 'ACTIVE', passwordRotated: passwordHash !== undefined },
     },
     async (tx) => {
+      await assertUserDevice(tx, actor, input.deviceId, row.customerId, row.id);
       const data: Record<string, unknown> = {};
       if (input.displayName !== undefined) data.displayName = input.displayName;
       if (passwordHash !== undefined) data.passwordHash = passwordHash;
@@ -362,6 +410,7 @@ export async function disableDeviceUser(
       afterValue: { status: 'DISABLED' },
     },
     async (tx) => {
+      await assertUserDevice(tx, actor, input.deviceId, row.customerId, row.id);
       await bumpVersion(tx, row, input.ifMatchVersion, { status: 'DISABLED' });
       for (const deviceId of await activeDeviceIds(tx, row.id)) {
         await enqueueUsersChanged(tx, deviceId, row.id, row.version + 1);
@@ -392,8 +441,12 @@ export async function assignDevices(
   input: AssignDevicesInput,
 ): Promise<AssignDevicesResult> {
   const deviceIds = [...new Set(input.deviceIds)];
+  if (input.deviceId && (deviceIds.length !== 1 || deviceIds[0] !== input.deviceId)) throw deviceUserNotFound();
   if (deviceIds.length === 0) throw deviceUserValidationFailed('deviceIds must be a non-empty array');
   const row = await loadUser(deps.client, actor, input.deviceUserId);
+  if (input.deviceId && (await loadUserDevice(deps.client, actor, input.deviceId)).customerId !== row.customerId) {
+    throw deviceUserNotFound();
+  }
   if (row.status === 'DISABLED') throw deviceUserConflict('A disabled user cannot be assigned to devices');
   const deviceRows = await (
     (deps.client as unknown as Record<string, unknown>).device as {
@@ -423,6 +476,7 @@ export async function assignDevices(
         afterValue: { deviceIds },
       },
       async (tx) => {
+        await assertUserDevice(tx, actor, input.deviceId, row.customerId);
         await bumpVersion(tx, row, input.ifMatchVersion, {});
         const created: DeviceUserAssignmentView[] = [];
         for (const deviceId of deviceIds) {
@@ -451,8 +505,12 @@ export async function revokeDevices(
 ): Promise<{ deviceUserId: string; deviceIds: readonly string[] }> {
   const at = deps.now?.() ?? new Date();
   const deviceIds = [...new Set(input.deviceIds)];
+  if (input.deviceId && (deviceIds.length !== 1 || deviceIds[0] !== input.deviceId)) throw deviceUserNotFound();
   if (deviceIds.length === 0) throw deviceUserValidationFailed('deviceIds must be a non-empty array');
   const row = await loadUser(deps.client, actor, input.deviceUserId);
+  if (input.deviceId && (await loadUserDevice(deps.client, actor, input.deviceId)).customerId !== row.customerId) {
+    throw deviceUserNotFound();
+  }
   const active = await assignments(deps.client).findMany({
     where: { deviceUserId: row.id, deviceId: { in: deviceIds }, status: 'ACTIVE' },
   });
@@ -475,6 +533,7 @@ export async function revokeDevices(
       afterValue: { revoked: deviceIds },
     },
     async (tx) => {
+      await assertUserDevice(tx, actor, input.deviceId, row.customerId, row.id);
       await bumpVersion(tx, row, input.ifMatchVersion, {});
       for (const deviceId of deviceIds) {
         const { count } = await assignments(tx).updateMany({
@@ -492,6 +551,8 @@ export async function revokeDevices(
 // ---------- 查询 ----------
 
 export interface ListDeviceUsersFilter {
+  readonly scopeDeviceId?: string;
+  readonly eligible?: boolean;
   readonly customerId?: string | undefined;
   readonly region?: string | undefined;
   readonly subregion?: string | undefined;
@@ -519,7 +580,15 @@ export async function listDeviceUsers(
   if (filter.status !== undefined && !['ACTIVE', 'DISABLED'].includes(filter.status)) {
     throw deviceUserValidationFailed('status must be ACTIVE or DISABLED');
   }
-  const scopedCustomer = actor.actorType === 'customer' ? actor.customerId : filter.customerId;
+  const scope =
+    filter.scopeDeviceId === undefined ? undefined : await loadUserDevice(deps.client, actor, filter.scopeDeviceId);
+  if (
+    scope &&
+    ((filter.customerId && filter.customerId !== scope.customerId) || (filter.deviceId && filter.deviceId !== scope.id))
+  ) {
+    throw deviceUserNotFound();
+  }
+  const scopedCustomer = scope?.customerId ?? (actor.actorType === 'customer' ? actor.customerId : filter.customerId);
   if (scopedCustomer === null) return [];
   const hasTopologyFilter =
     filter.region !== undefined || filter.subregion !== undefined || filter.deviceId !== undefined;
@@ -546,13 +615,17 @@ export async function listDeviceUsers(
     });
     matchingDeviceIds = deviceRows.map((row) => row.id);
   }
+  const inScope =
+    scope === undefined ? undefined : { deviceId: scope.id, customerId: scope.customerId, status: 'ACTIVE' };
   const rows = await users(deps.client).findMany({
     where: {
       ...(scopedCustomer !== undefined ? { customerId: scopedCustomer } : {}),
-      ...(matchingDeviceIds !== undefined
-        ? { assignments: { some: { status: 'ACTIVE', deviceId: { in: [...matchingDeviceIds] } } } }
-        : {}),
-      ...(filter.status !== undefined ? { status: filter.status } : {}),
+      ...(inScope
+        ? { assignments: filter.eligible ? { none: inScope } : { some: inScope } }
+        : matchingDeviceIds !== undefined
+          ? { assignments: { some: { status: 'ACTIVE', deviceId: { in: [...matchingDeviceIds] } } } }
+          : {}),
+      ...(filter.eligible ? { status: 'ACTIVE' } : filter.status !== undefined ? { status: filter.status } : {}),
       ...(filter.keyword !== undefined && filter.keyword.trim() !== ''
         ? {
             OR: [
@@ -562,7 +635,7 @@ export async function listDeviceUsers(
           }
         : {}),
     },
-    include: { assignments: { where: { status: 'ACTIVE' }, select: { deviceId: true } } },
+    include: { assignments: { where: inScope ?? { status: 'ACTIVE' }, select: { deviceId: true } } },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 200,
   });
@@ -582,22 +655,31 @@ export async function getDeviceUser(
   deps: DeviceUserDeps,
   actor: ActorContext,
   deviceUserId: string,
+  scopeDeviceId?: string,
 ): Promise<DeviceUserDetailView> {
   const row = await loadUser(deps.client, actor, deviceUserId);
+  const device = scopeDeviceId === undefined ? undefined : await loadUserDevice(deps.client, actor, scopeDeviceId);
+  if (device && device.customerId !== row.customerId) throw deviceUserNotFound();
   const rows = await assignments(deps.client).findMany({
-    where: { deviceUserId: row.id },
+    where: { deviceUserId: row.id, ...(device ? { deviceId: device.id, customerId: device.customerId } : {}) },
     orderBy: [{ assignedAt: 'desc' }, { id: 'desc' }],
   });
+  if (device && !rows.some(({ status }) => status === 'ACTIVE')) throw deviceUserNotFound();
   const outbox = (deps.client as unknown as Record<string, unknown>).outboxEvent as OutboxDelegate;
   const events = await outbox.findMany({
-    where: { aggregateType: 'deviceUser', aggregateId: row.id, eventType: USERS_CHANGED_NOTIFICATION },
+    where: {
+      aggregateType: 'deviceUser',
+      aggregateId: row.id,
+      eventType: USERS_CHANGED_NOTIFICATION,
+      ...(device ? { payload: { path: ['deviceId'], equals: device.id } } : {}),
+    },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 500,
   });
   const receipts = await (
     (deps.client as unknown as Record<string, unknown>).deviceUserSyncReceipt as SyncReceiptDelegate
   ).findMany({
-    where: { deviceUserId: row.id },
+    where: { deviceUserId: row.id, ...(device ? { deviceId: device.id } : {}) },
     orderBy: [{ servedAt: 'desc' }, { id: 'desc' }],
     take: 500,
   });
@@ -609,7 +691,7 @@ export async function getDeviceUser(
   for (const event of events) {
     const payload = event.payload as { deviceId?: unknown; entityVersion?: unknown } | null;
     const deviceId = typeof payload?.deviceId === 'string' ? payload.deviceId : null;
-    if (deviceId === null || latestByDevice.has(deviceId)) continue;
+    if (deviceId === null || (device && deviceId !== device.id) || latestByDevice.has(deviceId)) continue;
     const status = ['PENDING', 'PUBLISHED', 'FAILED'].includes(event.status)
       ? (event.status as 'PENDING' | 'PUBLISHED' | 'FAILED')
       : 'PENDING';

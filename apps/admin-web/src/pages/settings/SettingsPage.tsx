@@ -7,7 +7,6 @@ import { translate } from '../../i18n/i18n.js';
  *   Customer scope 变更、启停、受控重置；角色集封闭（DEC-012），高风险权限变更明确确认；
  *   界面显示名用“设备操作员”（不使用“运维人员”）；
  * - RBAC 权限矩阵只读展示（DEC-012：V1 固定，仅可分配已有角色）；
- * - 设备用户入口按 device-user:read 跳转至 FE-09 独立页面；
  * - 业务设置（BE-SET-01）：封闭 key 集四项，乐观锁 version 更新（409 → 刷新恢复）；
  *   command.confirmation 确认方式 DEC-023 固定——只读不提供编辑；固定协议枚举/AWS 运维配置不可编辑；
  * - 自我提权/越权由服务端 403 拒绝并正确呈现；不管理 IAM/CloudWatch/Budget/生产账号。
@@ -29,7 +28,6 @@ import {
   USER_STATUS_LABELS,
   USER_STATUS_OPTIONS,
   canManageUsers,
-  canReadDeviceUsers,
   canReadSettings,
   canReadUsers,
   canWriteSettings,
@@ -59,7 +57,6 @@ export interface SettingsPageProps {
     readonly error?: unknown;
   };
   readonly onUpdateSetting: (key: SettingKey, value: unknown, version: number) => Promise<SettingView>;
-  readonly onNavigate: (path: string) => void;
   readonly onRefresh: () => void | Promise<void>;
 }
 type SettingsTab = 'platform-users' | 'business-settings';
@@ -100,7 +97,6 @@ export function SettingsPage({
   onResetPassword,
   settings,
   onUpdateSetting,
-  onNavigate,
   onRefresh,
 }: SettingsPageProps) {
   const visibleTabs: readonly SettingsTab[] = [
@@ -264,20 +260,6 @@ export function SettingsPage({
             {TAB_LABELS[t]}
           </Button>
         ))}
-        {canReadDeviceUsers(role) ? (
-          <a
-            className="settings-device-users-link"
-            data-testid="settings-device-users-link"
-            href="/device-users"
-            onClick={(event) => {
-              if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-              event.preventDefault();
-              onNavigate('/device-users');
-            }}
-          >
-            {translate('page.7fc5eb892df6')}
-          </a>
-        ) : null}
       </nav>
 
       {notice !== null ? (

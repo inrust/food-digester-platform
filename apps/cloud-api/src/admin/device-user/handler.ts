@@ -15,7 +15,7 @@
  * 任何变化 version+1 并向受影响设备发 USERS_CHANGED（Outbox，deviceAction=SYNC）。
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */
-import { AuthError, withAuthorization } from '@fdp/auth';
+import { AuthError, hasPermission, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
 import { mapDbErrorToHttp } from '@fdp/database';
 import type { AdminHttpRequest, AdminHttpResponse } from '../onboarding/handler.js';
@@ -133,8 +133,15 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
   const now = deps.now ?? (() => new Date());
   const meta = (req: AdminHttpRequest) => ({ requestId: req.requestId, timestamp: now().toISOString() });
   const actorOf = (req: AdminHttpRequest) => req.actor as ActorContext;
+  const deviceScopeOf = (req: AdminHttpRequest) => {
+    const id = req.query?.scopeDeviceId;
+    if (id === undefined) return {};
+    if (!id.trim() || id.includes(',')) throw deviceUserValidationFailed('Invalid device user scope');
+    return { deviceId: id };
+  };
   const writeInputOf = (req: AdminHttpRequest, allowedKeys: readonly string[]) => ({
     deviceUserId: requireUserId(req),
+    ...deviceScopeOf(req),
     ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
     reason: requireReason(bodyOf(req, allowedKeys)),
   });
@@ -148,6 +155,7 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
       if (typeof body.username !== 'string') throw deviceUserValidationFailed('username is required');
       if (typeof body.password !== 'string') throw deviceUserValidationFailed('password is required');
       const view = await createDeviceUser(deps, actorOf(req), {
+        ...deviceScopeOf(req),
         ...(typeof body.customerId === 'string' ? { customerId: body.customerId } : {}),
         username: body.username,
         ...(body.displayName !== undefined ? { displayName: optionalString(body.displayName, 'displayName') } : {}),
@@ -162,7 +170,16 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
     { permission: 'device-user:read' },
     async (req) => {
       const q = req.query ?? {};
+      const { deviceId: scopeDeviceId } = deviceScopeOf(req);
+      const eligible = q.eligible === 'true';
+      if (q.eligible !== undefined && (!scopeDeviceId || !['true', 'false'].includes(q.eligible))) {
+        throw deviceUserValidationFailed('Eligibility requires a device scope');
+      }
+      if (eligible && !actorOf(req).roles.some((role) => hasPermission(role, 'device-user:write'))) {
+        throw new AuthError('FORBIDDEN');
+      }
       const items = await listDeviceUsers(deps, actorOf(req), {
+        ...(scopeDeviceId !== undefined ? { scopeDeviceId, eligible } : {}),
         ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
         ...(q.region !== undefined ? { region: q.region } : {}),
         ...(q.subregion !== undefined ? { subregion: q.subregion } : {}),
@@ -177,7 +194,7 @@ export function createAdminDeviceUserHandlers(deps: AdminDeviceUserHandlerDeps):
   const detail = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'device-user:read' },
     async (req) => {
-      const view = await getDeviceUser(deps, actorOf(req), requireUserId(req));
+      const view = await getDeviceUser(deps, actorOf(req), requireUserId(req), deviceScopeOf(req).deviceId);
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );

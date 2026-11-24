@@ -24,7 +24,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
@@ -35,11 +35,9 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
-    '/licenses',
     '/settings',
     '/customers',
     '/sites',
-    '/device-users',
     '/audit-logs',
   ],
   PlatformOperator: [
@@ -51,7 +49,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
-    '/licenses',
     '/customers',
     '/sites',
   ],
@@ -62,10 +59,8 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
-    '/licenses',
     '/customers',
     '/sites',
-    '/device-users',
     '/audit-logs',
   ],
   CustomerAdmin: [
@@ -78,7 +73,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/devices',
     '/settings',
     '/sites',
-    '/device-users',
   ],
   CustomerViewer: [
     '/dashboard',
@@ -88,7 +82,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/sites',
-    '/device-users',
   ],
 };
 
@@ -118,7 +111,13 @@ test('设备侧栏采用原型四项，旧工作台路径保留共享读取权�
 test('设备用户路由与菜单遵循共享读取权限；写权限保持独立', () => {
   for (const role of ROLES) {
     const readable = hasPermission(role, 'device-user:read');
-    assert.equal(menuPaths([role]).includes('/device-users'), readable, role);
+    assert.isFalse(menuPaths([role]).includes('/device-users'), role);
+    assert.isFalse(menuPaths([role]).includes('/licenses'), role);
+    assert.equal(
+      resolveRoute('/licenses', sessionOf(role)).kind,
+      hasPermission(role, 'license:read') ? 'allow' : 'forbidden',
+      role,
+    );
     assert.equal(resolveRoute('/device-users', sessionOf(role)).kind, readable ? 'allow' : 'forbidden', role);
   }
   assert.equal(hasPermission('CustomerViewer', 'device-user:write'), false);

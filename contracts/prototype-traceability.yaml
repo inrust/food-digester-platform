@@ -126,7 +126,7 @@
       "feTasks": ["FE-07", "FE-08", "FE-09", "FE-13"],
       "beTasks": ["BE-DEV-02", "BE-DEV-06", "BE-CERT-03", "BE-CFG-01", "BE-OTA-01"],
       "disposition": "Adapt",
-      "basis": "任务清单 §13.2：派生字段只读；证书为请求轮换；升级走 Campaign；CMP B/T06 R04–R06：从设备详情进入本设备的配置、媒体和告警",
+      "basis": "任务清单 §13.2：派生字段只读；证书为请求轮换；升级走 Campaign；CMP B/T06 R04–R06：从设备详情进入本设备的配置、媒体和告警。CMP B/T07 R10、R15、R17：设备详情承接存量授权和单设备用户",
       "elements": [
         { "id": "device-manage.button.updateConfig", "kind": "button", "name": "更新配置文件", "disposition": "Adapt", "basis": "BE-CFG-01：不可变配置版本发布，Contract/Region/Site/Alias 只读派生", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-manage.button.viewConfig", "kind": "button", "name": "查看当前配置文件", "disposition": "Adopt", "source": { "taskId": "BE-CFG-01", "api": "getConfiguration" } },
@@ -213,7 +213,7 @@
         { "id": "contract-detail.column.enabledStatus", "kind": "table-column", "name": "关联设备-启用状态", "disposition": "Reject", "rejectCategory": "mixed-status", "basis": "DEC-010：展示四轴状态而非单一启用字段" },
         { "id": "contract-detail.field.fourAxisStatus", "kind": "field", "name": "关联设备-四轴状态（替代）", "disposition": "Adapt", "basis": "DEC-010", "source": { "taskId": "BE-CON-02", "api": "listContractDevices", "field": "status" } },
         { "id": "contract-detail.column.firmware", "kind": "table-column", "name": "关联设备-软件版本", "disposition": "Adopt", "source": { "taskId": "BE-CON-02", "api": "listContractDevices", "field": "firmwareVersion" } },
-        { "id": "contract-detail.field.licenseSummary", "kind": "field", "name": "License 授权摘要（独立展示）", "disposition": "Adapt", "basis": "DEC-007：Contract 状态不直接显示成 License 状态", "source": { "taskId": "BE-LIC-01", "api": "getDeviceLicense", "field": "summary" } }
+        { "id": "contract-detail.field.licenseSummary", "kind": "field", "name": "License 授权摘要（独立展示）", "disposition": "Adapt", "basis": "DEC-007：Contract 状态不直接显示成 License 状态。CMP B/T07 R15：合约详情进入关联设备授权，关联和客户范围由服务端校验", "source": { "taskId": "BE-LIC-01", "api": "getDeviceLicense", "field": "summary" } }
       ]
     },
     {

@@ -12,7 +12,7 @@ const GROUP_FILTER_KEYS = [
   'connectivity',
   'licenseStatus',
 ] as const satisfies readonly (keyof DeviceListFilters)[];
-type DeviceWorkbench = '/configurations' | '/media' | '/alarms';
+type DeviceWorkbench = '/configurations' | '/media' | '/alarms' | '/device-users' | '/licenses';
 
 export function readDeviceGroupFilters(search: string): DeviceListFilters {
   const params = new URLSearchParams(search);
@@ -73,11 +73,25 @@ export function deviceWorkbenchId(path: string, search: string): string | null {
       ? ['deviceId', 'targetDeviceId']
       : path === '/alarms'
         ? ['scopeDeviceId', 'deviceId']
-        : path === '/media'
+        : path === '/media' || path === '/device-users' || path === '/licenses'
           ? ['deviceId']
           : [];
   const values = keys.flatMap((key) => params.getAll(key));
   const id = values[0];
   if (id === undefined) return null;
   return id.trim() === '' || values.some((value) => value !== id) ? '' : id;
+}
+
+export function licenseWorkbenchPath(context: { contractId?: string; deviceId?: string; licenseId?: string }): string {
+  const params = new URLSearchParams();
+  if (context.contractId) params.set('contractId', context.contractId);
+  if (context.deviceId) params.set('deviceId', context.deviceId);
+  if (context.licenseId) params.set('licenseId', context.licenseId);
+  const query = params.toString();
+  return query ? `/licenses?${query}` : '/licenses';
+}
+
+export function uniqueQueryId(search: string, key: string): string | null {
+  const values = new URLSearchParams(search).getAll(key);
+  return values.length === 0 ? null : values.length === 1 ? values[0]!.trim() : '';
 }

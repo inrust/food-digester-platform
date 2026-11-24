@@ -299,7 +299,16 @@ export async function routeP0Apis(page: Page, options: { alarmRows?: boolean } =
   await page.route('**/api/v1/admin/licenses**', (route) => {
     const url = new URL(route.request().url());
     const nextCursor = !url.searchParams.has('cursor') ? 'p1-next' : null;
-    return json(route, { data: nextCursor ? [p1License] : [], meta: { nextCursor } });
+    const deviceId = url.searchParams.get('scopeDeviceId');
+    const contractId = url.searchParams.get('contractId');
+    const scope = {
+      contractId,
+      devices:
+        deviceId === 'dev-p0'
+          ? [{ deviceId, customerId: 'cust-a', associationId: null, label: p0Device.alias, canCreate: true }]
+          : [],
+    };
+    return json(route, { data: nextCursor && !contractId ? [p1License] : [], meta: { nextCursor, scope } });
   });
   await page.route('**/api/v1/admin/configurations**', (route) => json(route, { data: [], meta: {} }));
   await page.route('**/api/v1/admin/device-users**', (route) => json(route, { data: [], meta: {} }));

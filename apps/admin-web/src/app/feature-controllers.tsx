@@ -1,11 +1,18 @@
 import { deviceScopeMismatch } from './DeviceWorkbench.js';
-import { deviceGroupsReturnPath, groupFiltersFromContext, withGroupFilters } from '../router/device-navigation.js';
+import {
+  deviceGroupsReturnPath,
+  groupFiltersFromContext,
+  licenseWorkbenchPath,
+  uniqueQueryId,
+  withGroupFilters,
+} from '../router/device-navigation.js';
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { hasPermission } from '@fdp/auth/browser';
 import { createMediaDownloadUrl } from '../pages/media/media-api.js';
 import { LiveImagePreview } from '../pages/devices/LiveImagePreview.js';
+import { ApiClientError } from '../api/errors.js';
 import type { ApiClient } from '../api/http-client.js';
 import { collectAll } from './collect-all.js';
 import { useDevicePicker } from './device-picker.js';
@@ -57,11 +64,7 @@ import {
   revokeDeviceUser,
 } from '../pages/device-users/device-users-api.js';
 import { DeviceUsersPage, EMPTY_DEVICE_USER_FILTER } from '../pages/device-users/DeviceUsersPage.js';
-import type {
-  DeviceUserFilter,
-  DeviceUserTopologyOption,
-  DeviceUsersPageProps,
-} from '../pages/device-users/DeviceUsersPage.js';
+import type { DeviceUserFilter } from '../pages/device-users/DeviceUsersPage.js';
 import { useDeviceUserDetail } from '../pages/device-users/use-device-user-detail.js';
 import type { DeviceUserListItemView } from '../pages/device-users/types.js';
 import {
@@ -84,6 +87,7 @@ import {
   renewLicense,
   revokeLicense,
 } from '../pages/licenses/licenses-api.js';
+import type { LicenseScope, LicenseScopeView } from '../pages/licenses/licenses-api.js';
 import { EMPTY_LICENSE_FILTER, LicensesPage } from '../pages/licenses/LicensesPage.js';
 import type { LicenseDetailState, LicenseFilter } from '../pages/licenses/LicensesPage.js';
 import type { LicenseView } from '../pages/licenses/types.js';
@@ -348,7 +352,7 @@ export function DeviceManageController({
       }}
       onNavigate={(path) =>
         onNavigate(
-          /^(\/configurations|\/media|\/alarms)\?/.test(path)
+          /^(\/configurations|\/media|\/alarms|\/licenses|\/device-users)\?/.test(path)
             ? withGroupFilters(path, groupFiltersFromContext(search))
             : path,
         )
@@ -367,6 +371,25 @@ export function LicensesController({
   readonly search: string;
   readonly onNavigate: Navigate;
 }) {
+  const contractId = uniqueQueryId(search, 'contractId');
+  const deviceId = uniqueQueryId(search, 'deviceId');
+  const linkedId = uniqueQueryId(search, 'licenseId');
+  const groupSearch = groupFiltersFromContext(search);
+  const scope = useMemo<LicenseScope>(
+    () => ({
+      ...(contractId ? { contractId } : {}),
+      ...(deviceId ? { deviceId } : {}),
+    }),
+    [contractId, deviceId],
+  );
+  const pathFor = (licenseId?: string) =>
+    withGroupFilters(
+      licenseWorkbenchPath({
+        ...scope,
+        ...(licenseId ? { licenseId } : {}),
+      }),
+      groupSearch,
+    );
   const [filter, setFilter] = useState<LicenseFilter>(EMPTY_LICENSE_FILTER);
   const [list, setList] = useState<{
     rows: readonly LicenseView[] | null;
@@ -374,106 +397,166 @@ export function LicensesController({
     error?: unknown;
     nextCursor?: string | null;
   }>({ rows: null });
-  const [createCandidates, setCreateCandidates] = useState<
-    readonly {
-      deviceId: string;
-      label: string;
-    }[]
-  >([]);
+  const [scopeKey, setScopeKey] = useState<string | null>(null);
+  const resolved = useMemo(() => (scopeKey === null ? null : (JSON.parse(scopeKey) as LicenseScopeView)), [scopeKey]);
   const [detail, setDetail] = useState<LicenseDetailState>({ kind: 'none' });
-  const selected = useRef<{ id: string } | null>(null);
+  const selected = useRef<{ id: string; scope?: LicenseScope } | null>(null);
+  const latestList = useRef(0);
+  const invalid = contractId === '' || deviceId === '' || linkedId === '';
+  const lookupLegacy = !contractId && !deviceId && Boolean(linkedId);
   const loadList = useCallback(
     async (cursor?: string) => {
+      const generation = ++latestList.current;
       setList((old) => ({ ...old, loading: true, error: undefined }));
       try {
+        if (invalid) throw deviceScopeMismatch();
+        if (lookupLegacy && linkedId) {
+          const license = await fetchLicense(api, linkedId);
+          if (generation !== latestList.current) return;
+          if (license.licenseId !== linkedId) throw deviceScopeMismatch();
+          onNavigate(
+            withGroupFilters(licenseWorkbenchPath({ deviceId: license.deviceId, licenseId: linkedId }), groupSearch),
+            { replace: true },
+          );
+          return;
+        }
         const result = await fetchLicenses(
           api,
-          { status: filter.licenseStatus, keyword: filter.keyword },
+          { status: filter.licenseStatus, keyword: filter.keyword, scope },
           { ...(cursor ? { cursor } : {}), limit: 50 },
         );
+        if (generation !== latestList.current) return;
+        const context = result.scope;
+        if (
+          !context ||
+          (contractId !== null && context.contractId !== contractId) ||
+          (deviceId !== null && (context.devices.length !== 1 || context.devices[0]?.deviceId !== deviceId)) ||
+          result.items.some(
+            (row) => !context.devices.some((d) => d.deviceId === row.deviceId && d.customerId === row.customerId),
+          )
+        ) {
+          throw deviceScopeMismatch();
+        }
+        if (!contractId && context.contractId && deviceId) {
+          onNavigate(
+            withGroupFilters(
+              licenseWorkbenchPath({
+                contractId: context.contractId,
+                deviceId,
+                ...(linkedId ? { licenseId: linkedId } : {}),
+              }),
+              groupSearch,
+            ),
+            { replace: true },
+          );
+          return;
+        }
+        setScopeKey(JSON.stringify(context));
         setList({ rows: result.items, loading: false, nextCursor: result.nextCursor });
       } catch (error) {
-        setList((old) => ({ ...old, loading: false, error }));
+        if (generation !== latestList.current) return;
+        selected.current = null;
+        setDetail({ kind: 'none' });
+        setScopeKey(null);
+        setList({ rows: [], error });
       }
     },
-    [api, filter],
+    [api, contractId, deviceId, filter, groupSearch, invalid, linkedId, lookupLegacy, onNavigate, scope],
   );
   const loadDetail = useCallback(
     async (id: string) => {
-      const selection = { id };
+      if (!resolved) return;
+      const selection: NonNullable<typeof selected.current> = { id };
       selected.current = selection;
       setDetail({ kind: 'loading' });
       try {
-        const license = await fetchLicense(api, id);
+        const license = await fetchLicense(api, id, scope);
         if (selection !== selected.current) return;
-        setDetail({ kind: 'ready', license, history: null });
+        const device = resolved.devices.find(
+          (candidate) => candidate.deviceId === license.deviceId && candidate.customerId === license.customerId,
+        );
+        if (license.licenseId !== id || !device) throw deviceScopeMismatch();
+        selection.scope = {
+          ...scope,
+          deviceId: device.deviceId,
+          ...(device.associationId ? { associationId: device.associationId } : {}),
+        };
         try {
-          const history = await fetchLicenseHistory(api, id);
+          const history = await fetchLicenseHistory(api, id, selection.scope);
           if (selected.current === selection) setDetail({ kind: 'ready', license, history });
         } catch (historyError) {
+          if (historyError instanceof ApiClientError && [403, 404, 409].includes(historyError.status))
+            throw historyError;
           if (selected.current === selection) setDetail({ kind: 'ready', license, history: [], historyError });
         }
       } catch (error) {
         if (selected.current === selection) setDetail({ kind: 'error', error });
       }
     },
-    [api],
+    [api, resolved, scope],
   );
-  const linkedLicenseId = useMemo(() => new URLSearchParams(search).get('licenseId')?.trim() || null, [search]);
   useEffect(() => {
     void loadList();
+    return () => {
+      latestList.current += 1;
+    };
   }, [loadList]);
   useEffect(() => {
-    if (linkedLicenseId === null) {
-      selected.current = null;
-      setDetail({ kind: 'none' });
-    } else if (selected.current?.id !== linkedLicenseId) void loadDetail(linkedLicenseId);
-  }, [linkedLicenseId, loadDetail]);
-  useEffect(() => {
-    let active = true;
-    void collectAll((cursor) => fetchDevices(api, undefined, { cursor, limit: 100 })).then(
-      (devices) => {
-        if (active) {
-          setCreateCandidates(
-            devices
-              .filter((device) => device.customer !== null && device.lifecycleStatus !== 'Retired')
-              .map((device) => ({ deviceId: device.id, label: device.alias ?? device.serialNumber })),
-          );
-        }
-      },
-      () => {
-        if (active) setCreateCandidates([]);
-      },
-    );
+    selected.current = null;
+    if (linkedId && resolved) void loadDetail(linkedId);
+    else setDetail({ kind: 'none' });
     return () => {
-      active = false;
+      selected.current = null;
     };
-  }, [api]);
+  }, [linkedId, loadDetail, resolved]);
+  const writeContext = (id: string): [LicenseScope, number] => {
+    const target = selected.current;
+    if (target?.id !== id || !target.scope || detail.kind !== 'ready' || detail.license.licenseId !== id) {
+      throw deviceScopeMismatch();
+    }
+    return [target.scope, detail.license.version];
+  };
   const refresh = () => {
     void loadList();
-    if (selected.current !== null) void loadDetail(selected.current.id);
+    if (linkedId && resolved) void loadDetail(linkedId);
   };
   return (
     <LicensesPage
+      key={JSON.stringify([scopeKey, linkedId])}
       role={roleOf(session)}
+      scopeLabel={
+        contractId
+          ? translate('cmpT07.contractScope', { id: contractId })
+          : resolved?.devices[0]
+            ? translate('deviceWorkbench.scope', { name: resolved.devices[0].label, id: resolved.devices[0].deviceId })
+            : ''
+      }
       list={list}
       appliedFilter={filter}
       onApplyFilter={setFilter}
       onLoadMore={(cursor) => void loadList(cursor)}
       onRefresh={refresh}
       detail={detail}
-      onSelect={(id) => onNavigate(`/licenses?licenseId=${encodeURIComponent(id)}`)}
+      onSelect={(id) => onNavigate(pathFor(id))}
       onCloseDetail={() => {
         selected.current = null;
         setDetail({ kind: 'none' });
-        onNavigate('/licenses');
+        onNavigate(pathFor());
       }}
-      createCandidates={createCandidates}
-      onCreate={(input) => createLicense(api, input)}
-      onIssue={(id) => issueLicense(api, id)}
-      onActivate={(id) => activateLicense(api, id)}
-      onRenew={(id, validTo) => renewLicense(api, id, validTo)}
-      onRevoke={(id, reason) => revokeLicense(api, id, reason)}
+      createCandidates={resolved?.devices.filter((d) => d.canCreate) ?? []}
+      onCreate={(input) => {
+        const target = resolved?.devices.find((device) => device.deviceId === input.deviceId && device.canCreate);
+        if (!target) throw deviceScopeMismatch();
+        return createLicense(api, input, {
+          ...scope,
+          deviceId: target.deviceId,
+          ...(target.associationId ? { associationId: target.associationId } : {}),
+        });
+      }}
+      onIssue={(id) => issueLicense(api, id, ...writeContext(id))}
+      onActivate={(id) => activateLicense(api, id, ...writeContext(id))}
+      onRenew={(id, validTo) => renewLicense(api, id, validTo, ...writeContext(id))}
+      onRevoke={(id, reason) => revokeLicense(api, id, reason, ...writeContext(id))}
     />
   );
 }
@@ -597,44 +680,41 @@ export function ConfigurationsController({
     />
   );
 }
-function useDeviceUsersPageProps({
+export function DeviceUsersController({
   api,
   session,
+  device,
+  linkedUserId,
 }: {
   readonly api: ApiClient;
   readonly session: SessionSnapshot;
-}): DeviceUsersPageProps {
-  const fixedCustomerId = session.customerId;
-  const role = roleOf(session);
-  const canReadCustomerDirectory = fixedCustomerId === null && hasPermission(role, 'customer:read');
-  const [filter, setFilter] = useState<DeviceUserFilter>({ ...EMPTY_DEVICE_USER_FILTER, customerId: fixedCustomerId });
+  readonly device: DeviceView;
+  readonly linkedUserId: string | null;
+}) {
+  const customerId = device.customer?.id;
+  const [filter, setFilter] = useState<DeviceUserFilter>(EMPTY_DEVICE_USER_FILTER);
   const [list, setList] = useState<{
     rows: readonly DeviceUserListItemView[] | null;
     error?: unknown;
   }>({ rows: null });
-  const { detail, openDetail, closeDetail, refreshDetail } = useDeviceUserDetail(api);
-  const [customerOptions, setCustomerOptions] = useState<readonly FilterOption[]>([]);
-  const [topologyOptions, setTopologyOptions] = useState<readonly DeviceUserTopologyOption[]>([]);
-  const [assignableDevices, setAssignableDevices] = useState<readonly FilterOption[]>([]);
+  const { detail, openDetail, closeDetail, refreshDetail } = useDeviceUserDetail(api, device.id, customerId);
   const latestList = useRef(0);
   const loadList = useCallback(async () => {
     const request = ++latestList.current;
-    const customerId = fixedCustomerId ?? filter.customerId;
     setList({ rows: null });
     try {
+      if (!customerId) throw deviceScopeMismatch();
       const rows = await fetchDeviceUsers(api, {
-        ...(customerId ? { customerId } : {}),
+        scopeDeviceId: device.id,
         ...(filter.status ? { status: filter.status } : {}),
         ...(filter.keyword ? { keyword: filter.keyword } : {}),
-        ...(filter.region ? { region: filter.region } : {}),
-        ...(filter.subregion ? { subregion: filter.subregion } : {}),
-        ...(filter.deviceId ? { deviceId: filter.deviceId } : {}),
       });
+      if (rows.some((row) => row.customerId !== customerId || row.activeDeviceCount !== 1)) throw deviceScopeMismatch();
       if (request === latestList.current) setList({ rows });
     } catch (error) {
       if (request === latestList.current) setList({ rows: [], error });
     }
-  }, [api, filter, fixedCustomerId]);
+  }, [api, customerId, device.id, filter]);
   useEffect(() => {
     void loadList();
     return () => {
@@ -642,86 +722,51 @@ function useDeviceUsersPageProps({
     };
   }, [loadList]);
   useEffect(() => {
-    let active = true;
-    const customerRequest = canReadCustomerDirectory ? fetchCustomers(api, { limit: 100 }) : null;
-    void Promise.allSettled([
-      customerRequest ?? Promise.resolve(null),
-      collectAll((cursor) =>
-        fetchDevices(api, fixedCustomerId ? { customerId: fixedCustomerId } : undefined, { cursor, limit: 100 }),
-      ),
-    ]).then(([customersResult, devicesResult]) => {
-      if (!active) return;
-      if (customersResult.status === 'fulfilled' && customersResult.value !== null) {
-        setCustomerOptions(customersResult.value.items.map((c) => option(c.id, c.name)));
-      } else setCustomerOptions([]);
-      if (devicesResult.status === 'fulfilled') {
-        const ds = devicesResult.value;
-        setTopologyOptions(
-          ds.map((d) => ({
-            deviceId: d.id,
-            label: d.alias ?? d.serialNumber,
-            customerId: d.customer?.id ?? null,
-            region: d.site?.region ?? null,
-            subregion: d.site?.subregion ?? null,
-          })),
-        );
-        setAssignableDevices(
-          ds.filter((d) => d.lifecycleStatus !== 'Retired').map((d) => option(d.id, d.alias ?? d.serialNumber)),
-        );
-      } else {
-        setTopologyOptions([]);
-        setAssignableDevices([]);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [api, fixedCustomerId, canReadCustomerDirectory]);
+    if (linkedUserId && customerId) void openDetail(linkedUserId);
+  }, [customerId, linkedUserId, openDetail]);
   const versionFor = (id: string) => {
     if (detail.kind !== 'ready' || detail.detail.deviceUserId !== id) throw new Error(translate('ui.70dfcb6f13f4'));
     return detail.detail.version;
   };
-  const refresh = () => {
-    void loadList();
-    refreshDetail();
-  };
-  const customerDeviceIds = new Set(
-    detail.kind === 'ready'
-      ? topologyOptions
-          .filter((device) => device.customerId === detail.detail.customerId)
-          .map((device) => device.deviceId)
-      : [],
+  return (
+    <DeviceUsersPage
+      role={roleOf(session)}
+      scopeDevice={device}
+      fixedCustomerId={customerId ?? null}
+      customerOptions={device.customer ? [option(device.customer.id, device.customer.name)] : []}
+      topologyOptions={[]}
+      list={list}
+      appliedFilter={filter}
+      onApplyFilter={setFilter}
+      onRefresh={() => {
+        void loadList();
+        refreshDetail();
+      }}
+      onRefreshDetail={refreshDetail}
+      detail={detail}
+      onSelect={(id) => void openDetail(id)}
+      onCloseDetail={closeDetail}
+      assignableDevices={[]}
+      onCreate={(input) => createDeviceUser(api, input, device.id)}
+      onUpdate={(id, input) => updateDeviceUser(api, id, versionFor(id), input, device.id)}
+      onDisable={(id, reason) => disableDeviceUser(api, id, versionFor(id), reason, device.id)}
+      onAssign={(id, ids, reason) => assignDeviceUser(api, id, versionFor(id), ids, reason, device.id)}
+      onRevoke={async (id, ids, reason) => {
+        const result = await revokeDeviceUser(api, id, versionFor(id), ids, reason, device.id);
+        closeDetail();
+        return result;
+      }}
+      onListEligible={async () => {
+        const rows = await fetchDeviceUsers(api, { scopeDeviceId: device.id, eligible: true });
+        if (rows.some((row) => row.customerId !== customerId || row.activeDeviceCount !== 0 || row.status !== 'ACTIVE'))
+          throw deviceScopeMismatch();
+        return rows;
+      }}
+      onAssignEligible={(user, reason) =>
+        assignDeviceUser(api, user.deviceUserId, user.version, [device.id], reason, device.id)
+      }
+    />
   );
-  return {
-    role,
-    fixedCustomerId,
-    customerOptions,
-    topologyOptions,
-    list,
-    appliedFilter: filter,
-    onApplyFilter: (next) => setFilter({ ...next, customerId: fixedCustomerId ?? next.customerId }),
-    onRefresh: refresh,
-    onRefreshDetail: refreshDetail,
-    detail,
-    onSelect: (id) => void openDetail(id),
-    onCloseDetail: closeDetail,
-    assignableDevices: assignableDevices.filter((device) => customerDeviceIds.has(device.value)),
-    onCreate: (input) =>
-      createDeviceUser(api, fixedCustomerId === null ? input : { ...input, customerId: fixedCustomerId }),
-    onUpdate: (id, input) => updateDeviceUser(api, id, versionFor(id), input),
-    onDisable: (id, reason) => disableDeviceUser(api, id, versionFor(id), reason),
-    onAssign: (id, ids, reason) => assignDeviceUser(api, id, versionFor(id), ids, reason),
-    onRevoke: (id, ids, reason) => revokeDeviceUser(api, id, versionFor(id), ids, reason),
-  };
-}
-export function DeviceUsersController({
-  api,
-  session,
-}: {
-  readonly api: ApiClient;
-  readonly session: SessionSnapshot;
-}) {
-  return <DeviceUsersPage {...useDeviceUsersPageProps({ api, session })} />;
 }
 type AlarmsControllerProps = {
   readonly api: ApiClient;

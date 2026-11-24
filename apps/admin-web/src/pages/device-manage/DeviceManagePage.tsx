@@ -190,6 +190,24 @@ export function DeviceManagePage({
             {translate('deviceWorkbench.openAlarms')}
           </Button>
         ) : null}
+        {hasPermission(role, 'license:read') && device.customer ? (
+          <Button
+            type="button"
+            data-testid="manage-licenses"
+            onClick={() => onNavigate(deviceWorkbenchPath('/licenses', device.id))}
+          >
+            {translate('cmpT07.openLicenses')}
+          </Button>
+        ) : null}
+        {hasPermission(role, 'device-user:read') && device.customer ? (
+          <Button
+            type="button"
+            data-testid="manage-device-users"
+            onClick={() => onNavigate(deviceWorkbenchPath('/device-users', device.id))}
+          >
+            {translate('cmpT07.openDeviceUsers')}
+          </Button>
+        ) : null}
       </div>
 
       {notice !== null ? (

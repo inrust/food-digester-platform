@@ -11,6 +11,7 @@ import { translate } from '../../i18n/i18n.js';
  * - Customer 角色 customerId 由父级强制（页面不提供客户选择）。
  */
 import { useRef, useState } from 'react';
+import type { DeviceView } from '../devices/types.js';
 import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
@@ -60,6 +61,9 @@ export interface DeviceUserTopologyOption {
 }
 export interface DeviceUsersPageProps {
   readonly role: Role;
+  readonly scopeDevice?: DeviceView;
+  readonly onListEligible?: () => Promise<readonly DeviceUserListItemView[]>;
+  readonly onAssignEligible?: (user: DeviceUserListItemView, reason: string) => Promise<AssignResultView>;
   /** Customer 角色父级强制传入本 Customer ID（页面隐藏客户选择）。 */
   readonly fixedCustomerId?: string | null;
   readonly customerOptions: readonly FilterOption[];
@@ -98,9 +102,12 @@ export interface DeviceUsersPageProps {
   readonly onAssign: (deviceUserId: string, deviceIds: readonly string[], reason: string) => Promise<AssignResultView>;
   readonly onRevoke: (deviceUserId: string, deviceIds: readonly string[], reason: string) => Promise<RevokeResultView>;
 }
-type PendingModal = 'create' | 'edit' | 'password' | 'assign' | 'revoke' | null;
+type PendingModal = 'create' | 'edit' | 'password' | 'assign' | 'revoke' | 'eligible' | null;
 export function DeviceUsersPage({
   role,
+  scopeDevice,
+  onListEligible,
+  onAssignEligible,
   fixedCustomerId = null,
   customerOptions,
   topologyOptions,
@@ -121,6 +128,8 @@ export function DeviceUsersPage({
 }: DeviceUsersPageProps) {
   const [draftFilter, setDraftFilter] = useState<DeviceUserFilter>(appliedFilter);
   const [modal, setModal] = useState<PendingModal>(null);
+  const [eligible, setEligible] = useState<{ rows?: readonly DeviceUserListItemView[]; error?: unknown }>({});
+  const eligibleRequest = useRef(0);
   const [disableOpen, setDisableOpen] = useState(false);
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -143,20 +152,33 @@ export function DeviceUsersPage({
     ),
   ];
   const detailView = detail.kind === 'ready' ? detail.detail : null;
-  const authorizedCustomers = fixedCustomerId === null ? customerOptions : [];
-  const runAction = async (execute: () => Promise<unknown>, successText: string) => {
+  const authorizedCustomers = scopeDevice || fixedCustomerId === null ? customerOptions : [];
+  const canAddToDevice = scopeDevice?.customer != null && scopeDevice.lifecycleStatus !== 'Retired';
+  const loadEligible = async () => {
+    if (!onListEligible) return;
+    const request = ++eligibleRequest.current;
+    setEligible({});
+    try {
+      const rows = await onListEligible();
+      if (eligibleRequest.current === request) setEligible({ rows });
+    } catch (error) {
+      if (eligibleRequest.current === request) setEligible({ error });
+    }
+  };
+  const runAction = async (execute: () => Promise<unknown>, successText: string | (() => string)) => {
     // 防重复点击：在途请求直接忽略（后端 If-Match/幂等兜底）
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
-    if (modal !== 'edit') setModal(null);
+    const keepForm = modal === 'edit' || modal === 'eligible' || (modal === 'create' && scopeDevice !== undefined);
+    if (!keepForm) setModal(null);
     setDisableOpen(false);
     setActionError(null);
     setNotice(null);
     try {
       await execute();
-      if (modal === 'edit') setModal(null);
-      setNotice(successText);
+      if (keepForm) setModal(null);
+      setNotice(typeof successText === 'string' ? successText : successText());
       onRefresh();
     } catch (err) {
       setActionError(err);
@@ -170,90 +192,105 @@ export function DeviceUsersPage({
       <header className="page-header">
         <h1>{translate('design.page.device-users')}</h1>
       </header>
+      {scopeDevice ? (
+        <p data-testid="device-user-device-scope">
+          {translate('deviceWorkbench.scope', {
+            name: scopeDevice.alias ?? scopeDevice.serialNumber,
+            id: scopeDevice.id,
+          })}
+        </p>
+      ) : null}
       <div className="filter-bar" data-testid="device-user-filter-bar">
-        {fixedCustomerId === null ? (
+        {!scopeDevice ? (
           <>
-            <label htmlFor="device-user-customer">{translate('page.467c1137f479')}</label>
-            <select
-              id="device-user-customer"
-              data-testid="device-user-customer-filter"
-              value={draftFilter.customerId ?? ''}
-              onChange={(event) =>
-                setDraftFilter({ ...draftFilter, customerId: event.target.value === '' ? null : event.target.value })
-              }
-            >
-              <option value="">{translate('page.778fc8f99453')}</option>
-              {customerOptions.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+            {fixedCustomerId === null ? (
+              <>
+                <label htmlFor="device-user-customer">{translate('page.467c1137f479')}</label>
+                <select
+                  id="device-user-customer"
+                  data-testid="device-user-customer-filter"
+                  value={draftFilter.customerId ?? ''}
+                  onChange={(event) =>
+                    setDraftFilter({
+                      ...draftFilter,
+                      customerId: event.target.value === '' ? null : event.target.value,
+                    })
+                  }
+                >
+                  <option value="">{translate('page.778fc8f99453')}</option>
+                  {customerOptions.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
+            <div className="filter-field">
+              <label htmlFor="device-user-region">{translate('page.406e0f8c6852')}</label>
+              <select
+                id="device-user-region"
+                data-testid="device-user-region-filter"
+                value={draftFilter.region ?? ''}
+                onChange={(event) =>
+                  setDraftFilter({
+                    ...draftFilter,
+                    region: event.target.value || null,
+                    subregion: null,
+                    deviceId: null,
+                  })
+                }
+              >
+                <option value="">{translate('page.778fc8f99453')}</option>
+                {regions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="device-user-subregion">{translate('page.ff0beacd69e2')}</label>
+              <select
+                id="device-user-subregion"
+                data-testid="device-user-subregion-filter"
+                value={draftFilter.subregion ?? ''}
+                onChange={(event) =>
+                  setDraftFilter({ ...draftFilter, subregion: event.target.value || null, deviceId: null })
+                }
+              >
+                <option value="">{translate('page.778fc8f99453')}</option>
+                {subregions.map((subregion) => (
+                  <option key={subregion} value={subregion}>
+                    {subregion}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="device-user-device">{translate('page.d79416b3896a')}</label>
+              <select
+                id="device-user-device"
+                data-testid="device-user-device-filter"
+                value={draftFilter.deviceId ?? ''}
+                onChange={(event) => setDraftFilter({ ...draftFilter, deviceId: event.target.value || null })}
+              >
+                <option value="">{translate('page.778fc8f99453')}</option>
+                {scopedTopology
+                  .filter(
+                    (item) =>
+                      (draftFilter.region === null || item.region === draftFilter.region) &&
+                      (draftFilter.subregion === null || item.subregion === draftFilter.subregion),
+                  )
+                  .map((item) => (
+                    <option key={item.deviceId} value={item.deviceId}>
+                      {item.label}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </>
         ) : null}
-        <div className="filter-field">
-          <label htmlFor="device-user-region">{translate('page.406e0f8c6852')}</label>
-          <select
-            id="device-user-region"
-            data-testid="device-user-region-filter"
-            value={draftFilter.region ?? ''}
-            onChange={(event) =>
-              setDraftFilter({
-                ...draftFilter,
-                region: event.target.value || null,
-                subregion: null,
-                deviceId: null,
-              })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-field">
-          <label htmlFor="device-user-subregion">{translate('page.ff0beacd69e2')}</label>
-          <select
-            id="device-user-subregion"
-            data-testid="device-user-subregion-filter"
-            value={draftFilter.subregion ?? ''}
-            onChange={(event) =>
-              setDraftFilter({ ...draftFilter, subregion: event.target.value || null, deviceId: null })
-            }
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {subregions.map((subregion) => (
-              <option key={subregion} value={subregion}>
-                {subregion}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-field">
-          <label htmlFor="device-user-device">{translate('page.d79416b3896a')}</label>
-          <select
-            id="device-user-device"
-            data-testid="device-user-device-filter"
-            value={draftFilter.deviceId ?? ''}
-            onChange={(event) => setDraftFilter({ ...draftFilter, deviceId: event.target.value || null })}
-          >
-            <option value="">{translate('page.778fc8f99453')}</option>
-            {scopedTopology
-              .filter(
-                (item) =>
-                  (draftFilter.region === null || item.region === draftFilter.region) &&
-                  (draftFilter.subregion === null || item.subregion === draftFilter.subregion),
-              )
-              .map((item) => (
-                <option key={item.deviceId} value={item.deviceId}>
-                  {item.label}
-                </option>
-              ))}
-          </select>
-        </div>
         <div className="filter-field">
           <label htmlFor="device-user-status">{translate('page.62e951a692ff')}</label>
           <select
@@ -307,9 +344,26 @@ export function DeviceUsersPage({
             type="button"
             className="primary-button"
             data-testid="device-user-create"
-            onClick={() => setModal('create')}
+            disabled={scopeDevice !== undefined && !canAddToDevice}
+            onClick={() => {
+              setActionError(null);
+              setModal('create');
+            }}
           >
             {translate('page.6663d2d3519a')}
+          </Button>
+        ) : null}
+        {scopeDevice && canAssign && canAddToDevice && onListEligible ? (
+          <Button
+            type="button"
+            data-testid="device-user-assign-existing"
+            onClick={() => {
+              setActionError(null);
+              setModal('eligible');
+              void loadEligible();
+            }}
+          >
+            {translate('cmpT07.assignExisting')}
           </Button>
         ) : null}
       </div>
@@ -392,6 +446,7 @@ export function DeviceUsersPage({
             <h3>{translate('page.eac30b08be59')}</h3>
           </header>
           <DeviceUserAccountDetails user={detailView} authorizedCustomers={authorizedCustomers} />
+          {scopeDevice && canWrite ? <p>{translate('cmpT07.accountWideEdits')}</p> : null}
 
           <section className="detail-card" aria-label={translate('page.f3ea6d345e2a')}>
             <h4>{translate('page.f3ea6d345e2a')}</h4>
@@ -431,21 +486,23 @@ export function DeviceUsersPage({
                     {...(detailView.status === 'DISABLED' ? { title: translate('page.0b78023f2a15') } : {})}
                     onClick={() => setDisableOpen(true)}
                   >
-                    {translate('page.d989e55188c9')}
+                    {translate(scopeDevice ? 'cmpT07.disableAccount' : 'page.d989e55188c9')}
                   </Button>
                 </>
               ) : null}
               {canAssign ? (
                 <>
-                  <Button
-                    type="button"
-                    data-testid="device-user-assign"
-                    disabled={busy || detailView.status === 'DISABLED'}
-                    {...(detailView.status === 'DISABLED' ? { title: translate('page.70f547130bda') } : {})}
-                    onClick={() => setModal('assign')}
-                  >
-                    {translate('page.229546d5233e')}
-                  </Button>
+                  {!scopeDevice ? (
+                    <Button
+                      type="button"
+                      data-testid="device-user-assign"
+                      disabled={busy || detailView.status === 'DISABLED'}
+                      {...(detailView.status === 'DISABLED' ? { title: translate('page.70f547130bda') } : {})}
+                      onClick={() => setModal('assign')}
+                    >
+                      {translate('page.229546d5233e')}
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     data-testid="device-user-revoke"
@@ -455,7 +512,7 @@ export function DeviceUsersPage({
                       : {})}
                     onClick={() => setModal('revoke')}
                   >
-                    {translate('page.38fe0730070c')}
+                    {translate(scopeDevice ? 'cmpT07.revokeDevice' : 'page.38fe0730070c')}
                   </Button>
                 </>
               ) : null}
@@ -585,13 +642,75 @@ export function DeviceUsersPage({
         testid="device-user-create-dialog"
         onClose={() => setModal(null)}
       >
+        {scopeDevice ? <p>{translate('cmpT07.createAndAssign')}</p> : null}
+        {scopeDevice && actionError ? (
+          <>
+            <ErrorNotice error={actionError} />
+            <p>{translate('cmpT07.retryCreate')}</p>
+          </>
+        ) : null}
         <CreateDeviceUserForm
           fixedCustomerId={fixedCustomerId}
           customerOptions={customerOptions}
           busy={busy}
-          onSubmit={(input) => void runAction(() => onCreate(input), translate('page.7a93fc4e149c'))}
+          onSubmit={(input) => {
+            let assigned = false;
+            void runAction(
+              async () => {
+                const result = await onCreate(input);
+                assigned = scopeDevice !== undefined && result.assignedDeviceId === scopeDevice.id;
+              },
+              () =>
+                translate(
+                  !scopeDevice
+                    ? 'page.7a93fc4e149c'
+                    : assigned
+                      ? 'cmpT07.createdAndAssigned'
+                      : 'cmpT07.createdWithoutAssignment',
+                ),
+            );
+          }}
         />
       </Modal>
+
+      {scopeDevice && onAssignEligible ? (
+        <Modal
+          open={modal === 'eligible'}
+          title={translate('cmpT07.assignExisting')}
+          testid="device-user-existing-dialog"
+          onClose={() => {
+            eligibleRequest.current += 1;
+            setModal(null);
+          }}
+        >
+          {eligible.error ? <ErrorNotice error={eligible.error} /> : null}
+          {actionError ? <ErrorNotice error={actionError} /> : null}
+          {eligible.rows === undefined && !eligible.error ? (
+            <p role="status">{translate('page.300ee3dee4dc')}</p>
+          ) : null}
+          {eligible.rows?.length === 0 ? <p>{translate('cmpT07.noEligibleUsers')}</p> : null}
+          {eligible.error || actionError ? (
+            <Button
+              type="button"
+              onClick={() => {
+                setActionError(null);
+                void loadEligible();
+              }}
+            >
+              {translate('common.refresh')}
+            </Button>
+          ) : null}
+          {eligible.rows?.length ? (
+            <AssignExistingForm
+              rows={eligible.rows}
+              busy={busy}
+              onSubmit={(user, reason) =>
+                void runAction(() => onAssignEligible(user, reason), translate('page.173f47097d59'))
+              }
+            />
+          ) : null}
+        </Modal>
+      ) : null}
 
       {detailView !== null ? (
         <>
@@ -664,12 +783,15 @@ export function DeviceUsersPage({
 
           <Modal
             open={modal === 'revoke'}
-            title={translate('page.38fe0730070c')}
+            title={translate(scopeDevice ? 'cmpT07.revokeDevice' : 'page.38fe0730070c')}
             testid="device-user-revoke-dialog"
             onClose={() => setModal(null)}
           >
             <DevicePickForm
               testidPrefix="revoke"
+              {...(scopeDevice
+                ? { fixedDevice: { value: scopeDevice.id, label: scopeDevice.alias ?? scopeDevice.serialNumber } }
+                : {})}
               devices={detailView.assignments
                 .filter((a) => a.status === 'ACTIVE')
                 .map((a) => ({ value: a.deviceId, label: a.deviceId }))}
@@ -691,7 +813,11 @@ export function DeviceUsersPage({
             danger
             requireReason
             reasonLabel={translate('page.d599ea3c90af')}
-            description={translate('page.e7992b508142') + detailView.username}
+            description={
+              scopeDevice
+                ? translate('cmpT07.disableAccountDescription', { username: detailView.username })
+                : translate('page.e7992b508142') + detailView.username
+            }
             confirmText={translate('page.f3abd8941903')}
             onConfirm={(reason) =>
               void runAction(() => onDisable(detailView.deviceUserId, reason), translate('page.3d95ae7025be'))
@@ -920,22 +1046,80 @@ function PasswordResetForm({
     </div>
   );
 }
+function AssignExistingForm({
+  rows,
+  busy,
+  onSubmit,
+}: {
+  rows: readonly DeviceUserListItemView[];
+  busy: boolean;
+  onSubmit: (row: DeviceUserListItemView, reason: string) => void;
+}) {
+  const [id, setId] = useState('');
+  const [reason, setReason] = useState('');
+  const user = rows.find((row) => row.deviceUserId === id);
+  return (
+    <div>
+      <div className="dialog-field">
+        <label htmlFor="existing-device-user">{translate('cmpT07.chooseUser')}</label>
+        <select
+          id="existing-device-user"
+          data-testid="existing-device-user"
+          value={id}
+          onChange={(event) => setId(event.target.value)}
+        >
+          <option value="">{translate('cmpT07.chooseUser')}</option>
+          {rows.map((row) => (
+            <option value={row.deviceUserId} key={row.deviceUserId}>
+              {row.displayName ? `${row.displayName} (${row.username})` : row.username}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="dialog-field">
+        <label htmlFor="existing-device-reason">{translate('page.fc530c4e70f6')}</label>
+        <TextArea
+          id="existing-device-reason"
+          data-testid="existing-device-reason"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+        />
+      </div>
+      <div className="dialog-actions">
+        <Button
+          type="button"
+          className="primary-button"
+          data-testid="assign-existing-submit"
+          disabled={busy || !user || !reason.trim()}
+          onClick={() => {
+            if (user && reason.trim()) onSubmit(user, reason.trim());
+          }}
+        >
+          {translate('page.1485e5902972')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function DevicePickForm({
   testidPrefix,
   devices,
+  fixedDevice,
   reasonLabel,
   submitText,
   busy,
   onSubmit,
 }: {
   readonly testidPrefix: string;
+  readonly fixedDevice?: FilterOption;
   readonly devices: readonly FilterOption[];
   readonly reasonLabel: string;
   readonly submitText: string;
   readonly busy: boolean;
   readonly onSubmit: (deviceIds: readonly string[], reason: string) => void;
 }) {
-  const [selected, setSelected] = useState<readonly string[]>([]);
+  const [selected, setSelected] = useState<readonly string[]>(fixedDevice ? [fixedDevice.value] : []);
   const [reason, setReason] = useState('');
   const reasonTrimmed = reason.trim();
   const toggle = (deviceId: string) => {
@@ -943,21 +1127,27 @@ function DevicePickForm({
   };
   return (
     <div data-testid={`${testidPrefix}-form`}>
-      <fieldset className="dialog-field">
-        <legend>{translate('page.bcd7aea101ed')}</legend>
-        {devices.length === 0 ? <p className="empty-state">{translate('page.18fb8c8c906c')}</p> : null}
-        {devices.map((d) => (
-          <label key={d.value}>
-            <Input
-              type="checkbox"
-              data-testid={`${testidPrefix}-device-${d.value}`}
-              checked={selected.includes(d.value)}
-              onChange={() => toggle(d.value)}
-            />
-            {d.label}
-          </label>
-        ))}
-      </fieldset>
+      {fixedDevice ? (
+        <p>
+          {fixedDevice.label} ({fixedDevice.value})
+        </p>
+      ) : (
+        <fieldset className="dialog-field">
+          <legend>{translate('page.bcd7aea101ed')}</legend>
+          {devices.length === 0 ? <p className="empty-state">{translate('page.18fb8c8c906c')}</p> : null}
+          {devices.map((d) => (
+            <label key={d.value}>
+              <Input
+                type="checkbox"
+                data-testid={`${testidPrefix}-device-${d.value}`}
+                checked={selected.includes(d.value)}
+                onChange={() => toggle(d.value)}
+              />
+              {d.label}
+            </label>
+          ))}
+        </fieldset>
+      )}
       <div className="dialog-field">
         <label htmlFor={`${testidPrefix}-reason`}>
           {reasonLabel}

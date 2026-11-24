@@ -16,6 +16,8 @@ import type {
 } from './types.js';
 
 export interface DeviceUserListFilter {
+  readonly scopeDeviceId?: string;
+  readonly eligible?: boolean;
   readonly customerId?: string;
   readonly region?: string;
   readonly subregion?: string;
@@ -29,6 +31,8 @@ export async function fetchDeviceUsers(
   filter: DeviceUserListFilter = {},
 ): Promise<readonly DeviceUserListItemView[]> {
   const params = new URLSearchParams();
+  if (filter.scopeDeviceId) params.set('scopeDeviceId', filter.scopeDeviceId);
+  if (filter.eligible) params.set('eligible', 'true');
   if (filter.customerId !== undefined && filter.customerId !== '') params.set('customerId', filter.customerId);
   if (filter.region !== undefined && filter.region !== '') params.set('region', filter.region);
   if (filter.subregion !== undefined && filter.subregion !== '') params.set('subregion', filter.subregion);
@@ -42,15 +46,23 @@ export async function fetchDeviceUsers(
   return response.data;
 }
 
+function scopedPath(path: string, deviceId?: string): string {
+  return deviceId ? `${path}?scopeDeviceId=${encodeURIComponent(deviceId)}` : path;
+}
+
 export async function createDeviceUser(
   api: ApiClient,
   input: { customerId?: string; username: string; displayName?: string; password: string; reason?: string },
+  scopeDeviceId?: string,
 ): Promise<DeviceUserView> {
   const body: Record<string, string> = { username: input.username, password: input.password };
   if (input.customerId !== undefined && input.customerId !== '') body['customerId'] = input.customerId;
   if (input.displayName !== undefined && input.displayName !== '') body['displayName'] = input.displayName;
   if (input.reason !== undefined && input.reason !== '') body['reason'] = input.reason;
-  const response = await api.request<{ data: DeviceUserView }>('/admin/device-users', { method: 'POST', body });
+  const response = await api.request<{ data: DeviceUserView }>(scopedPath('/admin/device-users', scopeDeviceId), {
+    method: 'POST',
+    body,
+  });
   return response.data;
 }
 
@@ -58,9 +70,10 @@ export async function fetchDeviceUser(
   api: ApiClient,
   deviceUserId: string,
   signal?: AbortSignal,
+  scopeDeviceId?: string,
 ): Promise<DeviceUserDetailView> {
   const response = await api.request<{ data: DeviceUserDetailView }>(
-    `/admin/device-users/${encodeURIComponent(deviceUserId)}`,
+    scopedPath(`/admin/device-users/${encodeURIComponent(deviceUserId)}`, scopeDeviceId),
     signal === undefined ? undefined : { signal },
   );
   return response.data;
@@ -72,12 +85,13 @@ export async function updateDeviceUser(
   deviceUserId: string,
   version: number,
   input: { displayName?: string | null; password?: string; reason: string },
+  scopeDeviceId?: string,
 ): Promise<DeviceUserView> {
   const body: Record<string, unknown> = { reason: input.reason };
   if (input.displayName !== undefined) body['displayName'] = input.displayName;
   if (input.password !== undefined && input.password !== '') body['password'] = input.password;
   const response = await api.request<{ data: DeviceUserView }>(
-    `/admin/device-users/${encodeURIComponent(deviceUserId)}`,
+    scopedPath(`/admin/device-users/${encodeURIComponent(deviceUserId)}`, scopeDeviceId),
     { method: 'PATCH', ifMatch: version, body },
   );
   return response.data;
@@ -88,9 +102,10 @@ export async function disableDeviceUser(
   deviceUserId: string,
   version: number,
   reason: string,
+  scopeDeviceId?: string,
 ): Promise<DeviceUserView> {
   const response = await api.request<{ data: DeviceUserView }>(
-    `/admin/device-users/${encodeURIComponent(deviceUserId)}/disable`,
+    scopedPath(`/admin/device-users/${encodeURIComponent(deviceUserId)}/disable`, scopeDeviceId),
     { method: 'POST', ifMatch: version, body: { reason } },
   );
   return response.data;
@@ -102,9 +117,10 @@ export async function assignDeviceUser(
   version: number,
   deviceIds: readonly string[],
   reason: string,
+  scopeDeviceId?: string,
 ): Promise<AssignResultView> {
   const response = await api.request<{ data: AssignResultView }>(
-    `/admin/device-users/${encodeURIComponent(deviceUserId)}/assignments`,
+    scopedPath(`/admin/device-users/${encodeURIComponent(deviceUserId)}/assignments`, scopeDeviceId),
     { method: 'POST', ifMatch: version, body: { deviceIds: [...deviceIds], reason } },
   );
   return response.data;
@@ -116,9 +132,10 @@ export async function revokeDeviceUser(
   version: number,
   deviceIds: readonly string[],
   reason: string,
+  scopeDeviceId?: string,
 ): Promise<RevokeResultView> {
   const response = await api.request<{ data: RevokeResultView }>(
-    `/admin/device-users/${encodeURIComponent(deviceUserId)}/assignments/revoke`,
+    scopedPath(`/admin/device-users/${encodeURIComponent(deviceUserId)}/assignments/revoke`, scopeDeviceId),
     { method: 'POST', ifMatch: version, body: { deviceIds: [...deviceIds], reason } },
   );
   return response.data;

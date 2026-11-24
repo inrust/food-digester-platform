@@ -1,4 +1,6 @@
+import { licenseWorkbenchPath } from '../router/device-navigation.js';
 import { translate } from '../i18n/i18n.js';
+import { hasPermission } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '../api/http-client.js';
@@ -74,12 +76,12 @@ function queryId(search: string, name: string): string | null {
   const value = new URLSearchParams(search).get(name)?.trim();
   return value ? value : null;
 }
-async function listCustomerLicenses(api: ApiClient, customerId: string) {
+async function listContractLicenses(api: ApiClient, contractId: string) {
   const items = [];
   const seen = new Set<string>();
   let cursor: string | null = null;
   do {
-    const page = await fetchLicenses(api, { customerId }, { cursor, limit: 100 });
+    const page = await fetchLicenses(api, { scope: { contractId } }, { cursor, limit: 100 });
     items.push(...page.items);
     cursor = page.nextCursor;
     if (cursor !== null && seen.has(cursor)) throw new Error('License pagination cursor repeated');
@@ -90,12 +92,10 @@ async function listCustomerLicenses(api: ApiClient, customerId: string) {
 export function SettingsController({
   api,
   session,
-  onNavigate,
   onStatusSuccess,
 }: {
   readonly api: ApiClient;
   readonly session: SessionSnapshot;
-  readonly onNavigate: Navigate;
   readonly onStatusSuccess: (message: string) => void;
 }) {
   const role = roleOf(session);
@@ -158,7 +158,6 @@ export function SettingsController({
       onResetPassword={(userId) => triggerUserPasswordReset(api, userId)}
       settings={settings}
       onUpdateSetting={(key, value, version) => updateSetting(api, key, value, version)}
-      onNavigate={onNavigate}
       onRefresh={refresh}
     />
   );
@@ -271,8 +270,13 @@ export function ContractDetailController({
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [licenses, setLicenses] = useState<Readonly<Record<string, DeviceLicenseSummaryView | null>>>({});
   const [licenseError, setLicenseError] = useState<unknown>();
+  const loadGeneration = useRef(0);
+  const canReadLicenses = session.roles.some((role) => hasPermission(role, 'license:read'));
   const load = useCallback(async () => {
     if (contractId === null) return setContractError(new Error(translate('ui.0eb22b066a9a')));
+    const generation = ++loadGeneration.current;
+    setLicenses({});
+    setDevices({ rows: null });
     setContractError(undefined);
     setLicenseError(undefined);
     setAssociationsError(undefined);
@@ -281,24 +285,35 @@ export function ContractDetailController({
       listContractDevices(api, contractId),
       listContractAssociations(api, contractId),
     ]);
+    if (generation !== loadGeneration.current) return;
     if (results[0].status === 'fulfilled') {
       const nextContract = results[0].value;
       setContract(nextContract);
       void fetchCustomers(api, { limit: 100 }).then(
-        (page) => setCustomerName(page.items.find((customer) => customer.id === nextContract.customerId)?.name ?? null),
-        () => setCustomerName(null),
+        (page) => {
+          if (generation === loadGeneration.current)
+            setCustomerName(page.items.find((customer) => customer.id === nextContract.customerId)?.name ?? null);
+        },
+        () => {
+          if (generation === loadGeneration.current) setCustomerName(null);
+        },
       );
     } else setContractError(results[0].reason);
     setDevices(results[1].status === 'fulfilled' ? { rows: results[1].value } : { rows: [], error: results[1].reason });
     if (results[2].status === 'fulfilled') setAssociations(results[2].value);
     else setAssociationsError(results[2].reason);
-    if (results[0].status === 'fulfilled' && results[1].status === 'fulfilled') {
+    if (canReadLicenses && results[0].status === 'fulfilled' && results[1].status === 'fulfilled') {
       try {
-        const allLicenses = await listCustomerLicenses(api, results[0].value.customerId);
+        const allLicenses = await listContractLicenses(api, contractId);
+        if (generation !== loadGeneration.current) return;
+        const customerId = results[0].value.customerId;
         const summaries: Record<string, DeviceLicenseSummaryView | null> = {};
         for (const { device } of results[1].value) {
           const license = allLicenses.find(
-            (candidate) => candidate.deviceId === device.deviceId && candidate.status === device.licenseStatus,
+            (candidate) =>
+              candidate.customerId === customerId &&
+              candidate.deviceId === device.deviceId &&
+              candidate.status === device.licenseStatus,
           );
           summaries[device.deviceId] = license
             ? {
@@ -312,14 +327,20 @@ export function ContractDetailController({
         }
         setLicenses(summaries);
       } catch (error) {
+        if (generation !== loadGeneration.current) return;
         setLicenses({});
         setLicenseError(error);
       }
     } else {
       setLicenses({});
     }
-  }, [api, contractId]);
-  useEffect(() => void load(), [load]);
+  }, [api, canReadLicenses, contractId]);
+  useEffect(() => {
+    void load();
+    return () => {
+      loadGeneration.current += 1;
+    };
+  }, [load]);
   const requireId = () => {
     if (contractId === null) throw new Error(translate('ui.0eb22b066a9a'));
     return contractId;
@@ -335,7 +356,18 @@ export function ContractDetailController({
       {...(associationsError !== undefined ? { associationsError } : {})}
       licenses={licenses}
       {...(licenseError !== undefined ? { licenseError } : {})}
-      onOpenLicense={(licenseId) => onNavigate(`/licenses?licenseId=${encodeURIComponent(licenseId)}`)}
+      onOpenLicense={(licenseId, deviceId) =>
+        onNavigate(
+          licenseWorkbenchPath({
+            contractId: requireId(),
+            licenseId,
+            ...(deviceId ? { deviceId } : {}),
+          }),
+        )
+      }
+      {...(canReadLicenses
+        ? { onOpenLicenses: () => onNavigate(licenseWorkbenchPath({ contractId: requireId() })) }
+        : {})}
       onListAvailable={() => listAvailableDevices(api, requireId())}
       onEdit={(input, version) => updateContract(api, requireId(), input, version)}
       onActivate={(reason, version) => activateContract(api, requireId(), reason, version)}

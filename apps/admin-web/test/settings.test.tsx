@@ -64,7 +64,6 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
     settingUpdated: [] as { key: string; value: unknown; version: number }[],
     filterApplied: [] as unknown[],
     refreshed: 0,
-    navigated: [] as string[],
   };
   const props: SettingsPageProps = {
     role: 'PlatformSuperAdmin',
@@ -125,7 +124,6 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
       calls.settingUpdated.push({ key, value, version });
       return makeSetting({ key, value, version: version + 1 });
     },
-    onNavigate: (path) => calls.navigated.push(path),
     onRefresh: () => {
       calls.refreshed += 1;
     },
@@ -137,31 +135,17 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
 
 // ---------- 标签页可见性 ----------
 
-test('入口按权限可见：SuperAdmin 两个标签和链接；CustomerAdmin 仅链接', () => {
+test('平台用户和业务设置标签按权限显示', () => {
   const { unmount } = renderPage();
   assert.ok(screen.getByTestId('tab-platform-users'));
-  assert.ok(screen.getByTestId('settings-device-users-link'));
+  assert.equal(screen.queryByTestId('settings-device-users-link'), null);
   assert.ok(screen.getByTestId('tab-business-settings'));
   unmount();
 
   renderPage({ role: 'CustomerAdmin' });
   assert.equal(screen.queryByTestId('tab-platform-users'), null);
-  assert.ok(screen.getByTestId('settings-device-users-link'));
-  assert.equal(screen.queryByTestId('tab-business-settings'), null);
-});
-
-test('设备用户按权限链接到独立工作台，设置页没有嵌入列表', async () => {
-  const user = userEvent.setup();
-  const { calls, unmount } = renderPage();
-  const link = screen.getByTestId('settings-device-users-link');
-  assert.equal(link.getAttribute('href'), '/device-users');
-  await user.click(link);
-  assert.deepEqual(calls.navigated, ['/device-users']);
-  assert.equal(screen.queryByTestId('device-users-page'), null);
-  unmount();
-
-  renderPage({ role: 'PlatformOperator' });
   assert.equal(screen.queryByTestId('settings-device-users-link'), null);
+  assert.equal(screen.queryByTestId('tab-business-settings'), null);
 });
 
 // ---------- 平台用户 ----------

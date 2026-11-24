@@ -212,6 +212,34 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     }
   });
 
+  test('B/T07 routes scoped license and device-user operations with their optimistic lock', async () => {
+    const routes = routeSet();
+    for (const [path, handler, query, params] of [
+      [
+        '/api/v1/admin/licenses/app-license/issue',
+        routes.licenses!.issue,
+        { contractId: 'c1', scopeDeviceId: 'd1', associationId: 'a1' },
+        { licenseId: 'app-license' },
+      ],
+      [
+        '/api/v1/admin/device-users/app-user/assignments/revoke',
+        routes.deviceUsers!.revoke,
+        { scopeDeviceId: 'd1' },
+        { deviceUserId: 'app-user' },
+      ],
+    ] as const) {
+      await createAdminRoute(
+        { httpMethod: 'POST', path },
+        routes,
+      )({
+        requestId: 'req-t07',
+        headers: { 'If-Match': '3' },
+        query,
+      });
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ query, params, headers: { 'If-Match': '3' } }));
+    }
+  });
+
   test('未知路径失败关闭为 404', async () => {
     const route = createAdminRoute({ httpMethod: 'GET', path: '/api/v1/admin/unknown' }, routeSet());
     await expect(route({ headers: {}, requestId: 'trace-2' })).resolves.toMatchObject({ status: 404 });

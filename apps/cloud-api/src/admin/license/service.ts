@@ -34,6 +34,8 @@ import {
 import type { EntitlementCode, LicenseSnapshot, LicenseStatus, LicenseTransitionEffects } from '@fdp/domain';
 import { activateDeviceForCloudLicense } from '../../device/license-activation.js';
 import type { ActorContext } from '@fdp/auth';
+import { assertLicenseScope, resolveLicenseScope } from './scope.js';
+import type { LicenseScopeInput, LicenseScopeView } from './scope.js';
 import { licenseConflict, licenseNotFound, licenseStateNotAllowed, licenseValidationFailed } from './errors.js';
 
 export const LICENSE_CHANGED_NOTIFICATION = 'LICENSE_CHANGED' as const;
@@ -123,6 +125,7 @@ interface LicenseDelegate {
 }
 
 export interface LicenseListFilter {
+  readonly scope?: LicenseScopeInput;
   readonly customerId?: string | undefined;
   readonly deviceId?: string | undefined;
   readonly status?: string | undefined;
@@ -136,7 +139,7 @@ export async function listLicenses(
   deps: LicenseDeps,
   actor: ActorContext,
   filter: LicenseListFilter = {},
-): Promise<Page<LicenseView>> {
+): Promise<Page<LicenseView> & { readonly scope?: LicenseScopeView }> {
   const statuses = ['Draft', 'Issued', 'Active', 'ExpiringSoon', 'Renewed', 'Expired', 'Revoked'];
   if (filter.status !== undefined && !statuses.includes(filter.status)) {
     throw licenseValidationFailed('status is not a supported License status');
@@ -145,9 +148,23 @@ export async function listLicenses(
   const cursor = filter.cursor ? decodeKeysetCursor(filter.cursor) : null;
   const limit = normalizeLimit(filter.limit ?? null);
   const keyword = filter.keyword?.trim();
+  const at = deps.now?.() ?? new Date();
+  const scope =
+    filter.scope === undefined ? undefined : await resolveLicenseScope(deps.client, actor, filter.scope, at);
   const rows = await licenses(deps.client).findMany({
     where: {
       ...(customerId !== undefined ? { customerId } : {}),
+      ...(scope
+        ? {
+            AND: [
+              {
+                OR: scope.devices
+                  .filter((device) => !filter.deviceId || device.deviceId === filter.deviceId)
+                  .map(({ deviceId, customerId }) => ({ deviceId, customerId })),
+              },
+            ],
+          }
+        : {}),
       ...(filter.deviceId ? { deviceId: filter.deviceId } : {}),
       ...(filter.status ? { status: filter.status } : {}),
       ...(keyword ? { OR: [{ id: { contains: keyword } }, { deviceId: { contains: keyword } }] } : {}),
@@ -159,7 +176,8 @@ export async function listLicenses(
   });
   const page = rows.slice(0, limit);
   return {
-    items: page.map((row) => toView(row, deps.now?.() ?? new Date())),
+    items: page.map((row) => toView(row, at)),
+    ...(scope !== undefined ? { scope } : {}),
     nextCursor: rows.length > limit && page.length > 0 ? encodeKeysetCursor(page[page.length - 1]!.id) : null,
   };
 }
@@ -339,6 +357,7 @@ async function applyTransition(
 }
 
 export interface CreateDraftInput {
+  readonly scope?: LicenseScopeInput;
   readonly deviceId: string;
   readonly validFrom: Date;
   readonly validTo: Date;
@@ -366,6 +385,7 @@ export async function createDraftLicense(
   if (!deviceRow.customerId) {
     throw licenseStateNotAllowed('The device is not assigned to a customer');
   }
+  const customerId = deviceRow.customerId;
   if (deviceRow.lifecycleStatus === 'Retired') {
     throw licenseStateNotAllowed('The device is retired');
   }
@@ -382,7 +402,7 @@ export async function createDraftLicense(
     {
       id: licenseId,
       deviceId: input.deviceId,
-      customerId: deviceRow.customerId,
+      customerId,
       validFrom: input.validFrom,
       validTo: input.validTo,
       entitlements,
@@ -406,15 +426,34 @@ export async function createDraftLicense(
         reason: input.reason ?? null,
         actorId: actor.actorId,
         actorRole: actor.roles[0],
-        customerId: deviceRow.customerId,
+        customerId,
         afterValue: (result: unknown) => ({ licenseId: (result as LicenseView).licenseId, status: 'Draft' }),
       },
       async (tx) => {
+        await assertLicenseScope(
+          tx,
+          actor,
+          input.scope,
+          { deviceId: input.deviceId, customerId },
+          deps.now?.() ?? new Date(),
+          true,
+        );
+        if (!input.scope) await tx.$queryRaw`SELECT id FROM devices WHERE id = ${input.deviceId} FOR UPDATE`;
+        const current = await tx.device.findFirst({
+          where: { id: input.deviceId },
+          select: { lifecycleStatus: true, customerId: true },
+        });
+        if (current?.customerId !== customerId) throw licenseNotFound();
+        if (current.lifecycleStatus === 'Retired') throw licenseStateNotAllowed('The device is retired');
+        const currentBlocking = await licenses(tx).count({
+          where: { deviceId: input.deviceId, status: { in: [...BLOCKING_LICENSE_STATUSES] } },
+        });
+        if (currentBlocking > 0) throw licenseConflict('The device already has a valid license');
         const row = await licenses(tx).create({
           data: {
             id: licenseId,
             deviceId: input.deviceId,
-            customerId: deviceRow.customerId,
+            customerId,
             status: 'Draft',
             validFrom: input.validFrom,
             validTo: input.validTo,
@@ -482,14 +521,25 @@ export async function createDraftLicense(
 }
 
 interface TransitionOptions {
+  readonly scope?: LicenseScopeInput;
+  readonly ifMatchVersion?: number;
   readonly licenseId: string;
   readonly auditReason?: string | undefined;
+}
+
+function assertLicenseVersion(row: LicenseRow, options: TransitionOptions): void {
+  if (options.scope !== undefined && options.ifMatchVersion === undefined) {
+    throw licenseValidationFailed('If-Match is required for a scoped license operation');
+  }
+  if (options.ifMatchVersion !== undefined && options.ifMatchVersion !== row.version) {
+    throw licenseConflict('The license was changed concurrently; refresh and retry');
+  }
 }
 
 async function runTransition(
   deps: LicenseDeps,
   actor: ActorContext,
-  licenseId: string,
+  options: TransitionOptions,
   compute: (
     row: LicenseRow,
     snapshot: LicenseSnapshot,
@@ -498,7 +548,9 @@ async function runTransition(
   auditCustomer: (row: LicenseRow) => string,
 ): Promise<LicenseView> {
   const now = deps.now?.() ?? new Date();
-  const row = await loadLicense(deps.client, licenseId);
+  const row = await loadLicense(deps.client, options.licenseId);
+  await assertLicenseScope(deps.client, actor, options.scope, row, now);
+  assertLicenseVersion(row, options);
   const { effects, data } = compute(row, toSnapshot(row), now);
   return audited<LicenseView>(
     deps.client,
@@ -513,7 +565,10 @@ async function runTransition(
       beforeValue: { status: row.status },
       afterValue: effects.auditEvent.afterValue as unknown as object,
     },
-    async (tx) => toView(await applyTransition(tx, effects, row, data, now), now),
+    async (tx) => {
+      await assertLicenseScope(tx, actor, options.scope, row, deps.now?.() ?? new Date(), true);
+      return toView(await applyTransition(tx, effects, row, data, now), now);
+    },
   );
 }
 
@@ -526,7 +581,7 @@ export async function issueLicense(
   return runTransition(
     deps,
     actor,
-    options.licenseId,
+    options,
     (_row, snapshot, _now) => {
       const effects = transitionLicense(snapshot, 'Issued', {
         actorType: 'ADMIN',
@@ -556,7 +611,7 @@ export async function activateLicense(
   return runTransition(
     deps,
     actor,
-    options.licenseId,
+    options,
     (_row, snapshot, now) => {
       if (snapshot.status === 'Issued' && (now < snapshot.validFrom || now >= snapshot.validTo)) {
         throw licenseStateNotAllowed('The license is outside its validity period');
@@ -577,6 +632,8 @@ export async function renewLicenseById(
 ): Promise<LicenseView & { readonly replayed: boolean }> {
   const now = deps.now?.() ?? new Date();
   const row = await loadLicense(deps.client, options.licenseId);
+  await assertLicenseScope(deps.client, actor, options.scope, row, now);
+  assertLicenseVersion(row, options);
   const effects = renewLicense(toSnapshot(row), options.newValidTo, {
     actorType: 'ADMIN',
     actorId: actor.actorId,
@@ -606,7 +663,10 @@ export async function renewLicenseById(
       beforeValue: { status: row.status, validTo: row.validTo.toISOString() },
       afterValue: { status: 'Renewed', validTo: options.newValidTo.toISOString() },
     },
-    async (tx) => toView(await applyTransition(tx, effects, row, { validTo: options.newValidTo, signature }, now), now),
+    async (tx) => {
+      await assertLicenseScope(tx, actor, options.scope, row, deps.now?.() ?? new Date(), true);
+      return toView(await applyTransition(tx, effects, row, { validTo: options.newValidTo, signature }, now), now);
+    },
   );
   return { ...view, replayed: false };
 }
@@ -622,7 +682,7 @@ export async function revokeLicense(
   return runTransition(
     deps,
     actor,
-    options.licenseId,
+    options,
     (_row, snapshot, _now) => ({
       effects: transitionLicense(
         snapshot,
@@ -688,14 +748,26 @@ export async function evaluateLicense(
 }
 
 /** 详情（license:read）。 */
-export async function getLicense(deps: LicenseDeps, licenseId: string): Promise<LicenseView> {
+export async function getLicense(
+  deps: LicenseDeps,
+  licenseId: string,
+  actor: ActorContext,
+  scope?: LicenseScopeInput,
+): Promise<LicenseView> {
   const row = await loadLicense(deps.client, licenseId);
-  return toView(row, deps.now?.() ?? new Date());
+  const at = deps.now?.() ?? new Date();
+  await assertLicenseScope(deps.client, actor, scope, row, at);
+  return toView(row, at);
 }
 
 /** 历史（license:read；按 createdAt 倒序，上限 100）。 */
-export async function listLicenseHistory(deps: LicenseDeps, licenseId: string): Promise<LicenseHistoryView[]> {
-  await loadLicense(deps.client, licenseId); // 404 先行
+export async function listLicenseHistory(
+  deps: LicenseDeps,
+  licenseId: string,
+  actor: ActorContext,
+  scope?: LicenseScopeInput,
+): Promise<LicenseHistoryView[]> {
+  await getLicense(deps, licenseId, actor, scope);
   const history = (deps.client as unknown as Record<string, unknown>).licenseHistory as HistoryDelegate;
   const rows = await history.findMany({
     where: { licenseId },

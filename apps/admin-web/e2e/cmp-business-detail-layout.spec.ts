@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './qa05-fixture.js';
-import { json, layoutViolations, routeFe11To15Apis, routeP0Apis, seedSession } from './qa05-api-fixtures.js';
+import { p0Device, json, layoutViolations, routeFe11To15Apis, routeP0Apis, seedSession } from './qa05-api-fixtures.js';
 
 const time = '2026-09-10T00:00:00Z';
 const longValue = 'fixture-long-detail-'.repeat(9);
@@ -81,7 +81,7 @@ test('CMP-38 independent details distinguish published notifications, acknowledg
   const requests: { method: string; customerId: string | null }[] = [];
   await page.route('**/api/v1/admin/device-users**', (route) => {
     const url = new URL(route.request().url());
-    requests.push({ method: route.request().method(), customerId: url.searchParams.get('customerId') });
+    requests.push({ method: route.request().method(), customerId: url.searchParams.get('scopeDeviceId') });
     const detail = {
       ...record,
       assignments: [
@@ -107,31 +107,33 @@ test('CMP-38 independent details distinguish published notifications, acknowledg
     });
   });
 
-  for (const path of ['/device-users', '/settings']) {
-    await page.goto(path);
-    if (path === '/settings') {
-      await page.getByTestId('settings-device-users-link').click();
-      await expect(page).toHaveURL(/\/device-users$/);
-    }
-    await page.getByTestId('device-user-detail-cmp-device-user').click();
-    const detail = page.getByTestId('device-user-detail');
-    await expect(detail.getByRole('region', { name: 'Account information' })).toContainText(longValue);
-    await expect(detail.getByTestId('user-assignment-cmp-assignment')).toContainText(longValue);
-    const notification = detail.getByRole('region', { name: 'Notification delivery' });
-    await expect(notification).toContainText('Delivered');
-    await expect(notification).toContainText('v6');
-    const confirmation = detail.getByRole('region', { name: 'Snapshot and application confirmation' });
-    await expect(confirmation).toContainText('v5');
-    await expect(confirmation.getByTestId('device-user-apply-status')).toHaveText('Not reported by the device');
-    const edit = detail.getByTestId('device-user-edit');
-    await edit.click();
-    await page.getByTestId('edit-display-name').fill('Unsaved fixture value');
-    await page.keyboard.press('Escape');
-    await expect(edit).toBeFocused();
-    await expect(detail.getByRole('region', { name: 'Account information' })).toContainText(longValue);
-    expect(await layoutViolations(page)).toEqual([]);
-  }
-  expect(requests.filter(({ customerId }) => customerId === 'cust-a')).toHaveLength(2);
+  await page.route('**/api/v1/admin/devices/**', (route) =>
+    json(route, {
+      data: { ...p0Device, id: longValue },
+    }),
+  );
+  await page.goto('/settings');
+  await expect(page.getByTestId('settings-device-users-link')).toHaveCount(0);
+  await page.goto(`/device-users?deviceId=${encodeURIComponent(longValue)}`);
+  await page.getByTestId('device-user-detail-cmp-device-user').click();
+  const detail = page.getByTestId('device-user-detail');
+  await expect(detail.getByRole('region', { name: 'Account information' })).toContainText(longValue);
+  await expect(detail.getByTestId('user-assignment-cmp-assignment')).toContainText(longValue);
+  const notification = detail.getByRole('region', { name: 'Notification delivery' });
+  await expect(notification).toContainText('Delivered');
+  await expect(notification).toContainText('v6');
+  const confirmation = detail.getByRole('region', { name: 'Snapshot and application confirmation' });
+  await expect(confirmation).toContainText('v5');
+  await expect(confirmation.getByTestId('device-user-apply-status')).toHaveText('Not reported by the device');
+  const edit = detail.getByTestId('device-user-edit');
+  await edit.click();
+  await page.getByTestId('edit-display-name').fill('Unsaved fixture value');
+  await page.keyboard.press('Escape');
+  await expect(edit).toBeFocused();
+  await expect(detail.getByRole('region', { name: 'Account information' })).toContainText(longValue);
+  expect(await layoutViolations(page)).toEqual([]);
+  expect(requests).toHaveLength(2);
+  expect(requests.every(({ customerId }) => customerId === longValue)).toBe(true);
   expect(requests.every(({ method }) => method === 'GET')).toBe(true);
 });
 

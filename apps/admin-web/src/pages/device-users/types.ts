@@ -17,6 +17,7 @@ export interface DeviceUserView {
   readonly version: number;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly assignedDeviceId?: string;
 }
 
 export interface DeviceUserReadView extends DeviceUserView {

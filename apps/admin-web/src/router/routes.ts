@@ -222,8 +222,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
     get label() {
       return translate('ui.39f08a19b655');
     },
-    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
-    menuGroup: 'contract',
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'license:read')),
+    menuGroup: null,
+    parentPath: '/contracts',
   },
   // FE-09 扩展路由（CT-06 矩阵外）：按共享 device-user:read 权限生成角色；Viewer 只读。
   {
@@ -233,7 +234,8 @@ export const APP_ROUTES: readonly AppRoute[] = [
       return translate('page.024ebe3ff3d1');
     },
     roles: ALL_ROLES.filter((role) => hasPermission(role, 'device-user:read')),
-    menuGroup: 'platform',
+    menuGroup: null,
+    parentPath: '/devices/groups',
   },
   // FE-15 扩展路由（CT-06 矩阵外）：audit:read V1 仅 PlatformSuperAdmin/Auditor（Customer 角色 403）
   {

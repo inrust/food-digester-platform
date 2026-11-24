@@ -55,6 +55,7 @@ export interface LicenseFilter {
 export const EMPTY_LICENSE_FILTER: LicenseFilter = { licenseStatus: null, keyword: null };
 export interface LicensesPageProps {
   readonly role: Role;
+  readonly scopeLabel?: string;
   readonly list: {
     readonly rows: readonly LicenseView[] | null;
     readonly loading?: boolean;
@@ -82,6 +83,7 @@ export interface LicensesPageProps {
 type PendingAction = 'issue' | 'activate' | 'revoke';
 export function LicensesPage({
   role,
+  scopeLabel,
   list,
   appliedFilter,
   onApplyFilter,
@@ -134,6 +136,7 @@ export function LicensesPage({
       <header className="page-header">
         <h1>{translate('design.page.licenses')}</h1>
       </header>
+      {scopeLabel ? <p data-testid="license-workbench-scope">{scopeLabel}</p> : null}
       <div className="filter-bar" data-testid="license-filter-bar">
         <div className="filter-field">
           <label htmlFor="license-status-filter">{translate('page.ac3cc79f9199')}</label>
@@ -185,6 +188,7 @@ export function LicensesPage({
             type="button"
             className="primary-button"
             data-testid="license-create"
+            disabled={scopeLabel !== undefined && createCandidates.length === 0}
             onClick={() => setCreateOpen(true)}
           >
             {translate('page.d06cb1f9df42')}

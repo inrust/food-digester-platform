@@ -92,7 +92,7 @@
       },
       {
         "file": "admin-device-user-api.json",
-        "sha256": "c3f9aa2f940c34e43a7f04b5e1fdb2ab67afea2f3534459ed064c82d628ad278",
+        "sha256": "5dfa0e1ee9ee9a4fb54be904b70c890b6eefd78f7c475bb11ea4584526320adb",
         "status": "implemented"
       },
       {
@@ -102,7 +102,7 @@
       },
       {
         "file": "admin-license-api.json",
-        "sha256": "9c014092ae919c28c168c2847a851d437951913a90c518589fb66dafa5a99bd5",
+        "sha256": "6c98b61cf98bf457948da96281492b1581fe08d7dc853780151dd9453f60eab2",
         "status": "implemented"
       },
       {
@@ -5079,12 +5079,18 @@
       }
     },
     "/api/v1/admin/device-users": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AdminDeviceUserApi__DeviceUserScope"
+        }
+      ],
       "post": {
         "tags": [
           "admin"
         ],
         "operationId": "createDeviceUser",
         "summary": "创建设备操作员（(customerId, username) 唯一；仅预计算验证材料）",
+        "description": "指定 scopeDeviceId 时，账号、当前设备分配、同步通知和审计在同一事务写入。分配失败时账号创建回滚，可重新提交。",
         "security": [
           {
             "CognitoJwt": []
@@ -5139,6 +5145,7 @@
         ],
         "operationId": "listDeviceUsers",
         "summary": "设备操作员列表（含所属客户名称及 ACTIVE 分配设备数）",
+        "description": "设备工作台只返回当前设备的 ACTIVE 分配，activeDeviceCount 限于当前设备。",
         "security": [
           {
             "CognitoJwt": []
@@ -5199,6 +5206,15 @@
               "type": "string",
               "description": "username/displayName"
             }
+          },
+          {
+            "name": "eligible",
+            "in": "query",
+            "required": false,
+            "description": "须带 scopeDeviceId 和设备用户写权限。返回本客户未分配给当前设备的启用账号。",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -5221,6 +5237,9 @@
           "403": {
             "$ref": "#/components/responses/AdminDeviceUserApi__Forbidden"
           },
+          "404": {
+            "$ref": "#/components/responses/AdminDeviceUserApi__NotFound"
+          },
           "500": {
             "$ref": "#/components/responses/AdminDeviceUserApi__InternalError"
           }
@@ -5230,12 +5249,18 @@
       }
     },
     "/api/v1/admin/device-users/{deviceUserId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AdminDeviceUserApi__DeviceUserScope"
+        }
+      ],
       "get": {
         "tags": [
           "admin"
         ],
         "operationId": "getDeviceUser",
         "summary": "设备操作员详情（含所属客户名称和分配历史；跨 Customer → 404）",
+        "description": "指定 scopeDeviceId 时须存在当前设备的 ACTIVE 分配，详情、历史及同步状态限当前设备。",
         "security": [
           {
             "CognitoJwt": []
@@ -5263,6 +5288,9 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/AdminDeviceUserApi__BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/AdminDeviceUserApi__Unauthorized"
           },
@@ -5285,6 +5313,7 @@
         ],
         "operationId": "updateDeviceUser",
         "summary": "修改资料或轮换设备本地密码（If-Match + 强制原因）",
+        "description": "设备上下文校验当前分配，账号修改及停用仍影响全部已分配设备。",
         "security": [
           {
             "CognitoJwt": []
@@ -5355,12 +5384,18 @@
       }
     },
     "/api/v1/admin/device-users/{deviceUserId}/disable": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AdminDeviceUserApi__DeviceUserScope"
+        }
+      ],
       "post": {
         "tags": [
           "admin"
         ],
         "operationId": "disableDeviceUser",
         "summary": "停用（ACTIVE→DISABLED，If-Match + 强制原因；停用用户不进入新 Sync）",
+        "description": "设备上下文校验当前分配，账号修改及停用仍影响全部已分配设备。",
         "security": [
           {
             "CognitoJwt": []
@@ -5430,12 +5465,18 @@
       }
     },
     "/api/v1/admin/device-users/{deviceUserId}/assignments": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AdminDeviceUserApi__DeviceUserScope"
+        }
+      ],
       "post": {
         "tags": [
           "admin"
         ],
         "operationId": "assignDeviceUser",
         "summary": "批量分配设备（If-Match + 强制原因；跨 Customer/Retired/停用用户 → 409；全成或全败）",
+        "description": "指定 scopeDeviceId 时，deviceIds 只能包含当前设备。",
         "security": [
           {
             "CognitoJwt": []
@@ -5505,12 +5546,18 @@
       }
     },
     "/api/v1/admin/device-users/{deviceUserId}/assignments/revoke": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AdminDeviceUserApi__DeviceUserScope"
+        }
+      ],
       "post": {
         "tags": [
           "admin"
         ],
         "operationId": "revokeDeviceUser",
         "summary": "批量撤销分配（If-Match + 强制原因；无 ACTIVE 分配 → 409 全回滚）",
+        "description": "指定 scopeDeviceId 时，deviceIds 只能包含当前设备。",
         "security": [
           {
             "CognitoJwt": []
@@ -6031,7 +6078,7 @@
         ],
         "operationId": "listLicenses",
         "summary": "查询 License 实体列表（含终态历史记录）",
-        "description": "返回正式 License 实体，不以设备当前授权摘要代替；支持状态、客户、设备和关键字筛选及键集分页。",
+        "description": "返回正式 License 实体，不以设备当前授权摘要代替；支持状态、客户、设备和关键字筛选及键集分页。 指定上下文时响应 meta.scope 返回已验证范围及设备，列表筛选、分页不扩大该范围。",
         "security": [
           {
             "CognitoJwt": []
@@ -6087,6 +6134,15 @@
           },
           {
             "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
           }
         ],
         "responses": {
@@ -6108,6 +6164,12 @@
           },
           "403": {
             "$ref": "#/components/responses/AdminLicenseApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminLicenseApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminLicenseApi__Conflict"
           },
           "500": {
             "$ref": "#/components/responses/AdminLicenseApi__InternalError"
@@ -6168,6 +6230,17 @@
             "$ref": "#/components/responses/AdminLicenseApi__InternalError"
           }
         },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
+          }
+        ],
         "x-source-document": "admin-license-api.json",
         "x-contract-status": "implemented"
       }
@@ -6193,6 +6266,15 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
           }
         ],
         "responses": {
@@ -6206,6 +6288,9 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/AdminLicenseApi__BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/AdminLicenseApi__Unauthorized"
           },
@@ -6214,6 +6299,9 @@
           },
           "404": {
             "$ref": "#/components/responses/AdminLicenseApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminLicenseApi__Conflict"
           },
           "500": {
             "$ref": "#/components/responses/AdminLicenseApi__InternalError"
@@ -6244,6 +6332,15 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
           }
         ],
         "responses": {
@@ -6268,6 +6365,9 @@
           },
           "404": {
             "$ref": "#/components/responses/AdminLicenseApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminLicenseApi__Conflict"
           },
           "500": {
             "$ref": "#/components/responses/AdminLicenseApi__InternalError"
@@ -6298,6 +6398,18 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseIfMatch"
           }
         ],
         "responses": {
@@ -6355,6 +6467,18 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseIfMatch"
           }
         ],
         "responses": {
@@ -6413,6 +6537,18 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseIfMatch"
           }
         ],
         "requestBody": {
@@ -6480,6 +6616,18 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseContractScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseDeviceScope"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseAssociation"
+          },
+          {
+            "$ref": "#/components/parameters/AdminLicenseApi__LicenseIfMatch"
           }
         ],
         "requestBody": {
@@ -11069,6 +11217,16 @@
           "minLength": 1
         }
       },
+      "AdminDeviceUserApi__DeviceUserScope": {
+        "name": "scopeDeviceId",
+        "in": "query",
+        "required": false,
+        "description": "当前工作台设备 ID。服务端验证设备归属和当前角色。",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
       "AdminEsgApi__CustomerId": {
         "name": "customerId",
         "in": "query",
@@ -11112,6 +11270,46 @@
           "$ref": "#/components/schemas/UtcTimestamp"
         },
         "description": "时间上限（含）"
+      },
+      "AdminLicenseApi__LicenseContractScope": {
+        "name": "contractId",
+        "in": "query",
+        "required": false,
+        "description": "合约工作台范围。仅当合约及设备关联在当前时点适用，且客户一致时才包含设备。",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "AdminLicenseApi__LicenseDeviceScope": {
+        "name": "scopeDeviceId",
+        "in": "query",
+        "required": false,
+        "description": "工作台校验的设备 ID。仅此参数用于列表时，解析该设备适用合约，否则使用存量设备范围。",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "AdminLicenseApi__LicenseAssociation": {
+        "name": "associationId",
+        "in": "query",
+        "required": false,
+        "description": "当前合约设备关联的 ID。合约上下文写入必须携带设备和关联 ID，关联更换会拒绝过期操作。",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "AdminLicenseApi__LicenseIfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": false,
+        "description": "工作台操作必传读取时的 License 版本。旧调用可省略。",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "AdminSettingsApi__SettingKey": {
         "name": "key",
@@ -16845,7 +17043,7 @@
           "customerId": {
             "type": "string",
             "minLength": 1,
-            "description": "平台角色必传；Customer 角色强制本 Customer"
+            "description": "无设备上下文时平台角色必传。Customer 角色强制本 Customer。有设备上下文时由服务端解析并验证客户。"
           },
           "username": {
             "type": "string",
@@ -16991,6 +17189,13 @@
             "$ref": "#/components/schemas/AdminDeviceUserApi__DeviceUserFields"
           }
         ],
+        "properties": {
+          "assignedDeviceId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "通过设备上下文原子创建并成功分配时返回的设备 ID。未指定上下文的旧调用省略。"
+          }
+        },
         "unevaluatedProperties": false
       },
       "AdminDeviceUserApi__DeviceUserCustomerName": {
@@ -18282,7 +18487,7 @@
             }
           },
           "meta": {
-            "$ref": "#/components/schemas/PageMeta"
+            "$ref": "#/components/schemas/AdminLicenseApi__LicensePageMeta"
           }
         }
       },
@@ -18366,6 +18571,88 @@
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AdminLicenseApi__LicenseScopeDevice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deviceId",
+          "customerId",
+          "associationId",
+          "label",
+          "canCreate"
+        ],
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "associationId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "canCreate": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdminLicenseApi__LicenseScope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contractId",
+          "devices"
+        ],
+        "properties": {
+          "contractId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "devices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminLicenseApi__LicenseScopeDevice"
+            }
+          }
+        }
+      },
+      "AdminLicenseApi__LicensePageMeta": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "timestamp"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "下一页游标；null 表示没有更多数据"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/AdminLicenseApi__LicenseScope"
           }
         }
       },

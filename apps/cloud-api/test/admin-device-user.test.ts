@@ -606,3 +606,102 @@ test('A/T04 R10 客户名称按已授权的持久化归属读取，与账号及�
   assert.equal((legacyList.body as ListBody).data[0]?.customerName, null);
   assert.equal((legacyDetail.body as DataBody).data.customerId, customerId);
 });
+
+test('B/T07 R10 R17 device scope isolates details and makes create plus assignment retryable', async () => {
+  const h = handlers();
+  const customerId = await plantCustomer();
+  const deviceId = await plantDevice(customerId);
+  const sameCustomerPeer = await plantDevice(customerId);
+  const otherCustomer = await plantCustomer();
+  const foreignDevice = await plantDevice(otherCustomer);
+  const admin: ActorContext = { ...superAdmin, actorType: 'customer', roles: ['CustomerAdmin'], customerId };
+  const viewer: ActorContext = { ...admin, roles: ['CustomerViewer'] };
+  const query = { scopeDeviceId: deviceId };
+  const body = { username: 't07-rollback', displayName: 'T07 account display', password: DEVICE_PASSWORD };
+
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION t07_fail_assignment() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM device_users WHERE id = NEW.device_user_id AND username = 't07-rollback')
+        THEN RAISE EXCEPTION 'controlled assignment failure';
+      END IF;
+      RETURN NEW;
+    END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER t07_fail_assignment BEFORE INSERT ON device_user_assignments
+    FOR EACH ROW EXECUTE FUNCTION t07_fail_assignment()`);
+  try {
+    assert.equal((await h.create(req(admin, { query, body }))).status, 500);
+    assert.equal(await prisma.deviceUser.count({ where: { customerId, username: body.username } }), 0);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER t07_fail_assignment ON device_user_assignments');
+    await prisma.$executeRawUnsafe('DROP FUNCTION t07_fail_assignment()');
+  }
+
+  const created = await h.create(req(admin, { query, body }));
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assertOpenApiResponse('createDeviceUser', created.status, created.body);
+  const data = (created.body as DataBody).data;
+  assert.equal(data.assignedDeviceId, deviceId);
+  const id = data.deviceUserId as string;
+  const params = { deviceUserId: id };
+  assert.equal(await prisma.deviceUserAssignment.count({ where: { deviceUserId: id, deviceId, status: 'ACTIVE' } }), 1);
+  assert.equal(
+    await prisma.outboxEvent.count({ where: { aggregateId: id, eventType: USERS_CHANGED_NOTIFICATION } }),
+    1,
+  );
+  assert.equal((await h.create(req(admin, { query, body }))).status, 409);
+  assert.equal((await h.create(req(viewer, { query, body }))).status, 403);
+
+  const peer = { scopeDeviceId: sameCustomerPeer };
+  const foreign = { scopeDeviceId: foreignDevice };
+  assert.equal((await h.list(req(viewer, { query: foreign }))).status, 404);
+  assert.equal((await h.detail(req(viewer, { params, query: peer }))).status, 404);
+  assert.equal(
+    (
+      await h.update(
+        writeReq(admin, 1, { params, query: peer, body: { displayName: 'unauthorized', reason: 'fixture' } }),
+      )
+    ).status,
+    404,
+  );
+  assert.equal(
+    (await h.revoke(writeReq(admin, 1, { params, query, body: { deviceIds: [sameCustomerPeer], reason: 'fixture' } })))
+      .status,
+    404,
+  );
+  assert.equal((await h.list(req(viewer, { query: { ...peer, eligible: 'true' } }))).status, 403);
+  const candidates = await h.list(req(admin, { query: { ...peer, eligible: 'true' } }));
+  assert.equal(candidates.status, 200);
+  assert.deepInclude((candidates.body as ListBody).data[0], { deviceUserId: id, activeDeviceCount: 0 });
+
+  const assigned = await h.assign(
+    writeReq(admin, 1, { params, query: peer, body: { deviceIds: [sameCustomerPeer], reason: 'fixture' } }),
+  );
+  assert.equal(assigned.status, 201, JSON.stringify(assigned.body));
+  const detail = await h.detail(req(viewer, { params, query }));
+  assert.equal(detail.status, 200, JSON.stringify(detail.body));
+  assertOpenApiResponse('getDeviceUser', detail.status, detail.body);
+  assert.equal((detail.body as DataBody).data.displayName, body.displayName);
+  assert.equal(((detail.body as DataBody).data.assignments as { deviceId: string }[])[0]?.deviceId, deviceId);
+  assert.lengthOf((detail.body as DataBody).data.assignments as unknown[], 1);
+  assert.lengthOf((detail.body as DataBody).data.syncStates as unknown[], 1);
+  const scopedList = await h.list(req(viewer, { query }));
+  assert.deepInclude((scopedList.body as ListBody).data[0], { activeDeviceCount: 1, customerId, deviceUserId: id });
+
+  const revoke = { params, query, body: { deviceIds: [deviceId], reason: 'Remove from this device only' } };
+  assert.equal((await h.revoke(writeReq(admin, 1, revoke))).status, 409);
+  assert.equal((await h.revoke(writeReq(admin, 2, revoke))).status, 200);
+  assert.equal((await h.detail(req(viewer, { params, query }))).status, 404);
+  assert.equal((await prisma.deviceUser.findUniqueOrThrow({ where: { id } })).status, 'ACTIVE');
+  assert.equal(
+    await prisma.deviceUserAssignment.count({
+      where: { deviceUserId: id, deviceId: sameCustomerPeer, status: 'ACTIVE' },
+    }),
+    1,
+  );
+  assert.equal(
+    (await h.disable(writeReq(admin, 3, { params, query: peer, body: { reason: 'Disable account everywhere' } })))
+      .status,
+    200,
+  );
+  assert.equal((await prisma.deviceUser.findUniqueOrThrow({ where: { id } })).status, 'DISABLED');
+});

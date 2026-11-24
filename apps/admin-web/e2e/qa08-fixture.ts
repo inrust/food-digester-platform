@@ -155,7 +155,15 @@ export const test = base.extend<{ qa08: Qa08 }>({
         createdAt: at,
         updatedAt: at,
         activeDeviceCount: 1,
-        assignments: [],
+        assignments: [
+          {
+            assignmentId: `${prefix}-DU-ASSIGN`,
+            deviceId: f.deviceId,
+            status: 'ACTIVE',
+            assignedAt: at,
+            revokedAt: null,
+          },
+        ],
         syncStates: [],
       };
       f.config = {

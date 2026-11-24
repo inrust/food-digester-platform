@@ -29,7 +29,7 @@ import {
   OtaPackagesController,
 } from './operations-controllers.js';
 import { LoginPage } from './LoginPage.js';
-import { deviceGroupsReturnPath, deviceWorkbenchId } from '../router/device-navigation.js';
+import { deviceGroupsReturnPath, deviceWorkbenchId, uniqueQueryId } from '../router/device-navigation.js';
 import { ValidatedDeviceWorkbench } from './DeviceWorkbench.js';
 import { safeReturnPath, useBrowserRouter } from './browser-router.js';
 import {
@@ -210,17 +210,34 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
         />
       );
       break;
-    case 'licenses':
-      page = (
-        <LicensesController
-          key={sessionScope}
-          api={services.api}
-          session={session}
-          search={location.search}
-          onNavigate={navigate}
-        />
-      );
+    case 'licenses': {
+      const contractId = uniqueQueryId(location.search, 'contractId');
+      const linkedLicense = uniqueQueryId(location.search, 'licenseId');
+      page =
+        contractId !== null || scopeId !== null || linkedLicense !== null ? (
+          <LicensesController
+            key={JSON.stringify([sessionScope, contractId, scopeId])}
+            api={services.api}
+            session={session}
+            search={location.search}
+            onNavigate={navigate}
+          />
+        ) : (
+          <section className="detail-stack" data-testid="licenses-page">
+            <h1>{translate('menu.licenses')}</h1>
+            <p>{translate('cmpT07.chooseLicenseContext')}</p>
+            <div className="action-row">
+              <Button type="button" data-testid="license-choose-contract" onClick={() => navigate('/contracts')}>
+                {translate('cmpT07.chooseContract')}
+              </Button>
+              <Button type="button" onClick={chooseDevice}>
+                {translate('deviceWorkbench.chooseDevice')}
+              </Button>
+            </div>
+          </section>
+        );
       break;
+    }
     case 'configurations':
       page =
         scopeId === null ? (
@@ -230,7 +247,26 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
         );
       break;
     case 'device-users':
-      page = <DeviceUsersController key={sessionScope} api={services.api} session={session} />;
+      page =
+        scopeId === null ? (
+          <section className="detail-stack" data-testid="device-users-page">
+            <h1>{translate('menu.device-users')}</h1>
+            <p>{translate('cmpT07.chooseDeviceUsers')}</p>
+            <Button type="button" data-testid="device-user-choose-device" onClick={chooseDevice}>
+              {translate('deviceWorkbench.chooseDevice')}
+            </Button>
+          </section>
+        ) : (
+          inDeviceContext((device) => (
+            <DeviceUsersController
+              key={uniqueQueryId(location.search, 'deviceUserId') ?? ''}
+              api={services.api}
+              session={session}
+              device={device}
+              linkedUserId={uniqueQueryId(location.search, 'deviceUserId')}
+            />
+          ))
+        );
       break;
     case 'alarms':
       page =
@@ -288,7 +324,6 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
           key={sessionScope}
           api={services.api}
           session={session}
-          onNavigate={navigateWithinApp}
           onStatusSuccess={(message) => toasts.push('success', message)}
         />
       );

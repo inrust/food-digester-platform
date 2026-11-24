@@ -80,8 +80,8 @@ test('CT-06：9 个菜单项的 routeId/label/pageState/roles 与路由注册表
   assert.equal(matrix.menus.length, 9);
 
   const menuRoutes = APP_ROUTES.filter((route) => route.menuGroup !== null);
-  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users；FE-15 /audit-logs
-  const EXTENSION_ROUTES = ['/customers', '/sites', '/licenses', '/device-users', '/audit-logs'];
+  // 扩展路由（CT-06 矩阵外，按 APP_ROUTES 出现顺序）：FE-05 /customers、/sites；FE-15 /audit-logs
+  const EXTENSION_ROUTES = ['/customers', '/sites', '/audit-logs'];
   const matrixRoutes = menuRoutes.filter((r) => !EXTENSION_ROUTES.includes(r.path));
   assert.equal(matrixRoutes.length, matrix.menus.length);
   // 扩展路由必须在此显式登记，防止路由表无约束膨胀

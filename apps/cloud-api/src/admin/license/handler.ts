@@ -33,6 +33,7 @@ import {
   revokeLicense,
   entitlementFromWire,
 } from './service.js';
+import { parseLicenseScope } from './scope.js';
 import type { LicenseDeps } from './service.js';
 import { assertOptionalStringFields, parseStrictObject, rejectRequestBody } from '../shared/strict-object.js';
 
@@ -106,6 +107,22 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
     ...(nextCursor !== undefined ? { nextCursor } : {}),
   });
   const actorOf = (req: AdminHttpRequest) => req.actor as ActorContext;
+  const scopeOf = (req: AdminHttpRequest) => {
+    const scope = parseLicenseScope(req.query);
+    return scope === undefined ? {} : { scope };
+  };
+  const transitionOf = (req: AdminHttpRequest) => {
+    const header = req.headers['If-Match'] ?? req.headers['if-match'];
+    const version = header === undefined ? undefined : Number(header);
+    if (version !== undefined && (!Number.isSafeInteger(version) || version < 1)) {
+      throw licenseValidationFailed('If-Match must be a positive integer');
+    }
+    return {
+      licenseId: requireLicenseId(req),
+      ...scopeOf(req),
+      ...(version === undefined ? {} : { ifMatchVersion: version }),
+    };
+  };
 
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:write' },
@@ -131,6 +148,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
       }
       const view = await createDraftLicense(deps, actorOf(req), {
         deviceId,
+        ...scopeOf(req),
         validFrom: requireTimestamp(body.validFrom, 'validFrom'),
         validTo: requireTimestamp(body.validTo, 'validTo'),
         entitlements: wireEntitlements.map(entitlementFromWire),
@@ -143,6 +161,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const list = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:read' }, async (req) => {
     const q = req.query ?? {};
     const page = await listLicenses(deps, actorOf(req), {
+      ...scopeOf(req),
       ...(q.customerId !== undefined ? { customerId: q.customerId } : {}),
       ...(q.deviceId !== undefined ? { deviceId: q.deviceId } : {}),
       ...(q.status !== undefined ? { status: q.status } : {}),
@@ -150,12 +169,15 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
       ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
       ...(q.limit !== undefined ? { limit: q.limit } : {}),
     });
-    return { status: 200, body: { data: page.items, meta: meta(req, page.nextCursor) } };
+    return {
+      status: 200,
+      body: { data: page.items, meta: { ...meta(req, page.nextCursor), ...(page.scope ? { scope: page.scope } : {}) } },
+    };
   });
 
   const issue = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:write' }, async (req) => {
     rejectRequestBody(req.body, licenseValidationFailed);
-    const view = await issueLicense(deps, actorOf(req), { licenseId: requireLicenseId(req) });
+    const view = await issueLicense(deps, actorOf(req), transitionOf(req));
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 
@@ -163,7 +185,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
     { permission: 'license:write' },
     async (req) => {
       rejectRequestBody(req.body, licenseValidationFailed);
-      const view = await activateLicense(deps, actorOf(req), { licenseId: requireLicenseId(req) });
+      const view = await activateLicense(deps, actorOf(req), transitionOf(req));
       return { status: 200, body: { data: view, meta: meta(req) } };
     },
   );
@@ -171,7 +193,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const renew = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:write' }, async (req) => {
     const body = parseStrictObject(req.body, ['newValidTo'], licenseValidationFailed);
     const view = await renewLicenseById(deps, actorOf(req), {
-      licenseId: requireLicenseId(req),
+      ...transitionOf(req),
       newValidTo: requireTimestamp(body.newValidTo, 'newValidTo'),
     });
     return { status: 200, body: { data: view, meta: meta(req) } };
@@ -182,7 +204,7 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
     async (req) => {
       const body = parseStrictObject(req.body, ['reason'], licenseValidationFailed);
       const view = await revokeLicense(deps, actorOf(req), {
-        licenseId: requireLicenseId(req),
+        ...transitionOf(req),
         ...(typeof body.reason === 'string' ? { auditReason: body.reason } : {}),
       });
       return { status: 200, body: { data: view, meta: meta(req) } };
@@ -192,6 +214,8 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   const evaluate = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:write' },
     async (req) => {
+      if (parseLicenseScope(req.query))
+        throw licenseValidationFailed('Evaluation is not supported in a license workbench');
       const body = parseStrictObject(req.body ?? {}, ['at'], licenseValidationFailed);
       const at = body.at === undefined ? now() : requireTimestamp(body.at, 'at');
       const result = await evaluateLicense(deps, actorOf(req), requireLicenseId(req), at);
@@ -200,14 +224,14 @@ export function createAdminLicenseHandlers(deps: AdminLicenseHandlerDeps): Admin
   );
 
   const detail = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'license:read' }, async (req) => {
-    const view = await getLicense(deps, requireLicenseId(req));
+    const view = await getLicense(deps, requireLicenseId(req), actorOf(req), parseLicenseScope(req.query));
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 
   const history = withAuthorization<AdminHttpRequest, AdminHttpResponse>(
     { permission: 'license:read' },
     async (req) => {
-      const items = await listLicenseHistory(deps, requireLicenseId(req));
+      const items = await listLicenseHistory(deps, requireLicenseId(req), actorOf(req), parseLicenseScope(req.query));
       return { status: 200, body: { data: items, meta: meta(req) } };
     },
   );
