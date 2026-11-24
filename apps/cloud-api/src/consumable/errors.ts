@@ -2,12 +2,14 @@
  * BE-CNS-01 耗材 API 错误。错误码对齐 CT-05（contracts/rest/error-codes.json）。
  */
 
-export type AdminConsumableErrorCode = 'VALIDATION_FAILED' | 'NOT_FOUND' | 'CONFLICT' | 'VERSION_CONFLICT';
+export type AdminConsumableErrorCode =
+  'VALIDATION_FAILED' | 'NOT_FOUND' | 'CONFLICT' | 'IDEMPOTENCY_CONFLICT' | 'VERSION_CONFLICT';
 
 export const ADMIN_CONSUMABLE_ERROR_HTTP_STATUS: Readonly<Record<AdminConsumableErrorCode, number>> = {
   VALIDATION_FAILED: 400,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  IDEMPOTENCY_CONFLICT: 409,
   VERSION_CONFLICT: 409,
 } as const;
 
@@ -41,4 +43,11 @@ export function consumableConflict(message: string): AdminConsumableError {
 /** 409：If-Match 版本与当前版本不一致。 */
 export function consumableVersionConflict(): AdminConsumableError {
   return new AdminConsumableError('VERSION_CONFLICT', 'The resource was modified concurrently; refresh and retry');
+}
+
+export function consumableIdempotencyConflict(): AdminConsumableError {
+  return new AdminConsumableError(
+    'IDEMPOTENCY_CONFLICT',
+    'This device request key is already bound to a different payload',
+  );
 }

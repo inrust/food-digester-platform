@@ -21,7 +21,7 @@ import { DEVICE_SYNC_ERROR_HTTP_STATUS, createDeviceSyncHandler } from '../src/i
 import type { DeviceSyncHandlerDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 import { createAdminConfigurationHandlers } from '../src/admin/configuration/handler.js';
-import { parseConfigurationDeliveryTargets } from '../src/device/configuration-delivery.js';
+import { parseVerifiedDeviceClientTargets } from '../src/device/verified-client-targets.js';
 import type { ConfigurationDeliveryView } from '../src/device/configuration-delivery.js';
 import { assertOpenApiResponse } from './openapi-response.js';
 
@@ -621,14 +621,14 @@ test('D/T11 R19 authenticated devices pull versioned JSON and only matching rece
   });
   await prisma.site.update({ where: { id: a.siteId! }, data: { name: 'T11 门店', region: '华东', subregion: 'T12' } });
   const clientVersion = 't11-host-fixture.1';
-  const targets = parseConfigurationDeliveryTargets(
+  const targets = parseVerifiedDeviceClientTargets(
     JSON.stringify({
       [a.deviceId]: clientVersion,
       [b.deviceId]: clientVersion,
     }),
   );
-  assert.equal(parseConfigurationDeliveryTargets('{ malformed').size, 0);
-  assert.equal(parseConfigurationDeliveryTargets(JSON.stringify({ '*': clientVersion })).size, 0);
+  assert.equal(parseVerifiedDeviceClientTargets('{ malformed').size, 0);
+  assert.equal(parseVerifiedDeviceClientTargets(JSON.stringify({ '*': clientVersion })).size, 0);
   const protocol = { configurationProtocol: { schemaVersion: 1, clientVersion } };
   const ajv = createAjv();
   const candidatePath = 'configuration/device-sync-configuration-delivery-candidate.openapi.json';

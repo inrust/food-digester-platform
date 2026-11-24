@@ -186,3 +186,108 @@ test('CMP-25 resets applied scope, dates, pagination and export while holding th
   await expect.poll(() => reports.slice(-2)).toEqual([changed, { ...changed, cursor: 'filtered-page-2' }]);
   expect(reports.some((query) => query['cursor'] === 'discarded-page')).toBe(false);
 });
+
+test('E/T12 R20 device and legacy requests remain actionable across admin intake cutover and rollback', async ({
+  page,
+}) => {
+  await seedSession(page, 'PlatformOperator');
+  await page.setViewportSize({ width: 375, height: 900 });
+  const timestamp = '2026-11-24T03:00:00Z';
+  const base = {
+    customerId: 'cust-a',
+    consumableType: 'CARBON_FILTER',
+    status: 'PENDING',
+    version: 1,
+    requestedAt: timestamp,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    completedAt: null,
+    processedBy: null,
+    processNote: null,
+    stageNotes: { request: { note: '设备上报需要更换', source: 'RECORDED' } },
+  };
+  const rows = [
+    {
+      ...base,
+      requestId: 't12-device',
+      deviceId: 'fixture-device-t12',
+      requestedBy: 'fixture-device-t12',
+      source: 'DEVICE',
+    },
+    {
+      ...base,
+      requestId: 't12-admin',
+      deviceId: 'fixture-legacy-t12',
+      requestedBy: 'fixture-admin',
+      source: 'ADMIN',
+      stageNotes: { request: { note: '存量平台申请', source: 'RECORDED' } },
+    },
+  ];
+  let switched = false;
+  let releaseCutoverList!: () => void;
+  const cutoverList = new Promise<void>((resolve) => {
+    releaseCutoverList = resolve;
+  });
+  const writes: Array<{ requestId: string; action: string; version: string | undefined }> = [];
+  await page.route('**/api/v1/admin/consumables**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
+  await page.route('**/api/v1/admin/consumable-requests**', async (route) => {
+    const request = route.request();
+    if (request.method() === 'GET') {
+      if (switched) await cutoverList;
+      return json(route, { data: rows, ...(switched ? { meta: { legacyCreationOffered: false } } : {}) });
+    }
+    const [requestId, action] = new URL(request.url()).pathname.split('/').slice(-2) as [string, string];
+    const index = rows.findIndex((row) => row.requestId === requestId);
+    expect(index).toBeGreaterThanOrEqual(0);
+    writes.push({ requestId, action, version: request.headers()['if-match'] });
+    const stage = action === 'process' ? 'processing' : action === 'complete' ? 'completion' : 'cancellation';
+    const status = action === 'process' ? 'PROCESSING' : action === 'complete' ? 'COMPLETED' : 'CANCELLED';
+    rows[index] = {
+      ...rows[index]!,
+      status,
+      version: rows[index]!.version + 1,
+      stageNotes: { ...rows[index]!.stageNotes, [stage]: { note: request.postDataJSON().note, source: 'RECORDED' } },
+    };
+    return json(route, { data: rows[index] });
+  });
+
+  await page.goto('/consumables');
+  const trigger = page.getByTestId('consumable-request-create-open');
+  await expect(trigger).toBeEnabled();
+  switched = true;
+  await page.reload();
+  const list = page.getByTestId('consumable-requests-table');
+  await expect(list).toBeVisible();
+  await expect(trigger).toHaveCount(0);
+  releaseCutoverList();
+  const deviceRow = list.getByRole('row').filter({ hasText: 'fixture-device-t12' });
+  const adminRow = list.getByRole('row').filter({ hasText: 'fixture-legacy-t12' });
+  await expect(deviceRow.getByRole('cell', { name: '设备', exact: true })).toBeVisible();
+  await expect(adminRow.getByRole('cell', { name: '平台', exact: true })).toBeVisible();
+  await expect(trigger).toHaveCount(0);
+
+  for (const [action, requestId, note] of [
+    ['process', 't12-device', '运维已接单'],
+    ['complete', 't12-device', '已完成更换'],
+    ['cancel', 't12-admin', '存量申请确认取消'],
+  ] as const) {
+    await page.getByTestId(`consumable-${action}-${requestId}`).click();
+    const dialog = page.getByTestId('consumable-action-form');
+    await dialog.getByTestId('consumable-action-note').fill(note);
+    await dialog.getByTestId('consumable-action-submit').click();
+    await expect(page.getByTestId(`consumable-request-notes-${requestId}`)).toContainText(note);
+  }
+  for (const note of ['设备上报需要更换', '运维已接单', '已完成更换']) {
+    await expect(page.getByTestId('consumable-request-notes-t12-device')).toContainText(note);
+  }
+  expect(writes).toEqual([
+    { requestId: 't12-device', action: 'process', version: '1' },
+    { requestId: 't12-device', action: 'complete', version: '2' },
+    { requestId: 't12-admin', action: 'cancel', version: '1' },
+  ]);
+  switched = false;
+  await page.reload();
+  await expect(trigger).toBeEnabled();
+  await expect(deviceRow.getByRole('cell', { name: '设备', exact: true })).toBeVisible();
+  await expect(adminRow.getByRole('cell', { name: '平台', exact: true })).toBeVisible();
+});

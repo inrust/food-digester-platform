@@ -10,11 +10,12 @@
  *   （并发下状态漂移 → 409 CONFLICT）+ DOM-03 audited 审计（consumable.request.create/process/complete/cancel）；
  * - 权限：创建/处理仅授权角色（device:write = PlatformSuperAdmin/PlatformOperator）；
  *   查询 device:read + Customer 角色租户隔离（仅本 Customer，跨 Customer 详情 → 404）；
- * - 边界：source 固定 ADMIN（协议冻结前仅管理端创建）；不实现工单派遣/库存/物流/短信；
+ * - ADMIN 原有开放申请重放；DEVICE 请求绑定证书设备、当前分配和持久化请求标识；
  *   完成后保留完整记录（终态行 + 审计历史）。
  */
+import { createHash } from 'node:crypto';
 import type { DbClient } from '@fdp/database';
-import { audited } from '@fdp/database';
+import { audited, recordAudit } from '@fdp/database';
 import {
   CONSUMABLE_REQUEST_STATUSES,
   OPEN_REQUEST_STATUSES,
@@ -22,9 +23,11 @@ import {
   assertKnownConsumableType,
 } from '@fdp/domain';
 import type { ConsumableRequestStatus } from '@fdp/domain';
-import type { ActorContext } from '@fdp/auth';
+import { forbidden } from '@fdp/auth';
+import type { ActorContext, DeviceAuthContext } from '@fdp/auth';
 import {
   consumableConflict,
+  consumableIdempotencyConflict,
   consumableNotFound,
   consumableValidationFailed,
   consumableVersionConflict,
@@ -148,47 +151,101 @@ export interface CreateConsumableRequestResult {
   readonly replayed: boolean;
 }
 
+type RequestOrigin =
+  | { readonly source: 'ADMIN'; readonly actorId: string; readonly actorRole: string }
+  | {
+      readonly source: 'DEVICE';
+      readonly actorId: string;
+      readonly actorRole: 'DEVICE';
+      readonly auth: DeviceAuthContext;
+      readonly requestKey: string;
+      readonly occurredAt: Date;
+      readonly payloadHash: string;
+    };
+
+export type DeviceConsumableSubmissionOutcome = 'CREATED' | 'LINKED_OPEN' | 'REPLAYED';
+export interface DeviceConsumableSubmissionInput extends Omit<CreateConsumableRequestInput, 'deviceId'> {
+  readonly schemaVersion: 1;
+  readonly requestKey: string;
+  readonly occurredAt: Date;
+}
+
+interface OpenRequestResult {
+  readonly view: ConsumableRequestView;
+  readonly outcome: DeviceConsumableSubmissionOutcome;
+}
+
 /** The admin entry point binds origin to the authenticated actor. */
-export function createConsumableRequest(
+export async function createConsumableRequest(
   deps: ConsumableRequestDeps,
   actor: ActorContext,
   input: CreateConsumableRequestInput,
 ): Promise<CreateConsumableRequestResult> {
-  return createOpenRequest(deps, input, { source: 'ADMIN', ...auditActor(actor) });
+  const { view, outcome } = await createOpenRequest(deps, input, { source: 'ADMIN', ...auditActor(actor) });
+  return { view, replayed: outcome !== 'CREATED' };
 }
 
-/** T12 can reuse persistence after authenticating the device and resolving its request identity. */
+export async function createDeviceConsumableRequest(
+  deps: ConsumableRequestDeps,
+  auth: DeviceAuthContext,
+  input: DeviceConsumableSubmissionInput,
+): Promise<OpenRequestResult> {
+  // Client software can be upgraded while an offline request is queued. The build is an admission check,
+  // while the normalized business fields form the retry identity.
+  const payloadHash = createHash('sha256')
+    .update(
+      JSON.stringify([input.schemaVersion, input.consumableType, input.occurredAt.toISOString(), input.note ?? null]),
+    )
+    .digest('hex');
+  return createOpenRequest(
+    deps,
+    { ...input, deviceId: auth.deviceId },
+    {
+      source: 'DEVICE',
+      actorId: auth.deviceId,
+      actorRole: 'DEVICE',
+      auth,
+      requestKey: input.requestKey,
+      occurredAt: input.occurredAt,
+      payloadHash,
+    },
+  );
+}
+
+async function currentSubmissionAssignment(
+  tx: DbClient,
+  origin: Extract<RequestOrigin, { source: 'DEVICE' }>,
+  device: { readonly id: string; readonly customerId: string; readonly siteId: string | null },
+  at: Date,
+): Promise<string> {
+  const { customerId, siteId } = device;
+  if (customerId !== origin.auth.customerId || siteId === null || siteId !== origin.auth.siteId) {
+    throw consumableConflict('The current device assignment does not support this request');
+  }
+  if (origin.occurredAt > at) throw consumableValidationFailed('occurredAt must not be in the future');
+  const [assignment, customer, site] = await Promise.all([
+    tx.deviceAssignment.findFirst({
+      where: { deviceId: device.id, customerId, siteId, status: 'ACTIVE', endedAt: null },
+      select: { id: true, assignedAt: true },
+    }),
+    tx.customer.findFirst({ where: { id: customerId, status: 'ACTIVE', deletedAt: null }, select: { id: true } }),
+    tx.site.findFirst({ where: { id: siteId, customerId, deletedAt: null }, select: { id: true } }),
+  ]);
+  if (!customer || !site || !assignment || origin.occurredAt < assignment.assignedAt) {
+    throw consumableConflict('The request does not belong to the current active assignment');
+  }
+  return assignment.id;
+}
+
 async function createOpenRequest(
   deps: ConsumableRequestDeps,
   input: CreateConsumableRequestInput,
-  origin: { readonly source: 'ADMIN' | 'DEVICE'; readonly actorId: string; readonly actorRole?: string },
-): Promise<CreateConsumableRequestResult> {
+  origin: RequestOrigin,
+): Promise<OpenRequestResult> {
   const consumableType = assertKnownConsumableType(input.consumableType);
-  const device = await (
-    (deps.client as unknown as Record<string, unknown>).device as {
-      findFirst(
-        args: Record<string, unknown>,
-      ): Promise<{ id: string; customerId: string | null; lifecycleStatus: string } | null>;
-    }
-  ).findFirst({ where: { id: input.deviceId }, select: { id: true, customerId: true, lifecycleStatus: true } });
-  if (!device) throw consumableNotFound();
-  if (device.customerId === null) {
-    throw consumableConflict('The device is not assigned to a customer');
-  }
-  if (device.lifecycleStatus === 'Retired') {
-    throw consumableConflict('The device is retired');
-  }
-
-  const openWhere = {
-    deviceId: input.deviceId,
-    consumableType,
-    status: { in: [...OPEN_REQUEST_STATUSES] },
-  };
-  const existing = await requests(deps.client).findFirst({ where: openWhere });
-  if (existing) return { view: toView(existing), replayed: true };
-
-  try {
-    const view = await audited<ConsumableRequestView>(
+  const at = deps.now?.() ?? new Date();
+  const execute = () =>
+    audited<OpenRequestResult>(
       deps.client,
       {
         objectType: 'consumableRequest',
@@ -196,10 +253,11 @@ async function createOpenRequest(
         action: 'consumable.request.create',
         reason: input.note ?? null,
         actorId: origin.actorId,
-        ...(origin.actorRole !== undefined ? { actorRole: origin.actorRole } : {}),
-        customerId: device.customerId,
+        actorRole: origin.actorRole,
+        customerId: (result) => (result as OpenRequestResult).view.customerId,
+        auditSuccessWhen: (result) => result.outcome === 'CREATED',
         afterValue: (result: unknown) => {
-          const view = result as ConsumableRequestView;
+          const { view } = result as OpenRequestResult;
           return {
             requestId: view.requestId,
             deviceId: view.deviceId,
@@ -207,32 +265,95 @@ async function createOpenRequest(
             status: view.status,
             source: view.source,
             version: view.version,
+            ...(origin.source === 'DEVICE' ? { requestKey: origin.requestKey } : {}),
           };
         },
       },
       async (tx) => {
-        const row = await requests(tx).create({
-          data: {
-            customerId: device.customerId,
-            deviceId: input.deviceId,
-            consumableType,
-            status: 'PENDING',
-            source: origin.source,
-            requestedBy: origin.actorId,
-            processNote: input.note ?? null,
-            stageNotes: input.note === undefined ? {} : { request: { note: input.note, source: 'RECORDED' } },
-          },
+        // Serialize intake with lifecycle/assignment writes and other sources for the same device.
+        await tx.$queryRaw`SELECT id FROM devices WHERE id = ${input.deviceId} FOR UPDATE`;
+        const device = await tx.device.findUnique({
+          where: { id: input.deviceId },
+          select: { id: true, customerId: true, siteId: true, lifecycleStatus: true },
         });
-        return toView(row);
+        if (!device) throw consumableNotFound();
+        if (origin.source === 'DEVICE' && device.lifecycleStatus !== 'Active') {
+          throw forbidden('Only an active device can submit a consumable request');
+        }
+        const { customerId } = device;
+        if (customerId === null) throw consumableConflict('The device is not assigned to a customer');
+        if (device.lifecycleStatus === 'Retired') throw consumableConflict('The device is retired');
+
+        const submission =
+          origin.source === 'DEVICE'
+            ? {
+                deviceId: device.id,
+                requestKey: origin.requestKey,
+                occurredAt: origin.occurredAt,
+                payloadHash: origin.payloadHash,
+                assignmentId: await currentSubmissionAssignment(tx, origin, { ...device, customerId }, at),
+              }
+            : null;
+        if (submission) {
+          const prior = await tx.consumableDeviceSubmission.findUnique({
+            where: { deviceId_requestKey: { deviceId: device.id, requestKey: submission.requestKey } },
+            include: { request: true },
+          });
+          if (prior) {
+            if (prior.payloadHash !== submission.payloadHash) throw consumableIdempotencyConflict();
+            if (prior.assignmentId !== submission.assignmentId || prior.request.customerId !== customerId) {
+              throw consumableConflict('The request does not belong to the current active assignment');
+            }
+            return { view: toView(prior.request as RequestRow), outcome: 'REPLAYED' };
+          }
+        }
+
+        const existing = await requests(tx).findFirst({
+          where: { deviceId: device.id, consumableType, status: { in: [...OPEN_REQUEST_STATUSES] } },
+        });
+        if (existing && existing.customerId !== customerId) {
+          throw consumableConflict(
+            'An open request must be resolved before submitting another request for this device',
+          );
+        }
+        const row =
+          existing ??
+          (await requests(tx).create({
+            data: {
+              customerId,
+              deviceId: device.id,
+              consumableType,
+              status: 'PENDING',
+              source: origin.source,
+              requestedBy: origin.actorId,
+              processNote: input.note ?? null,
+              stageNotes: input.note === undefined ? {} : { request: { note: input.note, source: 'RECORDED' } },
+            },
+          }));
+        if (submission) {
+          await tx.consumableDeviceSubmission.create({ data: { ...submission, requestId: row.id } });
+          if (existing) {
+            await recordAudit(tx, {
+              objectType: 'consumableRequest',
+              objectId: row.id,
+              action: 'consumable.request.link',
+              actorId: origin.actorId,
+              actorRole: origin.actorRole,
+              customerId,
+              result: 'SUCCESS',
+              reason: input.note ?? null,
+              afterValue: { requestId: row.id, deviceId: device.id, requestKey: submission.requestKey },
+            });
+          }
+        }
+        return { view: toView(row), outcome: existing ? (submission ? 'LINKED_OPEN' : 'REPLAYED') : 'CREATED' };
       },
     );
-    return { view, replayed: false };
+  try {
+    return await execute();
   } catch (err) {
-    if ((err as { code?: string })?.code === 'P2002') {
-      // 并发撞部分唯一索引 → 重读返回现有记录（幂等）
-      const winner = await requests(deps.client).findFirst({ where: openWhere });
-      if (winner) return { view: toView(winner), replayed: true };
-    }
+    // During rollout an older admin process can still win the open-request unique index.
+    if ((err as { code?: string })?.code === 'P2002') return execute();
     throw err;
   }
 }

@@ -12,7 +12,7 @@
  * - POST /api/v1/admin/consumable-requests/{requestId}/cancel    PENDING/PROCESSING→CANCELLED（If-Match + 强制原因）
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
  */
-import { AuthError, withAuthorization } from '@fdp/auth';
+import { AuthError, forbidden, withAuthorization } from '@fdp/auth';
 import type { ActorContext } from '@fdp/auth';
 import { ConsumableError } from '@fdp/domain';
 import { mapDbErrorToHttp } from '@fdp/database';
@@ -28,8 +28,12 @@ import {
 } from './request-service.js';
 import type { ConsumableRequestDeps } from './request-service.js';
 import { parseStrictObject } from '../admin/shared/strict-object.js';
+import { parseOptionalConsumableNote } from './request-policy.js';
 
-export type AdminConsumableRequestHandlerDeps = ConsumableRequestDeps;
+export type AdminConsumableRequestHandlerDeps = ConsumableRequestDeps & {
+  /** A verified cutover hides the old UI and permits old API clients until this UTC deadline. */
+  readonly legacyCreateUntil?: Date | null;
+};
 
 export interface AdminConsumableRequestHandlers {
   create(req: AdminHttpRequest): Promise<AdminHttpResponse>;
@@ -74,14 +78,6 @@ function bodyOf(req: AdminHttpRequest, allowedKeys: readonly string[]): Record<s
   return parseStrictObject(req.body ?? {}, allowedKeys, consumableValidationFailed);
 }
 
-function optionalNote(value: unknown, field: string): string | undefined {
-  if (value === undefined || value === null) return undefined;
-  if (typeof value !== 'string' || value.trim().length === 0 || value.trim().length > 500) {
-    throw consumableValidationFailed(`${field} must be a string of 1~500 characters`);
-  }
-  return value.trim();
-}
-
 function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse {
   if (err instanceof AuthError || err instanceof AdminConsumableError) {
     const message = SENSITIVE_LEAK_PATTERN.test(err.message) ? 'The request failed' : err.message;
@@ -116,10 +112,13 @@ export function createAdminConsumableRequestHandlers(
   const transitionInputOf = (req: AdminHttpRequest, allowedKeys: readonly string[]) => ({
     requestId: requireRequestId(req),
     ifMatchVersion: parseIfMatch(headerOf(req, 'If-Match')),
-    note: optionalNote(bodyOf(req, allowedKeys).note, 'note'),
+    note: parseOptionalConsumableNote(bodyOf(req, allowedKeys).note, 'note'),
   });
 
   const create = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:write' }, async (req) => {
+    if (deps.legacyCreateUntil && now() >= deps.legacyCreateUntil) {
+      throw forbidden('The compatibility window for creating consumable requests in the admin API has ended');
+    }
     const body = bodyOf(req, ['deviceId', 'consumableType', 'note']);
     if (typeof body.deviceId !== 'string' || body.deviceId.trim().length === 0) {
       throw consumableValidationFailed('deviceId is required');
@@ -130,7 +129,7 @@ export function createAdminConsumableRequestHandlers(
     const result = await createConsumableRequest(deps, actorOf(req), {
       deviceId: body.deviceId.trim(),
       consumableType: body.consumableType,
-      note: optionalNote(body.note, 'note'),
+      note: parseOptionalConsumableNote(body.note, 'note'),
     });
     return {
       status: result.replayed ? 200 : 201,
@@ -146,7 +145,13 @@ export function createAdminConsumableRequestHandlers(
       ...(q.status !== undefined ? { status: q.status } : {}),
       ...(q.consumableType !== undefined ? { consumableType: q.consumableType } : {}),
     });
-    return { status: 200, body: { data: items, meta: meta(req) } };
+    return {
+      status: 200,
+      body: {
+        data: items,
+        meta: { ...meta(req), ...(deps.legacyCreateUntil ? { legacyCreationOffered: false } : {}) },
+      },
+    };
   });
 
   const detail = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'device:read' }, async (req) => {

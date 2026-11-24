@@ -38,10 +38,10 @@ import type { EffectiveConfiguration } from '../admin/configuration/service.js';
 import { listDeviceUsersForSync } from '../admin/device-user/service.js';
 import {
   CONFIGURATION_DELIVERY_SCHEMA_VERSION,
-  isConfigurationClientVersion,
   makeConfigurationDelivery,
   recordConfigurationSync,
 } from './configuration-delivery.js';
+import { isVerifiedClientVersion } from './verified-client-targets.js';
 import type {
   ConfigurationDeliveryView,
   ConfigurationProtocol,
@@ -125,7 +125,7 @@ function parseConfigurationProtocol(value: unknown): ConfigurationProtocol | und
       typeof protocol.schemaVersion === 'number' &&
       Number.isSafeInteger(protocol.schemaVersion) &&
       protocol.schemaVersion >= 1 &&
-      isConfigurationClientVersion(protocol.clientVersion)
+      isVerifiedClientVersion(protocol.clientVersion)
     ) {
       return { schemaVersion: protocol.schemaVersion, clientVersion: protocol.clientVersion };
     }

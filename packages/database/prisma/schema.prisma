@@ -649,7 +649,7 @@ model ConsumableRequest {
   consumableType String    @map("consumable_type") // CARBON_FILTER | BIO_ADDITIVE
   // PENDING | PROCESSING | COMPLETED | CANCELLED（BE-CNS-02 状态机）
   status         String    @default("PENDING")
-  source         String    @default("ADMIN") // 协议冻结前仅管理端创建（BE-CNS-02）
+  source         String    @default("ADMIN") // ADMIN | DEVICE
   requestedBy    String    @map("requested_by")
   requestedAt    DateTime  @default(now()) @map("requested_at") @db.Timestamptz
   processedBy    String?   @map("processed_by")
@@ -661,7 +661,26 @@ model ConsumableRequest {
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   // CHECK (status IN ('PENDING','PROCESSING','COMPLETED','CANCELLED')) 见 migration.sql
 
+  deviceSubmissions ConsumableDeviceSubmission[]
+
   @@map("consumable_requests")
+}
+
+/// A device key is bound to the original payload and request even after the request closes.
+model ConsumableDeviceSubmission {
+  deviceId     String   @map("device_id")
+  requestKey   String   @map("request_key")
+  requestId    String   @map("request_id")
+  assignmentId String   @map("assignment_id")
+  payloadHash  String   @map("payload_hash")
+  occurredAt   DateTime @map("occurred_at") @db.Timestamptz
+  receivedAt   DateTime @default(now()) @map("received_at") @db.Timestamptz
+
+  request ConsumableRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@id([deviceId, requestKey])
+  @@index([requestId])
+  @@map("consumable_device_submissions")
 }
 
 // ---------- ESG ----------

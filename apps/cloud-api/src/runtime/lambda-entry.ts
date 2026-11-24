@@ -39,6 +39,7 @@ import { createAdminContractDeviceHandlers } from '../admin/contract-device/hand
 import { createAdminConfigurationHandlers } from '../admin/configuration/handler.js';
 import { createAdminConsumableHandlers } from '../consumable/handler.js';
 import { createAdminConsumableRequestHandlers } from '../consumable/request-handler.js';
+import { parseConsumableRequestTime } from '../consumable/request-policy.js';
 import { createAdminDeviceUserHandlers } from '../admin/device-user/handler.js';
 import { createAdminAlarmHandlers } from '../admin/alarm/handler.js';
 import { createAdminEsgHandlers } from '../admin/esg/handler.js';
@@ -171,7 +172,10 @@ async function initialize() {
         contractDevices: createAdminContractDeviceHandlers({ client }),
         configurations: createAdminConfigurationHandlers({ client }),
         consumables: createAdminConsumableHandlers({ client }),
-        consumableRequests: createAdminConsumableRequestHandlers({ client }),
+        consumableRequests: createAdminConsumableRequestHandlers({
+          client,
+          legacyCreateUntil: parseConsumableRequestTime(process.env.ADMIN_CONSUMABLE_REQUEST_CREATE_UNTIL),
+        }),
         deviceUsers: createAdminDeviceUserHandlers({ client }),
         alarms: createAdminAlarmHandlers({ client }),
         esg: createAdminEsgHandlers({ client, ...activityExportPorts }),

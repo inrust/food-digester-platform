@@ -65,7 +65,7 @@ export interface ConsumableRequestView {
   readonly consumableType: ConsumableType;
   readonly status: ConsumableRequestStatus;
   /** 协议冻结前仅管理端创建（ADMIN）。 */
-  readonly source: 'ADMIN';
+  readonly source: 'ADMIN' | 'DEVICE';
   readonly requestedBy: string;
   readonly requestedAt: string;
   readonly processedBy: string | null;

@@ -1,0 +1,221 @@
+{
+  "openapi": "3.1.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "E/T12 Device consumable request candidate",
+    "version": "1.0.0-candidate",
+    "description": "候选协议。仅用于受控联调，设备端确认前保持关闭。耗材代码复用 DEC-008。",
+    "x-decision-versions": ["DEC-008@1.0.0"],
+    "x-decision-register-version": "1.40.0"
+  },
+  "paths": {
+    "/api/v1/device/consumable-requests": {
+      "post": {
+        "operationId": "submitDeviceConsumableRequestCandidate",
+        "summary": "设备发起耗材更换申请",
+        "description": "证书身份绑定设备。当前可用分配下接受离线补报。相同设备和申请标识重试返回已绑定工单。不同设备允许使用相同标识。",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceConsumableRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "首次写入新 DEVICE 工单",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedDeviceConsumableRequest"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "已绑定同范围开放工单，或确认相同标识和载荷的重复请求",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExistingDeviceConsumableRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段、时间或版本无效（VALIDATION_FAILED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "证书缺失、未登记或不可用（UNAUTHENTICATED）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "设备生命周期或获准客户端组合不允许（FORBIDDEN）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "候选入口未启用（NOT_FOUND）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "当前分配冲突（CONFLICT）或同一申请标识指向不同载荷（IDEMPOTENCY_CONFLICT）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "内部错误（INTERNAL_ERROR），可原样重试",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceMtls": {
+        "$ref": "openapi-base.json#/components/securitySchemes/DeviceMtls"
+      }
+    },
+    "schemas": {
+      "DeviceConsumableRequestKey": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"
+      },
+      "DeviceConsumableRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schemaVersion", "clientVersion", "requestKey", "consumableType", "occurredAt"],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "clientVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+          },
+          "requestKey": {
+            "$ref": "#/components/schemas/DeviceConsumableRequestKey"
+          },
+          "consumableType": {
+            "$ref": "admin-consumable-request-api.json#/components/schemas/ConsumableRequest/properties/consumableType"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?Z$",
+            "description": "设备保存并原样重试的 UTC 申请发生时点。必须位于当前分配期间，且不能晚于服务端收件时间。"
+          },
+          "note": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "\\S"
+          }
+        }
+      },
+      "CreatedDeviceConsumableRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["requestKey", "requestId", "outcome"],
+            "properties": {
+              "requestKey": {
+                "$ref": "#/components/schemas/DeviceConsumableRequestKey"
+              },
+              "requestId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "outcome": {
+                "type": "string",
+                "enum": ["CREATED"]
+              }
+            }
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "ExistingDeviceConsumableRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "meta"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["requestKey", "requestId", "outcome"],
+            "properties": {
+              "requestKey": {
+                "$ref": "#/components/schemas/DeviceConsumableRequestKey"
+              },
+              "requestId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "outcome": {
+                "type": "string",
+                "enum": ["LINKED_OPEN", "REPLAYED"]
+              }
+            }
+          },
+          "meta": {
+            "$ref": "openapi-base.json#/components/schemas/ResponseMeta"
+          }
+        }
+      }
+    }
+  }
+}

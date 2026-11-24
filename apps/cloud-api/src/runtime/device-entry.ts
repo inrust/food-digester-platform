@@ -21,7 +21,8 @@ import {
   createDeviceDeactivateHandler,
   createDeviceSyncHandler,
 } from '../device/index.js';
-import { parseConfigurationDeliveryTargets } from '../device/configuration-delivery.js';
+import { parseVerifiedDeviceClientTargets } from '../device/verified-client-targets.js';
+import { createDeviceConsumableSubmissionHandler } from '../device/consumable-request-handler.js';
 import { createDeviceOtaDownloadHandler } from '../ota/download.js';
 import { createDeviceMediaHandler } from '../media/device-handler.js';
 import {
@@ -73,7 +74,16 @@ async function initialize() {
     authorization: new PostgresLiveImageAuthorization(client),
   };
   const live = createLiveImageLeaseHandlers(liveDeps);
+  const consumableTargets = parseVerifiedDeviceClientTargets(process.env.DEVICE_CONSUMABLE_REQUEST_TARGETS);
   return createDeviceApiLambdaHandler({
+    ...(consumableTargets.size > 0
+      ? {
+          submitConsumableRequest: createDeviceConsumableSubmissionHandler({
+            client,
+            verifiedTargets: consumableTargets,
+          }),
+        }
+      : {}),
     liveImageState: live.getDeviceState,
     liveImageFrame: createLiveImageFrameHandler(liveDeps),
     certificateStatus: createCertificateStatusHandler({
@@ -93,9 +103,7 @@ async function initialize() {
     sync: createDeviceSyncHandler({
       client,
       maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds(),
-      configurationDeliveryTargets: parseConfigurationDeliveryTargets(
-        process.env.DEVICE_CONFIGURATION_DELIVERY_TARGETS,
-      ),
+      configurationDeliveryTargets: parseVerifiedDeviceClientTargets(process.env.DEVICE_CONFIGURATION_DELIVERY_TARGETS),
     }),
     deactivate: createDeviceDeactivateHandler({ client, iot }),
     otaDownload: createDeviceOtaDownloadHandler({ client, objectUrlSigner: ota.downloadUrlSigner }),

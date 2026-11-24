@@ -3,7 +3,7 @@
   "info": {
     "title": "Bio-Nexa CMP Admin Consumable Request API",
     "version": "0.1.0",
-    "description": "BE-CNS-02 耗材更换申请工作流接口（Cognito 认证；创建/状态迁移 device:write=PlatformSuperAdmin/PlatformOperator，查询 device:read 且 Customer 角色租户隔离、跨 Customer 详情 404）：创建、列表、详情与状态机 PENDING→PROCESSING→COMPLETED/CANCELLED（跳级/重复处理/终态迁移 → 409）。同设备同耗材存在开放申请（PENDING/PROCESSING）时重复创建幂等返回现有记录（replayed=true，无写入/审计；部分唯一索引并发兜底）；状态迁移强制 If-Match（漂移 → 409 VERSION_CONFLICT）；Processing/Completed 仅授权角色执行并写审计（consumable.request.create/process/complete/cancel）；保存申请时间、来源（协议冻结前固定 ADMIN）、处理人、各阶段独立备注和完成时间；完成后保留完整记录。不实现工单派遣/库存/物流/短信联系。通用契约继承 openapi-base.json（CT-05）。",
+    "description": "BE-CNS-02 耗材更换申请工作流接口（Cognito 认证；创建/状态迁移 device:write=PlatformSuperAdmin/PlatformOperator，查询 device:read 且 Customer 角色租户隔离、跨 Customer 详情 404）：创建、列表、详情与状态机 PENDING→PROCESSING→COMPLETED/CANCELLED（跳级/重复处理/终态迁移 → 409）。同设备同耗材存在开放申请（PENDING/PROCESSING）时重复创建幂等返回现有记录（replayed=true，无写入/审计；部分唯一索引并发兜底）；状态迁移强制 If-Match（漂移 → 409 VERSION_CONFLICT）；Processing/Completed 仅授权角色执行并写审计（consumable.request.create/process/complete/cancel）；保存申请时间、来源（ADMIN 或 DEVICE）、处理人、各阶段独立备注和完成时间；完成后保留完整记录。不实现工单派遣/库存/物流/短信联系。通用契约继承 openapi-base.json（CT-05）。",
     "x-decision-versions": ["PRI-001@1.0.0", "ADP-001@1.0.0", "DEC-008@1.0.0", "DEC-012@1.0.0"],
     "x-decision-register-version": "1.40.0"
   },
@@ -22,7 +22,8 @@
       "post": {
         "tags": ["admin"],
         "operationId": "createConsumableRequest",
-        "summary": "创建更换申请（幂等：开放申请重复 → 200 + replayed=true 返回现有记录）",
+        "summary": "兼容的管理端创建（开放申请重复时幂等返回）",
+        "description": "设备来源切换后，旧客户端可在已配置的兼容期限内继续创建。期限届满后返回 403；查询、处理、完成与取消沿用原权限。",
         "security": [{ "CognitoJwt": [] }],
         "requestBody": {
           "required": true,
@@ -55,6 +56,7 @@
         "tags": ["admin"],
         "operationId": "listConsumableRequests",
         "summary": "更换申请列表（customerId/deviceId/status/consumableType 筛选）",
+        "description": "包括平台和设备来源。切换后 meta.legacyCreationOffered 为 false，管理后台收起旧创建入口。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           {
@@ -338,7 +340,11 @@
           "deviceId": { "type": "string", "minLength": 1 },
           "consumableType": { "type": "string", "enum": ["CARBON_FILTER", "BIO_ADDITIVE"] },
           "status": { "type": "string", "enum": ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"] },
-          "source": { "type": "string", "enum": ["ADMIN"], "description": "协议冻结前仅管理端创建" },
+          "source": {
+            "type": "string",
+            "enum": ["ADMIN", "DEVICE"],
+            "description": "原始工单来源；重复或关联开放工单时保持原值"
+          },
           "requestedBy": { "type": "string", "minLength": 1 },
           "requestedAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "processedBy": { "type": ["string", "null"] },
@@ -384,13 +390,23 @@
           "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
         }
       },
+      "ConsumableRequestListMeta": {
+        "type": "object",
+        "required": ["requestId", "timestamp"],
+        "additionalProperties": false,
+        "properties": {
+          "requestId": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta/properties/requestId" },
+          "timestamp": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
+          "legacyCreationOffered": { "type": "boolean", "description": "false 时收起旧创建界面。省略时沿用旧行为。" }
+        }
+      },
       "ConsumableRequestListSuccess": {
         "type": "object",
         "required": ["data", "meta"],
         "additionalProperties": false,
         "properties": {
           "data": { "type": "array", "items": { "$ref": "#/components/schemas/ConsumableRequest" } },
-          "meta": { "$ref": "openapi-base.json#/components/schemas/ResponseMeta" }
+          "meta": { "$ref": "#/components/schemas/ConsumableRequestListMeta" }
         }
       }
     }

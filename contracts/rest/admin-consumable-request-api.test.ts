@@ -81,11 +81,11 @@ test('六个端点齐备且 Cognito 认证；状态迁移强制 If-Match', () =>
   }
 });
 
-test('Schema 封闭：四态枚举/source 固定 ADMIN/幂等 replayed/完整历史字段', () => {
+test('Schema 封闭：四态枚举/source 保留 ADMIN 并支持 DEVICE/幂等 replayed/完整历史字段', () => {
   const request = doc.components.schemas.ConsumableRequest;
   assert.equal(request.additionalProperties, false);
   assert.deepEqual(request.properties.status.enum, ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED']);
-  assert.deepEqual(request.properties.source.enum, ['ADMIN'], '协议冻结前仅管理端创建');
+  assert.deepEqual(request.properties.source.enum, ['ADMIN', 'DEVICE']);
   for (const field of ['requestedAt', 'requestedBy', 'processedBy', 'processNote', 'completedAt', 'version']) {
     assert.ok(request.required.includes(field), `缺历史字段 ${field}`);
   }
@@ -126,4 +126,11 @@ test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.
     assert.ok(targetDoc, `$ref 目标文件不允许: ${ref}`);
     assert.notEqual(resolvePointer(targetDoc, pointer), undefined, `悬空引用: ${ref}`);
   }
+});
+
+test('R20 legacy creation capability is optional and separate from the source field', () => {
+  const schemas = doc.components.schemas;
+  assert.equal(schemas.ConsumableRequestListMeta.properties.legacyCreationOffered.type, 'boolean');
+  assert.ok(!schemas.ConsumableRequestListMeta.required.includes('legacyCreationOffered'));
+  assert.ok(!('source' in schemas.ConsumableRequestCreate.properties));
 });

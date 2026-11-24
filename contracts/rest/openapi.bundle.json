@@ -42,7 +42,7 @@
       },
       {
         "file": "admin-consumable-request-api.json",
-        "sha256": "f9e1d7edb02ccf8df5b2968d2b121315ee7379555c696ca9075b07dc763d14a1",
+        "sha256": "74f441f47efdc8e45c13e756dfae46c944a5ad2985a20613e3932b5cfe5565bc",
         "status": "implemented"
       },
       {
@@ -1908,7 +1908,8 @@
           "admin"
         ],
         "operationId": "createConsumableRequest",
-        "summary": "创建更换申请（幂等：开放申请重复 → 200 + replayed=true 返回现有记录）",
+        "summary": "兼容的管理端创建（开放申请重复时幂等返回）",
+        "description": "设备来源切换后，旧客户端可在已配置的兼容期限内继续创建。期限届满后返回 403；查询、处理、完成与取消沿用原权限。",
         "security": [
           {
             "CognitoJwt": []
@@ -1973,6 +1974,7 @@
         ],
         "operationId": "listConsumableRequests",
         "summary": "更换申请列表（customerId/deviceId/status/consumableType 筛选）",
+        "description": "包括平台和设备来源。切换后 meta.legacyCreationOffered 为 false，管理后台收起旧创建入口。",
         "security": [
           {
             "CognitoJwt": []
@@ -14062,9 +14064,10 @@
           "source": {
             "type": "string",
             "enum": [
-              "ADMIN"
+              "ADMIN",
+              "DEVICE"
             ],
-            "description": "协议冻结前仅管理端创建"
+            "description": "原始工单来源；重复或关联开放工单时保持原值"
           },
           "requestedBy": {
             "type": "string",
@@ -14161,6 +14164,26 @@
           }
         }
       },
+      "AdminConsumableRequestApi__ConsumableRequestListMeta": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "timestamp"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "$ref": "#/components/schemas/ResponseMeta/properties/requestId"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/UtcTimestamp"
+          },
+          "legacyCreationOffered": {
+            "type": "boolean",
+            "description": "false 时收起旧创建界面。省略时沿用旧行为。"
+          }
+        }
+      },
       "AdminConsumableRequestApi__ConsumableRequestListSuccess": {
         "type": "object",
         "required": [
@@ -14176,7 +14199,7 @@
             }
           },
           "meta": {
-            "$ref": "#/components/schemas/ResponseMeta"
+            "$ref": "#/components/schemas/AdminConsumableRequestApi__ConsumableRequestListMeta"
           }
         }
       },

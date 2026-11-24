@@ -161,6 +161,7 @@ export const REQUIRED_TITLES = [
   'CMP-16 publishes with UTC and preserves the reason',
   'CMP-16 publishes with no scheduled time and preserves the reason',
   'CMP-19 selects eligible devices and recovers when the server invalidates a selection',
+  'E/T12 R20 device and legacy requests remain actionable across admin intake cutover and rollback',
   'CMP-25 resets applied scope, dates, pagination and export while holding the Customer scope',
   'CMP-14 and CMP-15 keep configuration history bounded and let the keyboard reach earlier versions',
   'CMP-41 returns to the same row and scroll position and uses the latest site version for nested writes',

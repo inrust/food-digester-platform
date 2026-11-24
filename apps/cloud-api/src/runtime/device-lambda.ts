@@ -1,6 +1,7 @@
 /** Device API Gateway 的可信生产适配器：mTLS 身份只从 requestContext 注入。 */
 import type { ClientCertIdentity } from '@fdp/auth';
 import { matchDeliveredOperation } from './delivered-operations.js';
+import { DEVICE_CONSUMABLE_REQUEST_PATH } from '../device/consumable-request-handler.js';
 
 export interface ApiGatewayDeviceEvent {
   readonly headers?: Readonly<Record<string, string | undefined>>;
@@ -51,6 +52,7 @@ export interface DeviceRouteSet {
   readonly certificateStatus: DeviceRoute;
   readonly certificateRotate: DeviceRoute;
   readonly sync: DeviceRoute;
+  readonly submitConsumableRequest?: DeviceRoute;
   readonly deactivate: DeviceRoute;
   readonly otaDownload: DeviceRoute;
   readonly mediaUpload: DeviceRoute;
@@ -102,7 +104,11 @@ export function createDeviceApiLambdaHandler(routes: DeviceRouteSet) {
       ...(clientCert ? { identity: clientCert } : {}),
     };
 
-    let route: DeviceRoute | undefined;
+    // Candidate routing is separate from the published device operation inventory.
+    let route =
+      method === 'POST' && (path === DEVICE_CONSUMABLE_REQUEST_PATH || path === DEVICE_CONSUMABLE_REQUEST_PATH + '/')
+        ? routes.submitConsumableRequest
+        : undefined;
     switch (matched?.operation.operationId) {
       case 'getDeviceLiveImageState':
         route = routes.liveImageState;

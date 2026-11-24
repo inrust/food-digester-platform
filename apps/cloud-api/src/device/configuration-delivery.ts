@@ -28,30 +28,6 @@ export interface ConfigurationDeliveryView {
   readonly context: ConfigurationDerivedContext;
 }
 
-export function isConfigurationClientVersion(value: unknown): value is string {
-  return typeof value === 'string' && value.length <= 100 && value.length > 0 && value.trim() === value;
-}
-
-/** Only an exact device ID and a verified client build can be admitted. Invalid configuration leaves all devices on legacy Sync. */
-export function parseConfigurationDeliveryTargets(raw: string | undefined): ReadonlyMap<string, string> {
-  if (!raw) return new Map();
-  try {
-    const targets: unknown = JSON.parse(raw);
-    if (targets === null || typeof targets !== 'object' || Array.isArray(targets)) return new Map();
-    const entries = Object.entries(targets);
-    if (
-      entries.some(
-        ([deviceId, version]) => !/^[a-zA-Z0-9_.:-]{1,128}$/.test(deviceId) || !isConfigurationClientVersion(version),
-      )
-    ) {
-      return new Map();
-    }
-    return new Map(entries as [string, string][]);
-  } catch {
-    return new Map();
-  }
-}
-
 export function makeConfigurationDelivery(
   deviceId: string,
   configuration: EffectiveConfiguration,

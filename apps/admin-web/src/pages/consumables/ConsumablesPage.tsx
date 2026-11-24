@@ -10,7 +10,7 @@ import { translate } from '../../i18n/i18n.js';
  * - 联系方式：列表不含 PII，点击后调用独立授权端点按需加载；
  * - 更换申请：PENDING→PROCESSING→COMPLETED/CANCELLED，操作携带 version + 备注
  *   （complete/cancel 强制）；重复创建幂等（replayed 提示）；跳级由矩阵禁用 + 服务端 409；
- * - 边界：不预测寿命、不直接联系、不做库存/派单；协议冻结前无“来自设备”入口（source=ADMIN）。
+ * - 工单显示设备与平台来源，平台创建入口由服务端兼容策略控制。
  */
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
@@ -62,6 +62,7 @@ export interface ConsumablesPageProps {
     readonly rows: readonly ConsumableRequestView[] | null;
     readonly error?: unknown;
   };
+  readonly legacyCreationOffered?: boolean;
   readonly requestFilter: ConsumableRequestFilter;
   readonly onApplyRequestFilter: (filter: ConsumableRequestFilter) => void;
   readonly onLoadRequestDevices: () => Promise<readonly FilterOption[]>;
@@ -208,6 +209,7 @@ export function ConsumablesPage({
   onPrevStatusPage,
   onLoadContact,
   requests,
+  legacyCreationOffered = true,
   requestFilter,
   onApplyRequestFilter,
   onLoadRequestDevices,
@@ -337,7 +339,7 @@ export function ConsumablesPage({
   };
   const submitCreate = () => {
     const { deviceId, consumableType, note } = createDraft;
-    if (!canWrite || !deviceEligible || consumableType === '') return;
+    if (!legacyCreationOffered || !canWrite || !deviceEligible || consumableType === '') return;
     const generation = deviceLoad.current;
     setCreateError(null);
     void runAction(
@@ -612,22 +614,24 @@ export function ConsumablesPage({
       <section data-testid="consumable-requests-section" aria-label={translate('page.07c43eb2dde1')}>
         <div className="page-header">
           <h4>{translate('page.07c43eb2dde1')}</h4>
-          <Button
-            type="button"
-            className="primary-button"
-            data-testid="consumable-request-create-open"
-            disabled={!canWrite || busy}
-            {...(!canWrite ? { title: translate('page.250fd887db71') } : {})}
-            onClick={() => {
-              setCreateDraft(EMPTY_CREATE_DRAFT);
-              setDeviceSearch('');
-              setCreateError(null);
-              setCreateOpen(true);
-              void loadRequestDevices();
-            }}
-          >
-            {translate('page.d772b092f68b')}
-          </Button>
+          {legacyCreationOffered ? (
+            <Button
+              type="button"
+              className="primary-button"
+              data-testid="consumable-request-create-open"
+              disabled={!canWrite || busy}
+              {...(!canWrite ? { title: translate('page.250fd887db71') } : {})}
+              onClick={() => {
+                setCreateDraft(EMPTY_CREATE_DRAFT);
+                setDeviceSearch('');
+                setCreateError(null);
+                setCreateOpen(true);
+                void loadRequestDevices();
+              }}
+            >
+              {translate('page.d772b092f68b')}
+            </Button>
+          ) : null}
         </div>
         <FilterBar
           testId="consumable-request-filter"
@@ -724,6 +728,12 @@ export function ConsumablesPage({
                     {REQUEST_STATUS_LABELS[req.status]}
                   </span>
                 ),
+              },
+              {
+                key: 'source',
+                header: translate('consumables.requestSource'),
+                render: (req) =>
+                  translate(req.source === 'DEVICE' ? 'consumables.sourceDevice' : 'consumables.sourceAdmin'),
               },
               { key: 'requestedBy', header: translate('page.880ab989a872'), render: (req) => req.requestedBy },
               { key: 'processedBy', header: translate('page.3e132a2a8e75'), render: (req) => req.processedBy ?? '—' },
@@ -838,7 +848,7 @@ export function ConsumablesPage({
       </Modal>
 
       <Modal
-        open={createOpen}
+        open={legacyCreationOffered && createOpen}
         title={translate('page.42438fcdc1eb')}
         testid="consumable-create-form"
         onClose={closeCreate}

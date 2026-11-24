@@ -73,11 +73,12 @@ export async function getConsumableContact(api: ApiClient, deviceId: string): Pr
 export async function listConsumableRequests(
   api: ApiClient,
   filter: ConsumableRequestFilter,
-): Promise<readonly ConsumableRequestView[]> {
-  const response = await api.request<{ data: ConsumableRequestView[] }>(
-    `/admin/consumable-requests${buildQuery({ ...filter })}`,
-  );
-  return response.data;
+): Promise<{ readonly items: readonly ConsumableRequestView[]; readonly legacyCreationOffered: boolean }> {
+  const response = await api.request<{
+    data: ConsumableRequestView[];
+    meta?: { legacyCreationOffered?: boolean };
+  }>(`/admin/consumable-requests${buildQuery({ ...filter })}`);
+  return { items: response.data, legacyCreationOffered: response.meta?.legacyCreationOffered !== false };
 }
 
 export async function createConsumableRequest(

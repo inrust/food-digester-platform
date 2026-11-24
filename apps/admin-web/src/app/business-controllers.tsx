@@ -477,8 +477,10 @@ export function ConsumablesController({
   const [requests, setRequests] = useState<{
     rows: readonly ConsumableRequestView[] | null;
     error?: unknown;
+    legacyCreationOffered: boolean;
   }>({
     rows: null,
+    legacyCreationOffered: false,
   });
   const statusQuery = useMemo<ConsumableStatusFilter>(
     () => (fixedCustomerId === null ? statusFilter : { ...statusFilter, customerId: fixedCustomerId }),
@@ -502,8 +504,10 @@ export function ConsumablesController({
         ? { rows: statusResult.value.items, loading: false, nextCursor: statusResult.value.nextCursor }
         : { rows: [], loading: false, error: statusResult.reason },
     );
-    setRequests(
-      requestResult.status === 'fulfilled' ? { rows: requestResult.value } : { rows: [], error: requestResult.reason },
+    setRequests((previous) =>
+      requestResult.status === 'fulfilled'
+        ? { rows: requestResult.value.items, legacyCreationOffered: requestResult.value.legacyCreationOffered }
+        : { ...previous, rows: [], error: requestResult.reason },
     );
   }, [api, requestQuery, statusCursor, statusQuery]);
   useEffect(() => {
@@ -551,6 +555,7 @@ export function ConsumablesController({
       status={{ ...status, hasPrevPage: statusPrevious.length > 0 }}
       onLoadContact={(deviceId) => getConsumableContact(api, deviceId)}
       requests={requests}
+      legacyCreationOffered={requests.legacyCreationOffered}
       requestFilter={requestQuery}
       onApplyRequestFilter={setRequestFilter}
       onLoadRequestDevices={async () => {
