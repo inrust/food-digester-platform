@@ -76,16 +76,28 @@ export interface PublishConfigurationResult {
   readonly notifiedDeviceIds: readonly string[];
 }
 
+export interface ConfigurationDeliveryEvidence {
+  readonly deliveryId: string;
+  readonly servedAt: string;
+  readonly receivedAt: string | null;
+  readonly appliedAt: string | null;
+}
+
 export interface ConfigurationSyncStatusView {
   readonly configurationId: string;
   readonly version: number;
   readonly status: string;
   readonly effectiveAt: string | null;
-  readonly targets: readonly { readonly deviceId: string; readonly notificationStatus: string }[];
+  readonly targets: readonly {
+    readonly deviceId: string;
+    readonly notificationStatus: string;
+    readonly delivery?: ConfigurationDeliveryEvidence;
+  }[];
 }
 
 /** Sync 下发快照（BE-SYNC-01 读取路径）。 */
 export interface EffectiveConfiguration {
+  readonly versionId: string;
   readonly configurationId: string;
   readonly version: number;
   readonly payload: ConfigurationPayload;
@@ -202,36 +214,53 @@ function devices(client: DbClient) {
   };
 }
 
-/** 派生只读上下文：Alias/Site/Region/Subregion 取设备与站点；Contract 取客户当前有效合同。 */
-async function loadDerivedContext(client: DbClient, deviceId: string, at: Date): Promise<ConfigurationDerivedContext> {
-  const device = await devices(client).findFirst({ where: { id: deviceId } });
-  if (!device) throw configurationNotFound();
-  let site: { name: string; region: string | null; subregion: string | null } | null = null;
-  if (device.siteId) {
-    site = await (
-      (client as unknown as Record<string, unknown>).site as {
-        findFirst(args: Record<string, unknown>): Promise<typeof site>;
-      }
-    ).findFirst({ where: { id: device.siteId } });
-  }
-  let contract: { contractNumber: string; name: string } | null = null;
-  if (device.customerId) {
-    contract = await (
-      (client as unknown as Record<string, unknown>).contract as {
-        findFirst(args: Record<string, unknown>): Promise<typeof contract>;
-      }
-    ).findFirst({
-      where: { customerId: device.customerId, startAt: { lte: at }, endAt: { gt: at } },
-      orderBy: { startAt: 'desc' },
-    });
-  }
+/** Derive read-only context from the device's current site and active contract association. */
+export async function readConfigurationContext(
+  client: DbClient,
+  device: Pick<DeviceRow, 'id' | 'alias' | 'customerId' | 'siteId'>,
+  at: Date,
+): Promise<ConfigurationDerivedContext> {
+  const { id, customerId, siteId, alias } = device;
+  const [site, link] = await Promise.all([
+    siteId && customerId
+      ? client.site.findFirst({
+          where: { id: siteId, customerId, deletedAt: null },
+          select: { name: true, region: true, subregion: true },
+        })
+      : null,
+    customerId
+      ? client.contractDevice.findFirst({
+          where: {
+            deviceId: id,
+            customerId,
+            status: 'ACTIVE',
+            validFrom: { lte: at },
+            OR: [{ validTo: null }, { validTo: { gt: at } }],
+            contract: {
+              customerId,
+              status: { in: ['EFFECTIVE', 'EXPIRING_SOON'] },
+              startAt: { lte: at },
+              endAt: { gt: at },
+            },
+          },
+          orderBy: [{ validFrom: 'desc' }, { id: 'asc' }],
+          select: { contract: { select: { contractNumber: true, name: true } } },
+        })
+      : null,
+  ]);
   return {
-    alias: device.alias,
+    alias,
     site: site?.name ?? null,
     region: site?.region ?? null,
     subregion: site?.subregion ?? null,
-    contract: contract ? { contractNumber: contract.contractNumber, name: contract.name } : null,
+    contract: link ? { contractNumber: link.contract.contractNumber, name: link.contract.name } : null,
   };
+}
+
+async function loadDerivedContext(client: DbClient, deviceId: string, at: Date): Promise<ConfigurationDerivedContext> {
+  const device = await devices(client).findFirst({ where: { id: deviceId } });
+  if (!device) throw configurationNotFound();
+  return readConfigurationContext(client, device, at);
 }
 
 // ---------- 写路径 ----------
@@ -377,14 +406,7 @@ export async function publishConfigurationVersion(
   assertPublishableVersion(versionRow.status);
   const effectiveAt = input.effectiveAt ?? now;
 
-  // 目标设备（发布时点解析；Retired 不通知）
-  const targetDevices = (
-    config.targetDeviceId !== null
-      ? await devices(deps.client).findMany({ where: { id: config.targetDeviceId } })
-      : await devices(deps.client).findMany({ where: { model: config.targetModel } })
-  ).filter((d) => d.lifecycleStatus !== 'Retired');
-
-  const published = await audited<ConfigurationVersionView>(
+  return audited<PublishConfigurationResult>(
     deps.client,
     {
       objectType: 'configuration',
@@ -397,6 +419,17 @@ export async function publishConfigurationVersion(
       afterValue: { version, status: 'PUBLISHED', effectiveAt: effectiveAt.toISOString() },
     },
     async (tx) => {
+      if (config.targetDeviceId !== null) {
+        await tx.$queryRaw`SELECT id FROM devices WHERE id = ${config.targetDeviceId} FOR SHARE`;
+      }
+      const targetDevices = (
+        await devices(tx).findMany({
+          where: config.targetDeviceId !== null ? { id: config.targetDeviceId } : { model: config.targetModel },
+        })
+      ).filter((device) => device.lifecycleStatus !== 'Retired');
+      if (config.targetDeviceId !== null && targetDevices.length !== 1) {
+        throw configurationConflict('The configuration target is no longer eligible');
+      }
       const { count } = await versions(tx).updateMany({
         where: { id: versionRow.id, status: 'DRAFT' },
         data: { status: 'PUBLISHED', effectiveAt },
@@ -421,10 +454,9 @@ export async function publishConfigurationVersion(
       }
       const fresh = await versions(tx).findFirst({ where: { id: versionRow.id } });
       if (!fresh) throw configurationNotFound();
-      return toVersionView(fresh);
+      return { version: toVersionView(fresh), notifiedDeviceIds: targetDevices.map((device) => device.id) };
     },
   );
-  return { version: published, notifiedDeviceIds: targetDevices.map((d) => d.id) };
 }
 
 // ---------- 读路径 ----------
@@ -472,20 +504,66 @@ export async function getConfigurationVersion(
   return toVersionView(await loadVersion(deps.client, configurationId, version));
 }
 
-/** 发布同步状态（config:read）：通知投递状态 = CONFIG_CHANGED Outbox 状态（按版本独立读取）。 */
+/** Group receipt snapshots by immutable version and device, with the latest served evidence first. */
+async function loadConfigurationDeliveries(
+  client: DbClient,
+  versionIds: readonly string[],
+  deviceIds?: readonly string[],
+): Promise<ReadonlyMap<string, Map<string, ConfigurationDeliveryEvidence>>> {
+  const byVersion = new Map<string, Map<string, ConfigurationDeliveryEvidence>>();
+  if (versionIds.length === 0 || deviceIds?.length === 0) return byVersion;
+  const rows = await client.configurationDelivery.findMany({
+    where: {
+      configurationVersionId: { in: [...versionIds] },
+      ...(deviceIds ? { deviceId: { in: [...deviceIds] } } : {}),
+    },
+    orderBy: [{ servedAt: 'desc' }, { id: 'asc' }],
+  });
+  for (const row of rows) {
+    let byDevice = byVersion.get(row.configurationVersionId);
+    if (!byDevice) {
+      byDevice = new Map();
+      byVersion.set(row.configurationVersionId, byDevice);
+    }
+    if (byDevice.has(row.deviceId)) continue;
+    byDevice.set(row.deviceId, {
+      deliveryId: row.id,
+      servedAt: row.servedAt.toISOString(),
+      receivedAt: row.receivedAt?.toISOString() ?? null,
+      appliedAt: row.appliedAt?.toISOString() ?? null,
+    });
+  }
+  return byVersion;
+}
+
+/** Outbox notifications and authenticated delivery evidence are independent. */
 export async function getConfigurationVersionStatus(
   deps: ConfigurationDeps,
   configurationId: string,
   version: number,
 ): Promise<ConfigurationSyncStatusView> {
   const versionRow = await loadVersion(deps.client, configurationId, version);
-  const events = await outbox(deps.client).findMany({
-    where: { aggregateType: 'configuration', aggregateId: versionRow.id, eventType: CONFIG_CHANGED_NOTIFICATION },
-  });
-  const targets = events.map((e) => {
-    const payload = e.payload as { topic?: string };
-    const deviceId = typeof payload.topic === 'string' ? payload.topic.split('/')[2] : undefined;
-    return { deviceId: deviceId ?? 'unknown', notificationStatus: e.status };
+  const [events, deliveryByVersion] = await Promise.all([
+    outbox(deps.client).findMany({
+      where: { aggregateType: 'configuration', aggregateId: versionRow.id, eventType: CONFIG_CHANGED_NOTIFICATION },
+    }),
+    loadConfigurationDeliveries(deps.client, [versionRow.id]),
+  ]);
+  const deliveries = deliveryByVersion.get(versionRow.id);
+  const notifications = new Map(
+    events.map((event) => {
+      const payload = event.payload as { topic?: string };
+      const id = typeof payload.topic === 'string' ? payload.topic.split('/')[2] : undefined;
+      return [id ?? 'unknown', event.status] as const;
+    }),
+  );
+  const targets = [...new Set([...notifications.keys(), ...(deliveries?.keys() ?? [])])].map((deviceId) => {
+    const delivery = deliveries?.get(deviceId);
+    return {
+      deviceId,
+      notificationStatus: notifications.get(deviceId) ?? 'NOT_QUEUED',
+      ...(delivery ? { delivery } : {}),
+    };
   });
   return {
     configurationId,
@@ -558,6 +636,7 @@ export async function resolveEffectiveConfiguration(
   const selected = resolve(device);
   if (selected === null) return null;
   return {
+    versionId: selected.version.id,
     configurationId: selected.row.id,
     version: selected.version.version,
     payload: selected.version.payload as ConfigurationPayload,
@@ -577,8 +656,12 @@ export interface ConfigurationEffectiveDeviceView {
     readonly effectiveAt: string;
     readonly source: 'DEVICE' | 'MODEL';
   } | null;
-  /** Sync only serves a snapshot. The current protocol has no matching configuration apply receipt. */
-  readonly deviceAppliedConfiguration: null;
+  readonly configurationDelivery?: ConfigurationDeliveryEvidence;
+  readonly deviceAppliedConfiguration: {
+    readonly configurationId: string;
+    readonly version: number;
+    readonly appliedAt: string;
+  } | null;
 }
 
 export async function listEffectiveConfigurationDevices(
@@ -605,8 +688,14 @@ export async function listEffectiveConfigurationDevices(
   });
   const page = rows.slice(0, limit);
   const resolve = await loadEffectiveSelections(deps.client, page, at);
-  const items = page.map((device): ConfigurationEffectiveDeviceView => {
-    const selected = resolve(device);
+  const selections = page.map((device) => ({ device, selected: resolve(device) }));
+  const deliveries = await loadConfigurationDeliveries(
+    deps.client,
+    [...new Set(selections.flatMap(({ selected }) => (selected ? [selected.version.id] : [])))],
+    page.map((device) => device.id),
+  );
+  const items = selections.map(({ device, selected }): ConfigurationEffectiveDeviceView => {
+    const delivery = selected === null ? undefined : deliveries.get(selected.version.id)?.get(device.id);
     return {
       deviceId: device.id,
       serialNumber: device.serialNumber,
@@ -622,7 +711,11 @@ export async function listEffectiveConfigurationDevices(
               effectiveAt: selected.effectiveAt.toISOString(),
               source: selected.row.targetDeviceId !== null ? 'DEVICE' : 'MODEL',
             },
-      deviceAppliedConfiguration: null,
+      ...(delivery ? { configurationDelivery: delivery } : {}),
+      deviceAppliedConfiguration:
+        selected && delivery?.appliedAt
+          ? { configurationId: selected.row.id, version: selected.version.version, appliedAt: delivery.appliedAt }
+          : null,
     };
   });
   const last = page.at(-1);

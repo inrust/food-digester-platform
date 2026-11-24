@@ -217,3 +217,92 @@ for (const [zone, input, effectiveAt] of [
     qa05.proof = { zone, input, writes };
   });
 }
+
+test('D/T11 R04 R19 legacy device bookmark opens scoped JSON evidence and copies a historical version to a draft', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 820 });
+  await seedSession(page, 'PlatformSuperAdmin');
+  await routeP0Apis(page);
+  const detail = { ...summary, targetModel: null, targetDeviceId: 'dev-p0', derivedContext: null };
+  const historical = { ...versions[0]!, payload: { ...versions[0]!.payload, heartbeatInterval: 135 } };
+  const versionRows = [historical, ...versions.slice(1)];
+  const writes: unknown[] = [];
+  const deliveredAt = '2026-09-06T09:01:00Z';
+  const appliedAt = '2026-09-06T09:02:00Z';
+  const delivery = { deliveryId: 'a'.repeat(64), servedAt: time, receivedAt: deliveredAt, appliedAt };
+  await page.route('**/api/v1/admin/configurations**', (route) => {
+    const req = route.request();
+    const url = new URL(req.url());
+    if (req.method() === 'POST' && url.pathname.endsWith('/versions')) {
+      const body = req.postDataJSON();
+      writes.push(body);
+      const draft = { ...historical, versionId: 'rollback-4', version: 4, status: 'DRAFT', effectiveAt: null, ...body };
+      versionRows.push(draft);
+      return json(route, { data: draft }, 201);
+    }
+    if (url.pathname.endsWith('/effective-devices')) {
+      return json(route, {
+        data: [
+          {
+            deviceId: 'dev-p0',
+            serialNumber: 'SN-P0',
+            alias: null,
+            model: 'CMP-MODEL',
+            cloudEffectiveConfiguration: {
+              configurationId,
+              name: detail.name,
+              source: 'DEVICE',
+              version: 1,
+              effectiveAt: time,
+            },
+            configurationDelivery: delivery,
+            deviceAppliedConfiguration: { configurationId, version: 1, appliedAt },
+          },
+        ],
+        meta: { nextCursor: null, timestamp: appliedAt },
+      });
+    }
+    if (url.pathname.endsWith('/status')) {
+      return json(route, {
+        data: {
+          configurationId,
+          version: 1,
+          status: 'PUBLISHED',
+          effectiveAt: time,
+          targets: [{ deviceId: 'dev-p0', notificationStatus: 'NOT_QUEUED', delivery }],
+        },
+      });
+    }
+    if (url.pathname.endsWith('/' + configurationId))
+      return json(route, { data: { ...detail, versions: versionRows } });
+    expect(url.searchParams.get('targetDeviceId')).toBe('dev-p0');
+    return json(route, { data: [detail] });
+  });
+
+  await page.goto('/configurations?targetDeviceId=dev-p0');
+  await expect(page.getByTestId('configuration-device-scope')).toContainText('dev-p0');
+  await expect(page.getByTestId('menu-item-/configurations')).toHaveCount(0);
+  await planOpener(page).click();
+  await page.getByTestId('config-devices-load').click();
+  const row = page.getByRole('row').filter({ hasText: 'SN-P0' });
+  await expect(row.locator('time[datetime]')).toHaveCount(3);
+
+  await page.getByTestId('config-expand-1').click();
+  await page.getByTestId('config-version-1').getByText('查看设置 JSON', { exact: true }).click();
+  await expect(page.getByTestId('config-settings-json-1')).toContainText('"heartbeatInterval": 135');
+  await page.getByTestId('config-sync-1').click();
+  const target = page.getByTestId('config-sync-target-dev-p0');
+  await expect(target).toContainText('通知 · 未排队');
+  await expect(target).toContainText('已交付');
+  await expect(target).toContainText('设备实际应用版本');
+  await expect(target.locator('time[datetime]')).toHaveCount(2);
+  expect(await layoutViolations(page)).toEqual([]);
+
+  await page.getByTestId('config-copy-1').click();
+  const form = page.getByTestId('config-version-dialog');
+  await expect(form.getByTestId('cfg-field-heartbeatInterval')).toHaveValue('135');
+  await form.getByTestId('cfg-submit').click();
+  await expect(page.getByTestId('config-version-4')).toBeVisible();
+  expect(writes).toEqual([{ payload: historical.payload }]);
+});

@@ -132,7 +132,7 @@ curl --cert device-cert.pem --key device-private-key.pem \
 }
 ```
 
-首次同步也可使用 `{ "lastSyncTime": null }`。请求只允许这些字段，不能自报 `deviceId`、客户或站点来替代证书身份。
+首次同步也可使用 `{ "lastSyncTime": null }`。受控配置交付的候选客户端可按 Schema 提供 `configurationProtocol` 和 `configurationReceipt`，详见 [D/T11 配置交付](../dev/CMP-T11-上位机配置交付.md)。设备身份、客户和站点均由服务器确认。
 
 2026-11-11 按已确认的 DEC-027@1.0.0 简化激活流程。管理员在现有流程中激活有效 License 时，云端在同一事务中将满足当前客户/站点分配条件的 Assigned/Licensed 设备激活为 Active，记录运行状态和云端来源审计。App 使用普通 Sync 获取最新状态和 License，继续执行本地 License 检查。
 

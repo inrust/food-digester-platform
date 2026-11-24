@@ -21,6 +21,7 @@ import {
   createDeviceDeactivateHandler,
   createDeviceSyncHandler,
 } from '../device/index.js';
+import { parseConfigurationDeliveryTargets } from '../device/configuration-delivery.js';
 import { createDeviceOtaDownloadHandler } from '../ota/download.js';
 import { createDeviceMediaHandler } from '../media/device-handler.js';
 import {
@@ -89,7 +90,13 @@ async function initialize() {
         certificateValiditySeconds,
       },
     }),
-    sync: createDeviceSyncHandler({ client, maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds() }),
+    sync: createDeviceSyncHandler({
+      client,
+      maintenanceSyncIntervalSeconds: getMaintenanceSyncIntervalSeconds(),
+      configurationDeliveryTargets: parseConfigurationDeliveryTargets(
+        process.env.DEVICE_CONFIGURATION_DELIVERY_TARGETS,
+      ),
+    }),
     deactivate: createDeviceDeactivateHandler({ client, iot }),
     otaDownload: createDeviceOtaDownloadHandler({ client, objectUrlSigner: ota.downloadUrlSigner }),
     mediaUpload: createDeviceMediaHandler({

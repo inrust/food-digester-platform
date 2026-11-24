@@ -117,9 +117,26 @@ export function ConfigurationEffectiveDevices({
                   ),
               },
               {
+                key: 'delivery',
+                header: t('configuration.delivery.delivered'),
+                render: ({ configurationDelivery: delivery }) =>
+                  delivery?.receivedAt ? (
+                    <TimeText iso={delivery.receivedAt} />
+                  ) : (
+                    t(delivery ? 'configuration.delivery.awaitingReceipt' : 'configuration.delivery.unknown')
+                  ),
+              },
+              {
                 key: 'applied',
                 header: t('configuration.devices.applied'),
-                render: () => t('configuration.devices.unknown'),
+                render: ({ deviceAppliedConfiguration: applied }) =>
+                  applied ? (
+                    <>
+                      v{applied.version} · <TimeText iso={applied.appliedAt} />
+                    </>
+                  ) : (
+                    t('configuration.devices.unknown')
+                  ),
               },
             ]}
           />

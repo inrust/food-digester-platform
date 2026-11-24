@@ -128,7 +128,7 @@
       "disposition": "Adapt",
       "basis": "任务清单 §13.2：派生字段只读；证书为请求轮换；升级走 Campaign；CMP B/T06 R04–R06：从设备详情进入本设备的配置、媒体和告警。CMP B/T07 R10、R15、R17：设备详情承接存量授权和单设备用户",
       "elements": [
-        { "id": "device-manage.button.updateConfig", "kind": "button", "name": "更新配置文件", "disposition": "Adapt", "basis": "BE-CFG-01：不可变配置版本发布，Contract/Region/Site/Alias 只读派生", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
+        { "id": "device-manage.button.updateConfig", "kind": "button", "name": "更新配置文件", "disposition": "Adapt", "basis": "BE-CFG-01 / D/T11：不可变配置版本发布，业务上下文只读派生；候选 JSON 由已核准设备通过 Sync 获取", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-manage.button.viewConfig", "kind": "button", "name": "查看当前配置文件", "disposition": "Adopt", "source": { "taskId": "BE-CFG-01", "api": "getConfiguration" } },
         { "id": "device-manage.button.selectFirmware", "kind": "button", "name": "选择固件文件", "disposition": "Adapt", "basis": "BE-OTA-01：上传走预签名 URL + Hash/签名校验", "source": { "taskId": "BE-OTA-01", "api": "createFirmwareUpload" } },
         { "id": "device-manage.button.syncUpdate", "kind": "button", "name": "同步更新", "disposition": "Adapt", "basis": "FE-13：创建受控 OTA Campaign（首批 1 台），禁止直接推送单设备", "source": { "taskId": "BE-OTA-02", "api": "createOtaCampaign" } },

@@ -94,7 +94,7 @@
         "tags": ["admin"],
         "operationId": "listEffectiveConfigurationDevices",
         "summary": "按设备查看配置方案当前的云端生效版本",
-        "description": "仅持有 config:read 的平台角色。枚举当前方案按设备 ID 或型号定向的未退役设备，按设备 ID 升序分页。每页以 meta.timestamp 为解析时点，复用设备 Sync 的设备定向优先和有效版本规则，生效项可能来自其他方案。无目标返回空列表，无生效配置返回 null。当前协议没有可信的设备配置应用回执，deviceAppliedConfiguration 为 null（未知）。",
+        "description": "仅持有 config:read 的平台角色。枚举当前方案按设备 ID 或型号定向的未退役设备，按设备 ID 升序分页。每页以 meta.timestamp 为解析时点，复用设备 Sync 的设备定向优先和有效版本规则，生效项可能来自其他方案。无目标返回空列表，无生效配置返回 null。configurationDelivery 按设备及当前生效版本读回；只有该版本的 APPLIED 回执填充 deviceAppliedConfiguration，否则为 null（未知）。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -211,8 +211,8 @@
       "get": {
         "tags": ["admin"],
         "operationId": "getConfigurationVersionStatus",
-        "summary": "发布同步状态（每目标设备的通知投递状态）",
-        "description": "notificationStatus 为此版本 CONFIG_CHANGED Outbox 投递状态（PENDING/PUBLISHED/FAILED）。设备实际应用情况需要单独的版本回执。",
+        "summary": "发布同步状态（每台设备的通知、交付与应用）",
+        "description": "notificationStatus 为此版本 CONFIG_CHANGED Outbox 投递状态。回执作为独立 delivery 读回，离线补拉且无该版本通知事件的设备记为 NOT_QUEUED。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "configurationId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -493,9 +493,10 @@
           "cloudEffectiveConfiguration": {
             "oneOf": [{ "$ref": "#/components/schemas/CloudEffectiveConfiguration" }, { "type": "null" }]
           },
+          "configurationDelivery": { "$ref": "#/components/schemas/ConfigurationDeliveryEvidence" },
           "deviceAppliedConfiguration": {
-            "type": "null",
-            "description": "当前协议未提供可信设备配置应用回执，null 表示未知"
+            "oneOf": [{ "$ref": "#/components/schemas/DeviceAppliedConfiguration" }, { "type": "null" }],
+            "description": "当前云端生效版本的设备应用回执；null 表示未知。"
           }
         }
       },
@@ -508,6 +509,64 @@
           "meta": { "$ref": "openapi-base.json#/components/schemas/PageMeta" }
         }
       },
+      "ConfigurationDeliveryEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deliveryId",
+          "servedAt",
+          "receivedAt",
+          "appliedAt"
+        ],
+        "properties": {
+          "deliveryId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "servedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          },
+          "receivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "appliedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceAppliedConfiguration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "configurationId",
+          "version",
+          "appliedAt"
+        ],
+        "properties": {
+          "configurationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "appliedAt": {
+            "$ref": "openapi-base.json#/components/schemas/UtcTimestamp"
+          }
+        }
+      },
       "ConfigurationSyncStatusTarget": {
         "type": "object",
         "required": ["deviceId", "notificationStatus"],
@@ -516,9 +575,10 @@
           "deviceId": { "type": "string", "minLength": 1 },
           "notificationStatus": {
             "type": "string",
-            "enum": ["PENDING", "PUBLISHED", "FAILED"],
+            "enum": ["PENDING", "PUBLISHED", "FAILED", "NOT_QUEUED"],
             "description": "CONFIG_CHANGED Outbox 投递状态"
-          }
+          },
+          "delivery": { "$ref": "#/components/schemas/ConfigurationDeliveryEvidence" }
         }
       },
       "ConfigurationSyncStatus": {

@@ -360,13 +360,27 @@ describe('详情与权限', () => {
   test('详情含派生只读上下文（Alias/Site/Region/Subregion/Contract）；权限矩阵', async () => {
     const h = handlers();
     const { deviceId, customerId } = await plantDevice({ alias: '后门二号机' });
-    await prisma.contract.create({
+    const contract = await prisma.contract.create({
       data: {
         contractNumber: `CT-CFG-${seq}`,
         name: '服务合同',
         customerId,
         startAt: new Date(NOW.getTime() - DAY_MS),
         endAt: new Date(NOW.getTime() + 30 * DAY_MS),
+        status: 'EFFECTIVE',
+        createdBy: 'admin-1',
+      },
+    });
+    await prisma.contractDevice.create({
+      data: { contractId: contract.id, deviceId, customerId, validFrom: contract.startAt },
+    });
+    await prisma.contract.create({
+      data: {
+        contractNumber: 'T11-other-customer-contract-link',
+        name: 'Same customer, unrelated agreement',
+        customerId,
+        startAt: new Date(NOW.getTime() - 1000),
+        endAt: new Date(NOW.getTime() + DAY_MS),
         status: 'EFFECTIVE',
         createdBy: 'admin-1',
       },
@@ -614,4 +628,19 @@ describe('CMP-17 / D5 target device versions', () => {
     assert.equal(missing.status, 404);
     assertOpenApiResponse('listEffectiveConfigurationDevices', 404, missing.body);
   });
+});
+
+test('D/T11 R19 publish rechecks a single target that retired after the draft was created', async () => {
+  const h = handlers();
+  const device = await plantDevice();
+  const configurationId = (await createDeviceConfig(h, device.deviceId)).configurationId as string;
+  await createVersion(h, configurationId);
+  await prisma.device.update({ where: { id: device.deviceId }, data: { lifecycleStatus: 'Retired' } });
+  const res = await h.publishVersion(req(operator, { params: { configurationId, version: '1' }, body: {} }));
+  assert.equal(res.status, 409);
+  const row = await prisma.configurationVersion.findUniqueOrThrow({
+    where: { configurationId_version: { configurationId, version: 1 } },
+  });
+  assert.equal(row.status, 'DRAFT');
+  assert.equal(await prisma.outboxEvent.count({ where: { aggregateType: 'configuration', aggregateId: row.id } }), 0);
 });

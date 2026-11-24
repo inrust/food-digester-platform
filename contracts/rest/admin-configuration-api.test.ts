@@ -115,7 +115,7 @@ test('Schema 封闭：DEC-018 冻结 V1 四字段、单位、范围与默认值'
   const publishResult = doc.components.schemas.ConfigurationPublishResult;
   assert.deepEqual(publishResult.required.sort(), ['notifiedDeviceIds', 'version'].sort());
   const syncTarget = doc.components.schemas.ConfigurationSyncStatusTarget;
-  assert.deepEqual(syncTarget.properties.notificationStatus.enum, ['PENDING', 'PUBLISHED', 'FAILED']);
+  assert.deepEqual(syncTarget.properties.notificationStatus.enum, ['PENDING', 'PUBLISHED', 'FAILED', 'NOT_QUEUED']);
   // 派生只读上下文
   const detail = doc.components.schemas.ConfigurationDetail;
   assert.ok(detail.required.includes('derivedContext'));
@@ -147,7 +147,16 @@ test('CMP-17 declares keyset pagination, selection sources, no effective version
   assert.deepEqual(schemas.ConfigurationEffectiveDevice.properties.cloudEffectiveConfiguration.oneOf.at(-1), {
     type: 'null',
   });
-  assert.equal(schemas.ConfigurationEffectiveDevice.properties.deviceAppliedConfiguration.type, 'null');
+  assert.deepEqual(schemas.ConfigurationEffectiveDevice.properties.deviceAppliedConfiguration.oneOf, [
+    { $ref: '#/components/schemas/DeviceAppliedConfiguration' },
+    { type: 'null' },
+  ]);
+  assert.deepEqual(schemas.ConfigurationDeliveryEvidence.required, [
+    'deliveryId',
+    'servedAt',
+    'receivedAt',
+    'appliedAt',
+  ]);
   assert.equal(
     schemas.ConfigurationEffectiveDeviceListSuccess.properties.meta.$ref,
     'openapi-base.json#/components/schemas/PageMeta',

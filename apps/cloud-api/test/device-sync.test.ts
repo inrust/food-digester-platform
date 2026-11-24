@@ -1,4 +1,4 @@
-import { contractHandler } from '../../../contracts/testing/device-contract.js';
+import { contractHandler, createAjv } from '../../../contracts/testing/device-contract.js';
 /**
  * BE-SYNC-01 Unified Device Sync API 验收（PGlite 真实 PostgreSQL + 全部 migration）。
  *
@@ -20,6 +20,9 @@ import { certificateFingerprintFromPem } from '@fdp/auth';
 import { DEVICE_SYNC_ERROR_HTTP_STATUS, createDeviceSyncHandler } from '../src/index.js';
 import type { DeviceSyncHandlerDeps } from '../src/index.js';
 import { createTestDb } from './helpers.js';
+import { createAdminConfigurationHandlers } from '../src/admin/configuration/handler.js';
+import { parseConfigurationDeliveryTargets } from '../src/device/configuration-delivery.js';
+import type { ConfigurationDeliveryView } from '../src/device/configuration-delivery.js';
 import { assertOpenApiResponse } from './openapi-response.js';
 
 const NOW = new Date('2026-08-30T08:00:00Z');
@@ -588,3 +591,213 @@ describe('契约一致性', () => {
 
 const checkedCreateDeviceSyncHandler: typeof createDeviceSyncHandler = (deps) =>
   contractHandler('syncDevice', createDeviceSyncHandler(deps));
+
+test('D/T11 R19 authenticated devices pull versioned JSON and only matching receipts advance delivery and application', async () => {
+  const model = 'BNX-T11';
+  const a = await plantDevice({ model, alias: 'T11-门店设备', lastHeartbeatAt: null });
+  const modelConfigId = await plantConfiguration({ model }, new Date(NOW.getTime() - DAY_MS));
+  const ownConfigId = await plantConfiguration({ deviceId: a.deviceId }, new Date(NOW.getTime() - DAY_MS));
+  const ownSettings = { ...VALID_PAYLOAD, temperatureThreshold: 72.5 };
+  await prisma.configurationVersion.update({
+    where: { configurationId_version: { configurationId: ownConfigId, version: 1 } },
+    data: { payload: ownSettings },
+  });
+
+  const b = await plantDevice({ model, lastHeartbeatAt: null });
+  const customerId = a.customerId!;
+  const contract = await prisma.contract.create({
+    data: {
+      contractNumber: 'T11-SAMPLE-01',
+      name: 'T11 门店服务合约',
+      customerId,
+      status: 'EFFECTIVE',
+      startAt: new Date(NOW.getTime() - DAY_MS),
+      endAt: new Date(NOW.getTime() + DAY_MS),
+      createdBy: 'fixture',
+    },
+  });
+  await prisma.contractDevice.create({
+    data: { contractId: contract.id, deviceId: a.deviceId, customerId, validFrom: contract.startAt },
+  });
+  await prisma.site.update({ where: { id: a.siteId! }, data: { name: 'T11 门店', region: '华东', subregion: 'T12' } });
+  const clientVersion = 't11-host-fixture.1';
+  const targets = parseConfigurationDeliveryTargets(
+    JSON.stringify({
+      [a.deviceId]: clientVersion,
+      [b.deviceId]: clientVersion,
+    }),
+  );
+  assert.equal(parseConfigurationDeliveryTargets('{ malformed').size, 0);
+  assert.equal(parseConfigurationDeliveryTargets(JSON.stringify({ '*': clientVersion })).size, 0);
+  const protocol = { configurationProtocol: { schemaVersion: 1, clientVersion } };
+  const ajv = createAjv();
+  const candidatePath = 'configuration/device-sync-configuration-delivery-candidate.openapi.json';
+  const contracts = new URL('../../../contracts/', import.meta.url);
+  for (const path of ['rest/openapi-base.json', 'rest/device-sync-api.json', candidatePath]) {
+    ajv.addSchema(JSON.parse(readFileSync(new URL(path, contracts), 'utf8')), 'https://fdp.test/contracts/' + path);
+  }
+  const validate = (schema: string) =>
+    ajv.compile({
+      $ref: 'https://fdp.test/contracts/' + candidatePath + '#/components/schemas/' + schema,
+    });
+  const validRequest = validate('SyncRequest');
+  const validSnapshot = validate('DeviceSyncSnapshot');
+  const sync = async (device: PlantedDevice, body: unknown, at = NOW, gate = targets) => {
+    const result = await createDeviceSyncHandler({
+      client: prisma,
+      configurationDeliveryTargets: gate,
+      maintenanceSyncIntervalSeconds: MAINTENANCE_SYNC_SECONDS,
+      now: () => at,
+    })({ identity: { clientCertPem: device.pem }, requestId: 't11-sync', body });
+    if (result.status === 200) {
+      assert.isTrue(validRequest(body), ajv.errorsText(validRequest.errors));
+      assert.isTrue(validSnapshot(result.body), ajv.errorsText(validSnapshot.errors));
+    } else {
+      assertOpenApiResponse('syncDevice', result.status, result.body);
+    }
+    return result;
+  };
+
+  const legacy = dataOf(await sync(a, {}));
+  assert.notProperty(legacy, 'configurationDelivery');
+  assert.deepEqual(legacy.configuration, ownSettings);
+  for (const options of [
+    { configurationProtocol: { schemaVersion: 1, clientVersion: 'different-build' } },
+    { configurationProtocol: { schemaVersion: 2, clientVersion } },
+  ]) {
+    const fallback = dataOf(await sync(a, options));
+    assert.notProperty(fallback, 'configurationDelivery');
+    assert.equal(fallback.etag, legacy.etag);
+  }
+  assert.equal(await prisma.configurationDelivery.count({ where: { deviceId: a.deviceId } }), 0);
+
+  const first = await sync(a, protocol);
+  assert.equal(first.status, 200, JSON.stringify(first.body));
+  const snapshot = dataOf(first);
+  const delivery = snapshot.configurationDelivery as ConfigurationDeliveryView;
+  assert.equal(delivery.schemaVersion, 1);
+  assert.equal(delivery.configurationId, ownConfigId);
+  assert.deepEqual(delivery.settings, ownSettings);
+  assert.deepEqual(delivery.context, {
+    alias: 'T11-门店设备',
+    site: 'T11 门店',
+    region: '华东',
+    subregion: 'T12',
+    contract: { contractNumber: 'T11-SAMPLE-01', name: 'T11 门店服务合约' },
+  });
+  assert.deepEqual(snapshot.configuration, ownSettings);
+  assert.equal(snapshot.operationalStatus.connectivity, 'OFFLINE');
+  assert.notEqual(snapshot.etag, legacy.etag);
+
+  const modelSnapshot = dataOf(await sync(b, protocol));
+  assert.equal(modelSnapshot.configurationDelivery.configurationId, modelConfigId);
+  assert.deepEqual(modelSnapshot.configurationDelivery.settings, VALID_PAYLOAD);
+  assert.isNull(modelSnapshot.configurationDelivery.context.contract);
+  assert.notEqual(modelSnapshot.configurationDelivery.deliveryId, delivery.deliveryId);
+
+  const receipt = { deliveryId: delivery.deliveryId, configurationId: ownConfigId, version: 1 };
+  const receiptBody = (status: 'RECEIVED' | 'APPLIED') => ({
+    ...protocol,
+    configurationReceipt: { ...receipt, status },
+  });
+  const read = () => prisma.configurationDelivery.findUniqueOrThrow({ where: { id: delivery.deliveryId } });
+  const next = new Date(NOW.getTime() + 1_000);
+  const after = new Date(NOW.getTime() + 2_000);
+  assert.equal((await sync(a, { ...protocol, lastSyncTime: next.toISOString() }, next)).status, 200);
+  assert.isNull((await read()).receivedAt, 'legacy timestamp must not confirm configuration');
+  assert.equal((await sync(b, receiptBody('APPLIED'), next)).status, 409, 'certificate identity must match');
+  assert.equal(
+    (await sync(a, { ...protocol, configurationReceipt: { ...receipt, version: 2, status: 'APPLIED' } }, next)).status,
+    409,
+  );
+  assert.equal((await sync(a, { configurationReceipt: { ...receipt, status: 'APPLIED' } }, next)).status, 400);
+  assert.equal((await sync(a, { ...protocol, configurationReceipt: { ...receipt, status: 'OK' } }, next)).status, 400);
+  assert.isNull((await read()).receivedAt);
+
+  assert.equal((await sync(a, receiptBody('RECEIVED'), next)).status, 200);
+  assert.equal((await read()).receivedAt?.toISOString(), next.toISOString());
+  assert.isNull((await read()).appliedAt);
+  const retries = await Promise.all([sync(a, receiptBody('APPLIED'), after), sync(a, receiptBody('APPLIED'), after)]);
+  assert.deepEqual(
+    retries.map(({ status }) => status),
+    [200, 200],
+  );
+  assert.equal((await read()).receivedAt?.toISOString(), next.toISOString());
+  assert.equal((await read()).appliedAt?.toISOString(), after.toISOString());
+
+  const admin = createAdminConfigurationHandlers({ client: prisma, now: () => after });
+  const actor = {
+    actorId: 't11-fixture',
+    username: 't11-fixture',
+    actorType: 'platform',
+    roles: ['PlatformSuperAdmin'],
+    customerId: null,
+    tokenUse: 'access',
+  } as const;
+  const adminReq = (configurationId: string, version = 1) => ({
+    actor,
+    requestId: 't11-admin',
+    headers: {},
+    params: { configurationId, version: String(version) },
+  });
+  const state = await admin.versionStatus(adminReq(ownConfigId));
+  assertOpenApiResponse('getConfigurationVersionStatus', state.status, state.body);
+  const target = dataOf(state).data.targets[0];
+  assert.equal(target.deviceId, a.deviceId);
+  assert.equal(target.notificationStatus, 'NOT_QUEUED', 'offline pull does not imply any notification');
+  assert.equal(target.delivery.appliedAt, after.toISOString());
+  const effective = await admin.effectiveDevices(adminReq(modelConfigId));
+  assertOpenApiResponse('listEffectiveConfigurationDevices', effective.status, effective.body);
+  const rowA = dataOf(effective).data.find((row: { deviceId: string }) => row.deviceId === a.deviceId);
+  const rowB = dataOf(effective).data.find((row: { deviceId: string }) => row.deviceId === b.deviceId);
+  assert.equal(rowA.deviceAppliedConfiguration.configurationId, ownConfigId);
+  assert.isNull(rowB.deviceAppliedConfiguration);
+
+  await prisma.site.update({ where: { id: a.siteId! }, data: { subregion: 'T12-修订' } });
+  const changed = dataOf(await sync(a, protocol, new Date(after.getTime() + 1_000))).configurationDelivery;
+  assert.notEqual(changed.deliveryId, delivery.deliveryId);
+  assert.equal(changed.context.subregion, 'T12-修订');
+  const revised = dataOf(await admin.effectiveDevices(adminReq(ownConfigId))).data[0];
+  assert.equal(revised.configurationDelivery.deliveryId, changed.deliveryId);
+  assert.isNull(revised.deviceAppliedConfiguration, 'old JSON receipt cannot prove new derived context');
+
+  const newer = await admin.createVersion({
+    ...adminReq(ownConfigId),
+    body: { payload: { ...ownSettings, heartbeatInterval: 120 } },
+  });
+  assert.equal(newer.status, 201);
+  assert.equal((await admin.publishVersion({ ...adminReq(ownConfigId, 2), body: {} })).status, 200);
+  const changedReceipt = {
+    ...protocol,
+    configurationReceipt: { ...receipt, deliveryId: changed.deliveryId, status: 'APPLIED' },
+  };
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION t11_fail_delivery() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'controlled delivery failure'; END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER t11_fail_delivery BEFORE INSERT ON configuration_deliveries
+    FOR EACH ROW EXECUTE FUNCTION t11_fail_delivery()`);
+  try {
+    assert.equal((await sync(a, changedReceipt, new Date(after.getTime() + 2_000))).status, 500);
+    const unconfirmed = await prisma.configurationDelivery.findUniqueOrThrow({ where: { id: changed.deliveryId } });
+    assert.isNull(unconfirmed.receivedAt);
+    assert.isNull(unconfirmed.appliedAt);
+    assert.equal(await prisma.configurationDelivery.count({ where: { deviceId: a.deviceId } }), 2);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER t11_fail_delivery ON configuration_deliveries');
+    await prisma.$executeRawUnsafe('DROP FUNCTION t11_fail_delivery()');
+  }
+  const updated = dataOf(await sync(a, changedReceipt, new Date(after.getTime() + 2_000))).configurationDelivery;
+  assert.equal(updated.version, 2);
+  assert.equal(updated.settings.heartbeatInterval, 120);
+  assert.isNull(dataOf(await admin.effectiveDevices(adminReq(ownConfigId))).data[0].deviceAppliedConfiguration);
+
+  const rollback = await admin.createVersion({ ...adminReq(ownConfigId), body: { payload: ownSettings } });
+  assert.equal(rollback.status, 201);
+  assert.equal((await admin.publishVersion({ ...adminReq(ownConfigId, 3), body: {} })).status, 200);
+  const restored = dataOf(await sync(a, protocol, new Date(after.getTime() + 3_000)));
+  assert.equal(restored.configurationDelivery.version, 3);
+  assert.deepEqual(restored.configurationDelivery.settings, ownSettings);
+  const disabled = dataOf(await sync(a, receiptBody('APPLIED'), new Date(after.getTime() + 4_000), new Map()));
+  assert.notProperty(disabled, 'configurationDelivery');
+  assert.deepEqual(disabled.configuration, ownSettings);
+  assert.equal((await read()).appliedAt?.toISOString(), after.toISOString());
+});

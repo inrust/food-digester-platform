@@ -143,6 +143,9 @@ export const CONFIG_VERSION_STATUS_LABELS: Readonly<Record<string, string>> = {
   },
 };
 export const CONFIG_SYNC_STATUS_LABELS: Readonly<Record<string, string>> = {
+  get NOT_QUEUED() {
+    return translate('configuration.delivery.noNotification');
+  },
   get PENDING() {
     return translate('ui.f3467c698268');
   },

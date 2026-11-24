@@ -142,6 +142,7 @@ export function ConfigurationsPage({
   const [draftFilter, setDraftFilter] = useState<ConfigurationFilter>(appliedFilter);
   const [createOpen, setCreateOpen] = useState(false);
   const [versionFormOpen, setVersionFormOpen] = useState(false);
+  const [versionTemplate, setVersionTemplate] = useState<ConfigurationPayloadView>();
   const [publishTarget, setPublishTarget] = useState<number | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -410,7 +411,10 @@ export function ConfigurationsPage({
                   className="primary-button"
                   data-testid="config-version-create"
                   disabled={busy || detailRefreshing}
-                  onClick={() => setVersionFormOpen(true)}
+                  onClick={() => {
+                    setVersionTemplate(undefined);
+                    setVersionFormOpen(true);
+                  }}
                 >
                   {translate('page.c87926d3eb9a')}
                 </Button>
@@ -446,6 +450,10 @@ export function ConfigurationsPage({
                         busy={busy || detailRefreshing}
                         sync={detail.sync[v.version] ?? { kind: 'none' }}
                         onPublishIntent={() => setPublishTarget(v.version)}
+                        onCopyVersion={() => {
+                          setVersionTemplate(v.payload);
+                          setVersionFormOpen(true);
+                        }}
                         onLoadSyncStatus={() => onLoadSyncStatus(v.version)}
                       />
                     ))}
@@ -478,6 +486,7 @@ export function ConfigurationsPage({
         >
           <VersionPayloadForm
             busy={busy}
+            initialPayload={versionTemplate ?? defaultConfigPayload()}
             onSubmit={(payload, changeNote, reason) =>
               void runAction(
                 () =>
@@ -524,6 +533,7 @@ function VersionCard({
   busy,
   sync,
   onPublishIntent,
+  onCopyVersion,
   onLoadSyncStatus,
 }: {
   readonly version: ConfigurationVersionView;
@@ -531,9 +541,11 @@ function VersionCard({
   readonly busy: boolean;
   readonly sync: SyncStatusState;
   readonly onPublishIntent: () => void;
+  readonly onCopyVersion: () => void;
   readonly onLoadSyncStatus: () => void;
 }) {
   const publishable = version.status === 'DRAFT';
+  const [settingsJsonVisible, setSettingsJsonVisible] = useState(false);
   return (
     <details
       className="config-history-entry"
@@ -581,7 +593,17 @@ function VersionCard({
             </div>
           ))}
         </dl>
+        {settingsJsonVisible ? (
+          <pre data-testid={`config-settings-json-${version.version}`}>{JSON.stringify(version.payload, null, 2)}</pre>
+        ) : null}
         <div className="action-row">
+          <Button
+            type="button"
+            aria-expanded={settingsJsonVisible}
+            onClick={() => setSettingsJsonVisible(!settingsJsonVisible)}
+          >
+            {translate('configuration.delivery.viewSettingsJson')}
+          </Button>
           <Button
             type="button"
             className="primary-button"
@@ -592,6 +614,16 @@ function VersionCard({
           >
             {translate('page.94f172d02f5e')}
           </Button>
+          {version.status === 'PUBLISHED' && canWrite ? (
+            <Button
+              type="button"
+              disabled={busy}
+              data-testid={`config-copy-${version.version}`}
+              onClick={onCopyVersion}
+            >
+              {translate('configuration.delivery.copyVersion')}
+            </Button>
+          ) : null}
           {version.status === 'PUBLISHED' ? (
             <Button
               type="button"
@@ -624,7 +656,29 @@ function VersionCard({
               <ul data-testid={`config-sync-targets-${version.version}`}>
                 {sync.data.targets.map((t) => (
                   <li key={t.deviceId} data-testid={`config-sync-target-${t.deviceId}`}>
-                    {t.deviceId}：{CONFIG_SYNC_STATUS_LABELS[t.notificationStatus] ?? t.notificationStatus}
+                    <strong>{t.deviceId}</strong>
+                    <div>
+                      {translate('configuration.delivery.notification')} ·{' '}
+                      {CONFIG_SYNC_STATUS_LABELS[t.notificationStatus] ?? t.notificationStatus}
+                    </div>
+                    <div>
+                      {translate('configuration.delivery.delivered')} ·{' '}
+                      {t.delivery?.receivedAt ? (
+                        <TimeText iso={t.delivery.receivedAt} />
+                      ) : (
+                        translate(
+                          t.delivery ? 'configuration.delivery.awaitingReceipt' : 'configuration.delivery.unknown',
+                        )
+                      )}
+                    </div>
+                    <div>
+                      {translate('configuration.devices.applied')} ·{' '}
+                      {t.delivery?.appliedAt ? (
+                        <TimeText iso={t.delivery.appliedAt} />
+                      ) : (
+                        translate('configuration.devices.unknown')
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -637,12 +691,14 @@ function VersionCard({
 }
 function VersionPayloadForm({
   busy,
+  initialPayload,
   onSubmit,
 }: {
   readonly busy: boolean;
+  readonly initialPayload: ConfigurationPayloadView;
   readonly onSubmit: (payload: ConfigurationPayloadView, changeNote: string, reason: string) => void;
 }) {
-  const defaults = defaultConfigPayload();
+  const defaults = initialPayload;
   const [raw, setRaw] = useState<Record<ConfigFieldKey, string>>({
     heartbeatInterval: String(defaults.heartbeatInterval),
     telemetryInterval: String(defaults.telemetryInterval),

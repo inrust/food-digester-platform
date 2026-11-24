@@ -156,6 +156,7 @@ export const REQUIRED_TITLES = [
   'CMP-38 independent details distinguish published notifications, acknowledged snapshots and unknown device application',
   'CMP-44 audit JSON scrolls independently, redacts nested values and keeps the detail keyboard loop',
   'CMP-17/D5 shows paged Sync winners and unknown application separately from per-version delivery',
+  'D/T11 R04 R19 legacy device bookmark opens scoped JSON evidence and copies a historical version to a draft',
   'CMP-16 publishes with Asia/Shanghai and preserves the reason',
   'CMP-16 publishes with UTC and preserves the reason',
   'CMP-16 publishes with no scheduled time and preserves the reason',

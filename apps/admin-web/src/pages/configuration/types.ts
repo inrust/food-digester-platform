@@ -50,9 +50,17 @@ export interface ConfigurationPublishResultView {
   readonly notifiedDeviceIds: readonly string[];
 }
 
+export interface ConfigurationDeliveryEvidenceView {
+  readonly deliveryId: string;
+  readonly servedAt: string;
+  readonly receivedAt: string | null;
+  readonly appliedAt: string | null;
+}
+
 export interface ConfigurationSyncStatusTargetView {
   readonly deviceId: string;
-  readonly notificationStatus: 'PENDING' | 'PUBLISHED' | 'FAILED';
+  readonly notificationStatus: 'PENDING' | 'PUBLISHED' | 'FAILED' | 'NOT_QUEUED';
+  readonly delivery?: ConfigurationDeliveryEvidenceView;
 }
 
 export interface ConfigurationSyncStatusView {
@@ -75,7 +83,12 @@ export interface ConfigurationEffectiveDeviceView {
     readonly effectiveAt: string;
     readonly source: 'DEVICE' | 'MODEL';
   } | null;
-  readonly deviceAppliedConfiguration: null;
+  readonly configurationDelivery?: ConfigurationDeliveryEvidenceView;
+  readonly deviceAppliedConfiguration: {
+    readonly configurationId: string;
+    readonly version: number;
+    readonly appliedAt: string;
+  } | null;
 }
 
 export interface ConfigurationEffectiveDevicePage {

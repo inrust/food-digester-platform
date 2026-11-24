@@ -148,6 +148,7 @@ model Device {
   latestState      DeviceLatestState?
   retirement       DeviceRetirement?
   publicKeys       DevicePublicKey[]
+  configurationDeliveries ConfigurationDelivery[]
 
   @@map("devices")
 }
@@ -479,9 +480,26 @@ model ConfigurationVersion {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   configuration DeviceConfiguration @relation(fields: [configurationId], references: [id])
+  deliveries    ConfigurationDelivery[]
 
   @@unique([configurationId, version])
   @@map("configuration_versions")
+}
+
+/// An authenticated receipt proves the exact configuration JSON and immutable version served to a device.
+model ConfigurationDelivery {
+  id                     String    @id
+  deviceId               String    @map("device_id")
+  configurationVersionId String    @map("configuration_version_id")
+  servedAt               DateTime  @map("served_at") @db.Timestamptz
+  receivedAt             DateTime? @map("received_at") @db.Timestamptz
+  appliedAt              DateTime? @map("applied_at") @db.Timestamptz
+
+  device  Device               @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  version ConfigurationVersion @relation(fields: [configurationVersionId], references: [id], onDelete: Cascade)
+
+  @@index([configurationVersionId, deviceId, servedAt], map: "configuration_deliveries_version_device_served_idx")
+  @@map("configuration_deliveries")
 }
 
 // ---------- 设备用户（DEC-004：设备本地专用加盐验证值） ----------

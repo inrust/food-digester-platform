@@ -1,0 +1,300 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "D/T11 Device Sync configuration delivery candidate",
+    "version": "1.0.0-candidate",
+    "description": "候选 Schema，需真实上位机构建和回执联调签认后才可启用目标。公开的 Device Sync 兼容基线维持原形。",
+    "x-decision-versions": ["DEC-018@1.0.0"]
+  },
+  "paths": {
+    "/api/v1/device/sync": {
+      "post": {
+        "operationId": "syncDeviceConfigurationDeliveryCandidate",
+        "summary": "Sync 候选配置交付",
+        "description": "候选版本 1，联调签认前仅用于受控本地验证。设备与上位机构建均需服务端核准。",
+        "security": [
+          {
+            "DeviceMtls": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "完整事实快照",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceSyncSnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求体校验失败（VALIDATION_FAILED：未知字段、非法 UTC 时间戳或配置协商/回执结构）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../rest/openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未认证（UNAUTHENTICATED：证书缺失/未登记/非 ACTIVE/过期）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../rest/openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "生命周期不允许访问（FORBIDDEN）；Retired 且退役确认待处理的设备例外，仅允许 Sync/Deactivate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../rest/openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误（INTERNAL_ERROR）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../rest/openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT：云端 License 补齐时设备状态已变化，或已启用配置交付的设备提交了与自身历史快照不符的回执",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../rest/openapi-base.json#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceMtls": {
+        "$ref": "../rest/openapi-base.json#/components/securitySchemes/DeviceMtls"
+      }
+    },
+    "schemas": {
+      "SyncRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "if": {
+          "required": ["configurationReceipt"]
+        },
+        "then": {
+          "required": ["configurationProtocol"],
+          "properties": {
+            "configurationProtocol": {
+              "type": "object",
+              "properties": {
+                "schemaVersion": {
+                  "const": 1
+                }
+              }
+            }
+          }
+        },
+        "properties": {
+          "lastSyncTime": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/SyncRequest/properties/lastSyncTime"
+          },
+          "licenseConfirmation": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/SyncRequest/properties/licenseConfirmation"
+          },
+          "configurationProtocol": {
+            "$ref": "#/components/schemas/ConfigurationDeliveryProtocol"
+          },
+          "configurationReceipt": {
+            "$ref": "#/components/schemas/ConfigurationDeliveryReceipt"
+          }
+        }
+      },
+      "ConfigurationDeliveryProtocol": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schemaVersion", "clientVersion"],
+        "description": "可选协商。候选版本为 1。未启用设备、客户端版本不匹配或未知版本只返回既有快照。",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "clientVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+          }
+        }
+      },
+      "ConfigurationDeliveryReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["deliveryId", "configurationId", "version", "status"],
+        "description": "标识来自此前 Sync。RECEIVED 确认接收；APPLIED 确认已应用并蕴含接收。设备身份由证书确定，阶段可幂等重试。关闭交付时，格式合法的回执不落库。",
+        "properties": {
+          "deliveryId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "configurationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "type": "string",
+            "enum": ["RECEIVED", "APPLIED"]
+          }
+        }
+      },
+      "ConfigurationDeliveryContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["alias", "site", "region", "subregion", "contract"],
+        "properties": {
+          "alias": {
+            "type": ["string", "null"]
+          },
+          "site": {
+            "type": ["string", "null"]
+          },
+          "region": {
+            "type": ["string", "null"]
+          },
+          "subregion": {
+            "type": ["string", "null"]
+          },
+          "contract": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["contractNumber", "name"],
+                "properties": {
+                  "contractNumber": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ConfigurationDeliverySnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schemaVersion", "deliveryId", "configurationId", "version", "effectiveAt", "settings", "context"],
+        "description": "候选 JSON 交付快照。settings 为 DEC-018 四字段完整快照，context 从业务实体派生。",
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "deliveryId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "configurationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "effectiveAt": {
+            "$ref": "../rest/openapi-base.json#/components/schemas/UtcTimestamp"
+          },
+          "settings": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/SyncConfiguration"
+          },
+          "context": {
+            "$ref": "#/components/schemas/ConfigurationDeliveryContext"
+          }
+        }
+      },
+      "DeviceSyncSnapshot": {
+        "type": "object",
+        "required": ["assignment", "device", "license", "deviceUsers", "configuration", "operationalStatus"],
+        "additionalProperties": false,
+        "description": "D/T11 候选快照，只有已核准的设备与上位机构建可获得 configurationDelivery。旧 Sync 字段沿用受治理的现行契约。",
+        "properties": {
+          "deviceId": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/deviceId"
+          },
+          "snapshotAt": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/snapshotAt"
+          },
+          "lastSyncTime": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/lastSyncTime"
+          },
+          "etag": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/etag"
+          },
+          "assignment": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/assignment"
+          },
+          "device": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/device"
+          },
+          "license": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/license"
+          },
+          "deviceUsers": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/deviceUsers"
+          },
+          "configuration": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/configuration"
+          },
+          "configurationDelivery": {
+            "$ref": "#/components/schemas/ConfigurationDeliverySnapshot",
+            "description": "仅当证书设备 ID、协商版本和服务端核准的客户端版本匹配且存在已生效配置时返回。旧 configuration 字段保持原形。"
+          },
+          "operationalStatus": {
+            "$ref": "../rest/device-sync-api.json#/components/schemas/DeviceSyncSnapshot/properties/operationalStatus"
+          }
+        }
+      }
+    }
+  }
+}

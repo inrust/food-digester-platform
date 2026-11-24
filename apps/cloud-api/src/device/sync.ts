@@ -33,9 +33,20 @@ import type { DeviceAuthContext } from '@fdp/auth';
 import { normalizeOperationalStatus } from '@fdp/domain';
 import { EFFECTIVE_LICENSE_STATUSES } from '../admin/customer/repository.js';
 import { DEFAULT_CONNECTIVITY_THRESHOLD_MS, deriveConnectivity } from '../admin/device/repository.js';
-import { resolveEffectiveConfiguration } from '../admin/configuration/service.js';
+import { readConfigurationContext, resolveEffectiveConfiguration } from '../admin/configuration/service.js';
 import type { EffectiveConfiguration } from '../admin/configuration/service.js';
 import { listDeviceUsersForSync } from '../admin/device-user/service.js';
+import {
+  CONFIGURATION_DELIVERY_SCHEMA_VERSION,
+  isConfigurationClientVersion,
+  makeConfigurationDelivery,
+  recordConfigurationSync,
+} from './configuration-delivery.js';
+import type {
+  ConfigurationDeliveryView,
+  ConfigurationProtocol,
+  ConfigurationReceipt,
+} from './configuration-delivery.js';
 
 interface DeviceUserSyncReceiptDelegate {
   updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
@@ -74,6 +85,7 @@ export class DeviceSyncError extends Error {
 
 export interface DeviceSyncDeps {
   readonly client: DbClient;
+  readonly configurationDeliveryTargets?: ReadonlyMap<string, string>;
   readonly now?: () => Date;
   /**
    * DEC-001：Maintenance 状态同步节奏（秒）。消费方禁止直接读矩阵 JSON 或复制冻结值，
@@ -101,18 +113,75 @@ export interface SyncRequestInput {
   readonly lastSyncTime: string | null;
   /** @deprecated 结构兼容字段；设备激活由云端 License 流程完成。 */
   readonly licenseConfirmation?: LicenseConfirmation;
+  readonly configurationProtocol?: ConfigurationProtocol;
+  readonly configurationReceipt?: ConfigurationReceipt;
 }
+function parseConfigurationProtocol(value: unknown): ConfigurationProtocol | undefined {
+  if (value === undefined) return undefined;
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const protocol = value as Record<string, unknown>;
+    if (
+      Object.keys(protocol).every((key) => key === 'schemaVersion' || key === 'clientVersion') &&
+      typeof protocol.schemaVersion === 'number' &&
+      Number.isSafeInteger(protocol.schemaVersion) &&
+      protocol.schemaVersion >= 1 &&
+      isConfigurationClientVersion(protocol.clientVersion)
+    ) {
+      return { schemaVersion: protocol.schemaVersion, clientVersion: protocol.clientVersion };
+    }
+  }
+  throw new DeviceSyncError('VALIDATION_FAILED', 'configurationProtocol fields are invalid');
+}
+
+function parseConfigurationReceipt(
+  value: unknown,
+  protocol: ConfigurationProtocol | undefined,
+): ConfigurationReceipt | undefined {
+  if (value === undefined) return undefined;
+  if (
+    protocol?.schemaVersion === CONFIGURATION_DELIVERY_SCHEMA_VERSION &&
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  ) {
+    const receipt = value as Record<string, unknown>;
+    if (
+      Object.keys(receipt).every((key) => ['deliveryId', 'configurationId', 'version', 'status'].includes(key)) &&
+      typeof receipt.deliveryId === 'string' &&
+      /^[0-9a-f]{64}$/.test(receipt.deliveryId) &&
+      typeof receipt.configurationId === 'string' &&
+      receipt.configurationId.trim() === receipt.configurationId &&
+      receipt.configurationId.length > 0 &&
+      receipt.configurationId.length <= 128 &&
+      typeof receipt.version === 'number' &&
+      Number.isSafeInteger(receipt.version) &&
+      receipt.version >= 1 &&
+      (receipt.status === 'RECEIVED' || receipt.status === 'APPLIED')
+    ) {
+      return {
+        deliveryId: receipt.deliveryId,
+        configurationId: receipt.configurationId,
+        version: receipt.version,
+        status: receipt.status,
+      };
+    }
+  }
+  throw new DeviceSyncError('VALIDATION_FAILED', 'configurationReceipt fields or schemaVersion are invalid');
+}
+
 export function parseSyncRequest(body: unknown): SyncRequestInput {
   if (body === undefined || body === null) return { lastSyncTime: null };
   if (typeof body !== 'object' || Array.isArray(body)) {
     throw new DeviceSyncError('VALIDATION_FAILED', 'The request body must be an object');
   }
-  const keys = Object.keys(body as Record<string, unknown>);
-  const unknown = keys.filter((k) => !['lastSyncTime', 'licenseConfirmation'].includes(k));
+  const values = body as Record<string, unknown>;
+  const unknown = Object.keys(values).filter(
+    (key) => !['lastSyncTime', 'licenseConfirmation', 'configurationProtocol', 'configurationReceipt'].includes(key),
+  );
   if (unknown.length > 0) {
     throw new DeviceSyncError('VALIDATION_FAILED', `Unknown fields: ${unknown.join(', ')}`);
   }
-  const confirmation = (body as Record<string, unknown>).licenseConfirmation;
+  const confirmation = values.licenseConfirmation;
   let licenseConfirmation: LicenseConfirmation | undefined;
   if (confirmation !== undefined) {
     if (!confirmation || typeof confirmation !== 'object' || Array.isArray(confirmation))
@@ -132,8 +201,14 @@ export function parseSyncRequest(body: unknown): SyncRequestInput {
       throw new DeviceSyncError('VALIDATION_FAILED', 'licenseConfirmation fields are invalid');
     licenseConfirmation = c as unknown as LicenseConfirmation;
   }
-  const extra = licenseConfirmation ? { licenseConfirmation } : {};
-  const value = (body as Record<string, unknown>).lastSyncTime;
+  const configurationProtocol = parseConfigurationProtocol(values.configurationProtocol);
+  const configurationReceipt = parseConfigurationReceipt(values.configurationReceipt, configurationProtocol);
+  const extra = {
+    ...(licenseConfirmation ? { licenseConfirmation } : {}),
+    ...(configurationProtocol ? { configurationProtocol } : {}),
+    ...(configurationReceipt ? { configurationReceipt } : {}),
+  };
+  const value = values.lastSyncTime;
   if (value === undefined || value === null) return { lastSyncTime: null, ...extra };
   if (typeof value !== 'string' || !UTC_TIMESTAMP_PATTERN.test(value) || Number.isNaN(Date.parse(value))) {
     throw new DeviceSyncError('VALIDATION_FAILED', 'lastSyncTime must be a UTC ISO 8601 timestamp or null');
@@ -239,6 +314,7 @@ export interface DeviceSyncSnapshot {
   readonly license: SyncLicenseView | null;
   readonly deviceUsers: readonly SyncDeviceUserView[];
   readonly configuration: EffectiveConfiguration['payload'] | null;
+  readonly configurationDelivery?: ConfigurationDeliveryView;
   readonly operationalStatus: SyncOperationalStatusView;
 }
 
@@ -386,6 +462,7 @@ export function computeSnapshotEtag(
   const stable = {
     assignment: snapshot.assignment,
     configuration: snapshot.configuration,
+    ...(snapshot.configurationDelivery ? { configurationDelivery: snapshot.configurationDelivery } : {}),
     device: snapshot.device,
     deviceUsers: snapshot.deviceUsers,
     license: snapshot.license,
@@ -405,7 +482,7 @@ export function computeSnapshotEtag(
 export async function buildDeviceSyncSnapshot(
   deps: DeviceSyncDeps,
   auth: DeviceAuthContext,
-  input: { readonly lastSyncTime: string | null },
+  input: SyncRequestInput,
 ): Promise<DeviceSyncSnapshot> {
   const now = deps.now?.() ?? new Date();
   const device = await devices(deps.client).findFirst({ where: { id: auth.deviceId } });
@@ -464,6 +541,27 @@ export async function buildDeviceSyncSnapshot(
 
   const license = pickSyncLicense(licenseRows, now);
   const configuration = await resolveEffectiveConfiguration(deps, device.id, now);
+  const protocol = input.configurationProtocol;
+  const useConfigurationDelivery =
+    device.lifecycleStatus !== 'Retired' &&
+    protocol?.schemaVersion === CONFIGURATION_DELIVERY_SCHEMA_VERSION &&
+    deps.configurationDeliveryTargets?.get(device.id) === protocol.clientVersion;
+  const configurationDelivery =
+    useConfigurationDelivery && configuration
+      ? makeConfigurationDelivery(device.id, configuration, await readConfigurationContext(deps.client, device, now))
+      : undefined;
+  if (useConfigurationDelivery) {
+    const recorded = await recordConfigurationSync(
+      deps.client,
+      device.id,
+      now,
+      input.configurationReceipt,
+      configurationDelivery && configuration
+        ? { deliveryId: configurationDelivery.deliveryId, versionId: configuration.versionId }
+        : undefined,
+    );
+    if (!recorded) throw new DeviceSyncError('CONFLICT', 'The configuration receipt does not match a served snapshot');
+  }
 
   const operationalStatus =
     normalizeOperationalStatus(latestState?.operationalStatus) ??
@@ -492,6 +590,7 @@ export async function buildDeviceSyncSnapshot(
     license: license ? toLicenseView(license, now) : null,
     deviceUsers,
     configuration: configuration?.payload ?? null,
+    ...(configurationDelivery ? { configurationDelivery } : {}),
     operationalStatus: operational,
   };
 
