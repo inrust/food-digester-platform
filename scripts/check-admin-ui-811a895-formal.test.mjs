@@ -15,6 +15,16 @@ test('scoped Gate accepts the archived real-target receipt, without promoting fu
   assert.equal(r.fullAdminTargetAccepted, false);
 });
 const probes = [
+  [
+    'current settings route substituted for the archived route',
+    'Chrome:PlatformSuperAdmin:all-source-routes',
+    (r) => {
+      const route = r.browsers.cases
+        .find((c) => c.browser === 'Chrome' && c.role === 'PlatformSuperAdmin')
+        .routes.find((route) => route.path === '/settings');
+      route.path = route.actualPath = '/business-settings';
+    },
+  ],
   ['missing role', 'five-distinct-roles', (r) => r.business.identities.pop()],
   ['wrong SHA', 'exact-source', (r) => (r.browsers.sourceCommit = '0'.repeat(40))],
   ['unverified Lambda', 'deployment-byte-verification', (r) => (r.version.lambdaArtifacts[0].matches = false)],

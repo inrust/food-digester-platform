@@ -108,7 +108,7 @@ test('完整的 16 API、角色、Cognito、并发、S3、Dashboard、审计与�
   assert.deepEqual(validateEvidence(fixture()), []);
 });
 
-test('16 个 operationId 与六份正式 OpenAPI 精确一致', () => {
+test('历史 16 项操作和后续启用接口共同覆盖六份当前 OpenAPI', () => {
   const files = [
     'device-media-api.json',
     'admin-media-api.json',
@@ -126,7 +126,8 @@ test('16 个 operationId 与六份正式 OpenAPI 精确一致', () => {
         .map(([, operation]) => operation.operationId),
     );
   });
-  assert.deepEqual(new Set(REQUIRED_OPERATIONS), new Set(actual));
+  assert.ok(!REQUIRED_OPERATIONS.includes('enableUser'));
+  assert.deepEqual(new Set([...REQUIRED_OPERATIONS, 'enableUser']), new Set(actual));
 });
 
 test('API、角色、租户或安全/并发探针缺口均失败关闭', () => {

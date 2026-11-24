@@ -111,7 +111,16 @@ test('dedicated query project never changes migration project or passes StartBui
   const commands = JSON.parse(p.project.source.buildspec).phases;
   assert.ok(!JSON.stringify(commands).includes('migrate deploy'));
   assert.equal(p.project.vpcConfig.securityGroupIds[0], 'sg-081d9a3ee5f6011e9');
-  assert.equal(p.manifest.migrations.length, 45);
+  assert.equal(p.manifest.migrations.length, 49);
+  assert.deepEqual(
+    p.manifest.migrations.slice(-4).map(({ name }) => name),
+    [
+      '20261124090000_user_last_disabled_at',
+      '20261124130000_consumable_request_stage_notes',
+      '20261124163000_configuration_deliveries',
+      '20261124170000_consumable_device_submissions',
+    ],
+  );
   assert.ok(p.manifest.migrations.some(({ name }) => name === '20261119010000_media_capture_sort'));
 });
 

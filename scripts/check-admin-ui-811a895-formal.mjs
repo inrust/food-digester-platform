@@ -3,13 +3,48 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
-import { APP_ROUTES } from '../apps/admin-web/src/router/routes.ts';
 import { hasPermission } from '../packages/auth/src/permissions.ts';
 
 export const SOURCE_COMMIT = '811a8959477d7b2608f2562b5d221f8b40370944';
 export const FORMAL_FOLDER = 'docs/audit/evidence/admin-ui-811a895-formal-2026-10-04';
 export const ROLES = ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor', 'CustomerAdmin', 'CustomerViewer'];
 const BROWSERS = ['Chrome', 'Edge', 'Firefox'];
+const [admin, operator, auditor, customerAdmin, customerViewer] = ROLES;
+// Non-public paths and role sets from SOURCE_COMMIT's router. Current routes have a different acceptance scope.
+const SOURCE_ROUTES = [
+  [
+    ROLES,
+    [
+      '/dashboard',
+      '/devices/view',
+      '/devices/groups',
+      '/alarms',
+      '/media',
+      '/esg/overview',
+      '/esg/devices',
+      '/sites',
+      '/devices/manage',
+    ],
+  ],
+  [
+    [admin, operator, auditor],
+    [
+      '/configurations',
+      '/contracts',
+      '/customers',
+      '/licenses',
+      '/contracts/detail',
+      '/ota/campaigns',
+      '/ota/packages',
+    ],
+  ],
+  [[admin, operator, customerAdmin], ['/devices/operate']],
+  [[admin, operator, customerAdmin, customerViewer], ['/consumables']],
+  [[admin, customerAdmin], ['/settings']],
+  [[admin, auditor, customerAdmin, customerViewer], ['/device-users']],
+  [[admin, auditor], ['/audit-logs']],
+  [[admin], ['/contracts/new']],
+].flatMap(([roles, paths]) => paths.map((path) => ({ path, roles })));
 const READS = {
   customers: 'customer:read',
   sites: 'site:read',
@@ -278,8 +313,7 @@ export function validateFormalBundle(bundle) {
                 x.capabilities?.acceptInsecureCerts === false),
       ),
   );
-  const cases = rows(b?.cases),
-    routes = APP_ROUTES.filter((x) => !x.public);
+  const cases = rows(b?.cases);
   check(
     'fifteen-distinct-browser-role-cases',
     exact(
@@ -294,9 +328,9 @@ export function validateFormalBundle(bundle) {
       id + ':all-source-routes',
       exact(
         rows(c.routes).map((x) => x.path),
-        routes.map((x) => x.path),
+        SOURCE_ROUTES.map((x) => x.path),
       ) &&
-        routes.every((route) => {
+        SOURCE_ROUTES.every((route) => {
           const q = rows(c.routes).find((x) => x.path === route.path);
           return (
             q?.result === 'PASS' &&

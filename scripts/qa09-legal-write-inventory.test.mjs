@@ -18,7 +18,15 @@ test('valid HTTP writes cannot be inflated by malformed, wrong role, wrong metho
     { ...base, method: 'GET' },
     { ...base, result: 'FAIL' },
   ]);
-  assert.equal(rows.length, 65);
+  assert.equal(rows.length, 67);
+  for (const [operationId, permission] of [
+    ['enableUser', 'user:write'],
+    ['reactivateSite', 'site:write'],
+  ]) {
+    const operation = rows.find((row) => row.operationId === operationId);
+    assert.equal(operation?.permission, permission);
+    assert.equal(operation?.roles.find((role) => role.role === 'PlatformSuperAdmin')?.result, 'NOT_RUN');
+  }
   const op = rows.find((r) => r.path.endsWith('/metadata'));
   assert.equal(op.roles.find((r) => r.role === 'PlatformOperator').checks.length, 1);
   assert.equal(op.roles.find((r) => r.role === 'CustomerViewer').result, 'NOT_APPLICABLE');
