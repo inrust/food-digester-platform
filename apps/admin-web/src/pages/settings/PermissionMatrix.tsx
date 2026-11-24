@@ -1,4 +1,4 @@
-import { PERMISSIONS, ROLES, hasPermission } from '@fdp/auth/browser';
+import { PERMISSIONS, PLATFORM_DELIVERY_ROLES, hasPermission } from '@fdp/auth/browser';
 import type { Permission, Role } from '@fdp/auth/browser';
 import { useState } from 'react';
 import { FilterBar } from '../../components/FilterBar.js';
@@ -18,7 +18,7 @@ export function PermissionMatrix() {
   const { t } = useI18n();
   const [role, setRole] = useState<Role | ''>('');
   const [search, setSearch] = useState('');
-  const roles = role === '' ? ROLES : [role];
+  const roles = role === '' ? PLATFORM_DELIVERY_ROLES : [role];
   const query = search.trim().toLowerCase();
   const groups = Array.from(permissionsByModule, ([module, permissions]) => {
     const label = t(`rbac.module.${module}`);
@@ -42,7 +42,7 @@ export function PermissionMatrix() {
           <label htmlFor="rbac-role">{t('rbac.roleFilter')}</label>
           <select id="rbac-role" value={role} onChange={(event) => setRole(event.target.value as Role | '')}>
             <option value="">{t('rbac.allRoles')}</option>
-            {ROLES.map((candidate) => (
+            {PLATFORM_DELIVERY_ROLES.map((candidate) => (
               <option key={candidate} value={candidate}>
                 {roleDisplayName(candidate)}
               </option>

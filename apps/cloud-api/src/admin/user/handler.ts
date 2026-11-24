@@ -6,7 +6,7 @@
  * - GET /api/v1/admin/account/profile               本人业务资料（已认证主体）
  * - GET /api/v1/admin/users                         列表（筛选 + 键集游标分页）
  * - POST /api/v1/admin/users                        邀请（Cognito 临时凭证，API 不接收永久密码）
- * - PUT  /api/v1/admin/users/{userId}/roles         角色分配（整体替换）
+ * - PUT  /api/v1/admin/users/{userId}/roles         角色分配（保留既有审计角色）
  * - PUT  /api/v1/admin/users/{userId}/scope         Customer scope 变更
  * - POST /api/v1/admin/users/{userId}/disable       停用（幂等回放）
  * - POST /api/v1/admin/users/{userId}/enable        启用（幂等回放）

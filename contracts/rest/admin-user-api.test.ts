@@ -63,6 +63,15 @@ test('角色封闭集与 DEC-012 映射；输入不含密码字段；响应不�
   ]);
 
   const invite = doc.components.schemas.UserInvite;
+  assert.deepEqual(doc.components.schemas.UserInviteRoleCode.enum, [
+    'PlatformSuperAdmin',
+    'PlatformOperator',
+    'CustomerAdmin',
+    'CustomerViewer',
+  ]);
+  assert.equal(invite.properties.roles.items.$ref, '#/components/schemas/UserInviteRoleCode');
+  assert.equal(doc.components.schemas.UserRolesAssign.properties.roles.items.$ref, '#/components/schemas/RoleCode');
+  assert.equal(doc.components.schemas.UserView.properties.roles.items.$ref, '#/components/schemas/RoleCode');
   assert.equal(invite.additionalProperties, false);
   assert.deepEqual(invite.required, ['email', 'displayName', 'roles']);
   const inviteJson = JSON.stringify(invite.properties).toLowerCase();

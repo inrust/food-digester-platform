@@ -4,11 +4,11 @@
  * - 平台用户和业务设置使用独立页面；
  * - 平台用户：邀请（无永久密码字段/提交体不含 password）、角色整体替换（高风险确认）、
  *   scope 变更、停用、受控重置（不接触密码）；
- * - RBAC 矩阵只读；DEC-012“设备操作员”显示名；
+ * - R18 双角色候选与只读 RBAC 矩阵；
  * - 自我提权/越权 403 正确呈现；业务设置乐观锁 409 可恢复（刷新）；
  * - 封闭 key 集四项；command.confirmation（DEC-023 固定）只读无编辑入口。
  */
-import { PERMISSIONS, ROLES, hasPermission } from '@fdp/auth/browser';
+import { PERMISSIONS, PLATFORM_DELIVERY_ROLES, hasPermission } from '@fdp/auth/browser';
 import { afterEach, assert, test, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -142,6 +142,14 @@ test('邀请：表单无永久密码字段；提交体不含 password；提示 C
   );
   // 拒绝密码输入（CT-06 Reject：settings.modal.passwordInput）
   assert.equal(form.querySelector('input[type="password"]'), null);
+  assert.deepEqual(
+    within(roleGroup)
+      .getAllByRole('checkbox')
+      .map((box) => box.getAttribute('data-testid')),
+    ['invite-role-PlatformSuperAdmin', 'invite-role-PlatformOperator'],
+  );
+  assert.ok(within(roleGroup).getByRole('checkbox', { name: '平台管理员' }));
+  assert.ok(within(roleGroup).getByRole('checkbox', { name: '运维人员' }));
 
   await user.type(within(form).getByTestId('invite-email'), 'new@example.com');
   await user.type(within(form).getByTestId('invite-display-name'), '新用户');
@@ -158,50 +166,67 @@ test('邀请：表单无永久密码字段；提交体不含 password；提示 C
   assert.ok(notice.textContent?.includes('不接触密码'));
 });
 
-test('邀请校验：平台/Customer 混绑拒绝；Customer 角色缺 customerId 拒绝', async () => {
-  const user = userEvent.setup();
-  renderPage();
-  await user.click(screen.getByTestId('user-invite-open'));
-  const form = screen.getByTestId('user-invite-form');
-  await user.type(within(form).getByTestId('invite-email'), 'mix@example.com');
-  await user.type(within(form).getByTestId('invite-display-name'), '混绑');
-  await user.click(within(form).getByTestId('invite-role-Auditor'));
-  await user.click(within(form).getByTestId('invite-role-CustomerViewer'));
-  assert.ok(within(form).getByTestId('invite-error').textContent?.includes('禁止混绑'));
-  assert.equal((within(form).getByTestId('invite-submit') as HTMLButtonElement).disabled, true);
-
-  // 纯 Customer 角色缺 customerId
-  assert.ok(
-    validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: '' })?.includes(
-      'Customer',
-    ),
-  );
-  // 平台角色带 customerId
-  assert.ok(
-    validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['Auditor'], customerId: 'c1' })?.includes('省略'),
-  );
-  assert.equal(validateInvite({ email: 'a@b.co', displayName: 'x', roles: ['CustomerAdmin'], customerId: 'c1' }), null);
+test('R18 平台邀请校验拒绝历史及客户角色', () => {
+  const draft = { email: 'a@b.co', displayName: '邀请对象' };
+  for (const roles of [[], ['Auditor'], ['CustomerViewer'], ['PlatformOperator', 'Auditor']] as const) {
+    assert.ok(validateInvite({ ...draft, roles })?.includes('请选择'));
+  }
+  assert.equal(validateInvite({ ...draft, roles: ['PlatformSuperAdmin', 'PlatformOperator'] }), null);
 });
 
-test('角色变更：高风险明确确认后整体替换；混绑禁用提交', async () => {
+test('客户账号仅提供客户角色，替换需要明确确认', async () => {
   const user = userEvent.setup();
   const { calls } = renderPage();
   await user.click(screen.getByTestId('user-roles-usr-002'));
   const form = screen.getByTestId('user-roles-form');
-  // 混绑 → 禁用
-  await user.click(within(form).getByTestId('assign-role-Auditor'));
-  assert.ok(within(form).getByTestId('assign-error').textContent?.includes('禁止混绑'));
-  assert.equal((within(form).getByTestId('assign-submit') as HTMLButtonElement).disabled, true);
-  // 取消混绑，换 CustomerAdmin
-  await user.click(within(form).getByTestId('assign-role-Auditor'));
+  assert.deepEqual(
+    within(form)
+      .getAllByRole('checkbox')
+      .map((box) => box.getAttribute('data-testid')),
+    ['assign-role-CustomerAdmin', 'assign-role-CustomerViewer'],
+  );
   await user.click(within(form).getByTestId('assign-role-CustomerViewer'));
+  assert.equal((within(form).getByTestId('assign-submit') as HTMLButtonElement).disabled, true);
   await user.click(within(form).getByTestId('assign-role-CustomerAdmin'));
   await user.click(within(form).getByTestId('assign-submit'));
-  // 明确确认（高风险）
   const dialog = screen.getByTestId('confirm-dialog');
   assert.ok(dialog.textContent?.includes('高风险权限变更'));
   await user.click(within(dialog).getByText('确认变更'));
   assert.deepEqual(calls.assigned, [{ userId: 'usr-002', roles: ['CustomerAdmin'] }]);
+});
+
+test('R18 存量 Auditor 不自动获得平台角色，多角色账号明确确认后只调整交付角色', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderPage({
+    users: {
+      rows: [
+        makeUser({ roles: ['Auditor'] }),
+        makeUser({ userId: 'usr-multi', roles: ['Auditor', 'PlatformOperator'] }),
+      ],
+    },
+  });
+  await user.click(screen.getByTestId('user-roles-usr-001'));
+  let form = screen.getByTestId('user-roles-form');
+  const options = within(form).getAllByRole('checkbox') as HTMLInputElement[];
+  assert.deepEqual(
+    options.map((box) => box.getAttribute('data-testid')),
+    ['assign-role-PlatformSuperAdmin', 'assign-role-PlatformOperator'],
+  );
+  assert.ok(options.every((box) => !box.checked));
+  assert.isTrue((within(form).getByTestId('assign-submit') as HTMLButtonElement).disabled);
+  assert.match(form.textContent ?? '', /保留.*Auditor/);
+  await user.click(within(form).getByRole('button', { name: '关闭' }));
+  assert.deepEqual(calls.assigned, []);
+
+  await user.click(screen.getByTestId('user-roles-usr-multi'));
+  form = screen.getByTestId('user-roles-form');
+  assert.isTrue((within(form).getByTestId('assign-role-PlatformOperator') as HTMLInputElement).checked);
+  await user.click(within(form).getByTestId('assign-role-PlatformOperator'));
+  await user.click(within(form).getByTestId('assign-submit'));
+  const dialog = screen.getByTestId('confirm-dialog');
+  assert.match(dialog.textContent ?? '', /保存后的角色为 Auditor/);
+  await user.click(within(dialog).getByText('确认变更'));
+  assert.deepEqual(calls.assigned, [{ userId: 'usr-multi', roles: ['Auditor'] }]);
 });
 
 test('停用与重置：明确确认；重置提示不接触密码', async () => {
@@ -270,28 +295,33 @@ test('自我提权/越权：403 经 ErrorNotice 正确呈现', async () => {
   assert.ok(error.textContent?.includes('无权访问'));
 });
 
-test('RBAC 矩阵逐角色呈现共享定义，支持按权限和模块筛选', async () => {
+test('CMP-37 双角色矩阵逐权限呈现共享定义，支持按权限和模块筛选', async () => {
   const user = userEvent.setup();
   renderPage({ role: 'Auditor' });
   const matrix = screen.getByTestId('rbac-matrix');
   const table = within(matrix).getByTestId('rbac-table');
   assert.equal(table.querySelector('input, select, button'), null);
-  for (const role of ROLES)
+  for (const role of PLATFORM_DELIVERY_ROLES)
     for (const permission of PERMISSIONS) {
       const cell = within(table).getByTestId(`rbac-${role}-${permission}`);
       assert.equal(cell.getAttribute('data-granted'), String(hasPermission(role, permission)));
     }
-  assert.ok(table.textContent?.includes('设备操作员'));
-  assert.ok(!table.textContent?.includes('运维人员'));
+  assert.deepEqual(
+    within(table)
+      .getAllByRole('columnheader')
+      .slice(1)
+      .map((cell) => cell.textContent),
+    ['平台管理员', '运维人员'],
+  );
   const search = within(matrix).getByLabelText('查找权限或模块');
-  await user.selectOptions(within(matrix).getByRole('combobox', { name: '按角色查看' }), 'CustomerViewer');
+  await user.selectOptions(within(matrix).getByRole('combobox', { name: '按角色查看' }), 'PlatformOperator');
   await user.type(search, 'contract:read');
-  assert.equal(within(table).getByTestId('rbac-CustomerViewer-contract:read').textContent, '未授权');
+  assert.equal(within(table).getByTestId('rbac-PlatformOperator-contract:read').textContent, '已授权');
   assert.equal(within(table).queryByTestId('rbac-PlatformSuperAdmin-contract:read'), null);
-  assert.equal(within(table).queryByTestId('rbac-CustomerViewer-contract:write'), null);
+  assert.equal(within(table).queryByTestId('rbac-PlatformOperator-contract:write'), null);
   await user.clear(search);
   await user.type(search, '合约');
-  assert.ok(within(table).getByTestId('rbac-CustomerViewer-contract:write'));
+  assert.ok(within(table).getByTestId('rbac-PlatformOperator-contract:write'));
   await user.clear(search);
   await user.type(search, 'unmatched');
   assert.equal(within(matrix).queryByTestId('rbac-table'), null);

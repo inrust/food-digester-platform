@@ -20,7 +20,20 @@ test('CMP-35/37 platform users expose full values and the searchable matrix stay
     createdAt: time,
     updatedAt: time,
   };
-  await page.route('**/api/v1/admin/users**', (route) => json(route, { data: [row], meta: { nextCursor: null } }));
+  const auditor = {
+    ...row,
+    userId: 'legacy-auditor',
+    email: 'auditor@example.test',
+    displayName: 'Legacy auditor',
+    status: 'ACTIVE',
+    roles: ['Auditor'],
+    customerId: null,
+  };
+  const userWrites: string[] = [];
+  await page.route('**/api/v1/admin/users**', (route) => {
+    if (route.request().method() !== 'GET') userWrites.push(route.request().method());
+    return json(route, { data: [row, auditor], meta: { nextCursor: null } });
+  });
   await page.route('**/api/v1/admin/settings**', (route) => json(route, { data: [], meta: {} }));
   await page.goto('/settings');
 
@@ -39,19 +52,37 @@ test('CMP-35/37 platform users expose full values and the searchable matrix stay
   await expect(list.getByTestId('user-roles-cmp-platform-user')).toBeDisabled();
   await expect(list.getByTestId('user-scope-cmp-platform-user')).toBeDisabled();
 
+  await page.getByTestId('user-invite-open').click();
+  const invite = page.getByTestId('user-invite-form');
+  await expect(invite.getByRole('checkbox')).toHaveCount(2);
+  await expect(invite.getByRole('checkbox', { name: '平台管理员' })).not.toBeChecked();
+  await expect(invite.getByRole('checkbox', { name: '运维人员' })).not.toBeChecked();
+  await page.keyboard.press('Escape');
+
+  await list.getByTestId('user-roles-legacy-auditor').click();
+  const assignment = page.getByTestId('user-roles-form');
+  await expect(assignment.getByRole('checkbox')).toHaveCount(2);
+  await expect(assignment.getByRole('checkbox', { name: '平台管理员' })).not.toBeChecked();
+  await expect(assignment.getByRole('checkbox', { name: '运维人员' })).not.toBeChecked();
+  await expect(assignment.getByTestId('assign-submit')).toBeDisabled();
+  await expect(assignment).toContainText('保留该账号已有的 Auditor 审计角色');
+  await page.keyboard.press('Escape');
+  expect(userWrites).toEqual([]);
+
   const matrix = page.getByTestId('rbac-matrix');
   const role = matrix.getByRole('combobox', { name: '按角色查看' });
   const search = matrix.getByLabel('查找权限或模块');
   const table = matrix.getByTestId('rbac-table');
-  await expect(role.locator('option')).toHaveCount(6);
+  await expect(role.locator('option')).toHaveText(['全部角色', '平台管理员', '运维人员']);
   await search.fill('合约');
   await expect(table.getByRole('rowheader', { name: 'contract:write' })).toBeVisible();
   await expect(table.getByTestId('rbac-PlatformSuperAdmin-contract:write')).toHaveText('已授权');
   await expect(table.getByTestId('rbac-PlatformOperator-contract:write')).toHaveText('未授权');
-  await role.selectOption('Auditor');
+  await role.selectOption('PlatformOperator');
   await search.fill('contract:read');
-  await expect(table.getByTestId('rbac-Auditor-contract:read')).toHaveText('已授权');
-  await expect(table.getByTestId('rbac-Auditor-contract:write')).toHaveCount(0);
+  await expect(table.getByTestId('rbac-PlatformOperator-contract:read')).toHaveText('已授权');
+  await expect(table.getByTestId('rbac-PlatformSuperAdmin-contract:read')).toHaveCount(0);
+  await expect(table.getByTestId('rbac-PlatformOperator-contract:write')).toHaveCount(0);
   await expect(table.locator('input, button, select')).toHaveCount(0);
   await search.fill('no-matching-fixture-permission');
   await expect(matrix.getByRole('status')).toHaveText('没有匹配的权限');

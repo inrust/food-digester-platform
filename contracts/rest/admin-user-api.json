@@ -82,6 +82,7 @@
         "tags": ["admin"],
         "operationId": "inviteUser",
         "summary": "邀请用户：Cognito 生成临时凭证（API 不接收永久密码）→ 用户 INVITED（201）",
+        "description": "R18 平台邀请仅接受 PlatformSuperAdmin 和 PlatformOperator；客户邀请沿用 Customer 角色与客户范围。",
         "security": [{ "CognitoJwt": [] }],
         "requestBody": {
           "required": true,
@@ -105,7 +106,8 @@
       "put": {
         "tags": ["admin"],
         "operationId": "assignUserRoles",
-        "summary": "角色分配（整体替换；自我提权/提升平台角色越权/最后一个 SuperAdmin 移除均拒绝；同步 Cognito groups）",
+        "summary": "角色分配（同步 Cognito groups；保留已分配的 Auditor）",
+        "description": "平台账号只可新增 PlatformSuperAdmin 或 PlatformOperator。已有 Auditor 保持生效，兼容旧客户端在完整角色列表中带回已有 Auditor。客户角色仍按原作用域整体替换。禁止跨类型变更、自我提权和移除最后一位 SuperAdmin。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "userId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
@@ -289,6 +291,10 @@
         "description": "封闭角色集（AUTH-01/DEC-012；V1 矩阵固定只读）",
         "enum": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"]
       },
+      "UserInviteRoleCode": {
+        "type": "string",
+        "enum": ["PlatformSuperAdmin", "PlatformOperator", "CustomerAdmin", "CustomerViewer"]
+      },
       "UserInvite": {
         "type": "object",
         "required": ["email", "displayName", "roles"],
@@ -298,7 +304,7 @@
           "displayName": { "type": "string", "minLength": 1, "maxLength": 128 },
           "roles": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/RoleCode" },
+            "items": { "$ref": "#/components/schemas/UserInviteRoleCode" },
             "minItems": 1,
             "maxItems": 3,
             "description": "平台/Customer 角色禁止混绑（单一 actorType）"
@@ -321,7 +327,7 @@
             "items": { "$ref": "#/components/schemas/RoleCode" },
             "minItems": 1,
             "maxItems": 3,
-            "description": "整体替换目标用户角色集"
+            "description": "仅可新增与目标同类型的角色；平台新增角色限 PlatformSuperAdmin 和 PlatformOperator，已有 Auditor 自动保留"
           }
         }
       },

@@ -28,7 +28,14 @@ import {
   withTransaction,
 } from '@fdp/database';
 import type { ActorContext, Role } from '@fdp/auth';
-import { CUSTOMER_ROLES, PLATFORM_ROLES, actorTypeOf, isRole, unauthenticated } from '@fdp/auth';
+import {
+  CUSTOMER_ROLES,
+  PLATFORM_ROLES,
+  actorTypeOf,
+  isPlatformDeliveryRole,
+  isRole,
+  unauthenticated,
+} from '@fdp/auth';
 import { userConflict, userForbidden, userNotFound, userValidationFailed } from './errors.js';
 import type { CognitoAdminPort } from './cognito-port.js';
 import { readAuthenticatedAccount } from './account-read-candidate.js';
@@ -444,6 +451,9 @@ export async function inviteUser(deps: UserAdminDeps, actor: ActorContext, input
   }
   assertCustomerActorScope(actor, roleType, customerId);
   assertPlatformRoleChangeAllowed(actor, roleType);
+  if (roleType === 'platform' && !input.roles.every(isPlatformDeliveryRole)) {
+    throw userValidationFailed('New platform invitations only support PlatformSuperAdmin and PlatformOperator');
+  }
 
   const duplicate = await users(deps.client).findFirst({ where: { email } });
   if (duplicate) throw userConflict('A user with this email already exists');
@@ -533,11 +543,13 @@ export async function assignUserRoles(
     (await userRoles(deps.client).findMany({
       where: { userId },
     })) as unknown as UserRoleRow[]
-  ).map((r) => r.roleCode);
+  )
+    .map((r) => r.roleCode)
+    .sort();
   const currentType = currentRoles.length > 0 ? actorTypeOf(currentRoles[0] as Role) : null;
 
-  const nextRoles = [...new Set(input.roles)];
-  const nextType = validateRoleSet(nextRoles);
+  const requestedRoles = [...new Set(input.roles)];
+  const nextType = validateRoleSet(requestedRoles);
 
   assertNotSelf(target, actor, 'change the roles of');
   assertPlatformRoleChangeAllowed(actor, nextType);
@@ -550,10 +562,19 @@ export async function assignUserRoles(
     assertCustomerActorScope(actor, nextType, scope?.customerId ?? null);
   }
   if (!target.cognitoSub) throw userConflict('The user has no Cognito identity');
+  // Existing legacy groups survive updates to the delivered roles, including older full-set requests.
+  const retainedRoles = nextType === 'platform' ? currentRoles.filter((role) => !isPlatformDeliveryRole(role)) : [];
+  if (
+    nextType === 'platform' &&
+    requestedRoles.some((role) => !isPlatformDeliveryRole(role) && !retainedRoles.includes(role))
+  ) {
+    throw userValidationFailed('A legacy platform role cannot be granted');
+  }
+  const nextRoles = [...new Set([...requestedRoles, ...retainedRoles])].sort();
   const intentId = await startCognitoReconciliationIntent(deps.client, userId, 'SET_GROUPS', {
     cognitoSub: target.cognitoSub,
-    before: { roles: [...currentRoles].sort() },
-    after: { roles: [...nextRoles].sort() },
+    before: { roles: currentRoles },
+    after: { roles: nextRoles },
   });
   let cognitoApplied = false;
   let cognitoAttempted = false;
@@ -565,20 +586,26 @@ export async function assignUserRoles(
         objectType: 'user',
         objectId: userId,
         action: 'user.role.assign',
-        reason: `roles ${currentRoles.sort().join(',')} → ${nextRoles.sort().join(',')}`,
+        reason: `roles ${currentRoles.join(',')} → ${nextRoles.join(',')}`,
         actorId: actor.actorId,
         actorRole: actor.roles[0],
         customerId: null,
-        beforeValue: { roles: currentRoles.sort() },
-        afterValue: { roles: [...nextRoles].sort() },
+        beforeValue: { roles: currentRoles },
+        afterValue: { roles: nextRoles },
       },
       async (tx) => {
         await lockSuperAdminInvariant(tx);
         const lockedTarget = (await users(tx).findFirst({ where: { id: userId } })) as unknown as UserRow | null;
         if (!lockedTarget) throw userNotFound();
-        lockedCurrentRoles = ((await userRoles(tx).findMany({ where: { userId } })) as unknown as UserRoleRow[]).map(
-          (role) => role.roleCode,
-        );
+        lockedCurrentRoles = ((await userRoles(tx).findMany({ where: { userId } })) as unknown as UserRoleRow[])
+          .map((role) => role.roleCode)
+          .sort();
+        if (
+          lockedCurrentRoles.length !== currentRoles.length ||
+          lockedCurrentRoles.some((role, index) => role !== currentRoles[index])
+        ) {
+          throw userConflict('The user roles changed. Reload before retrying');
+        }
         const removingSuperAdmin =
           lockedCurrentRoles.includes(SUPER_ADMIN_ROLE) && !nextRoles.includes(SUPER_ADMIN_ROLE);
         await assertNotLastSuperAdmin(tx, lockedTarget, removingSuperAdmin && lockedTarget.status !== 'DISABLED');

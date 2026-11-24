@@ -73,7 +73,7 @@ for (const viewport of [
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('dialog').getByRole('button', { name: '关闭' })).toBeFocused();
     await page.keyboard.press('Shift+Tab');
-    await expect(page.getByTestId('invite-role-CustomerViewer')).toBeFocused();
+    await expect(page.getByTestId('invite-role-PlatformOperator')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByTestId('user-invite-open')).toBeFocused();

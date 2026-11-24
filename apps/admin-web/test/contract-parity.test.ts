@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assert, test } from 'vitest';
-import { ROLES } from '@fdp/auth';
+import { CUSTOMER_ROLES, PLATFORM_DELIVERY_ROLES, ROLES } from '@fdp/auth';
 import { FROZEN_ROLE_DISPLAY_NAMES } from '../src/menu/menu.js';
 import { APP_ROUTES } from '../src/router/routes.js';
 import {
@@ -43,12 +43,7 @@ import {
 import { MEDIA_COVERAGE, MEDIA_STATUS_OPTIONS, MEDIA_TYPE_OPTIONS } from '../src/pages/media/media-state.js';
 import { AUDIT_RESULT_OPTIONS, SENSITIVE_KEY_PATTERN } from '../src/pages/audit/audit-state.js';
 import { SENSITIVE_KEY_PATTERN as OBSERVABILITY_SENSITIVE_KEY_PATTERN } from '../../../packages/observability/src/redaction.js';
-import {
-  ROLE_OPTIONS,
-  SETTINGS_COVERAGE,
-  SETTING_KEYS,
-  USER_STATUS_OPTIONS,
-} from '../src/pages/settings/settings-state.js';
+import { SETTINGS_COVERAGE, SETTING_KEYS, USER_STATUS_OPTIONS } from '../src/pages/settings/settings-state.js';
 import {
   CONTRACT_ACTION_MATRIX,
   CONTRACT_COVERAGE,
@@ -517,11 +512,13 @@ test('FE-16：RoleCode/SettingKey/用户状态枚举与契约一致；settings �
     components: {
       schemas: {
         RoleCode: { enum: string[] };
+        UserInviteRoleCode: { enum: string[] };
         UserView: { properties: { status: { enum: string[] } } };
       };
     };
   };
-  assert.deepEqual([...ROLE_OPTIONS].sort(), [...userApi.components.schemas.RoleCode.enum].sort());
+  assert.deepEqual([...ROLES], userApi.components.schemas.RoleCode.enum);
+  assert.deepEqual([...PLATFORM_DELIVERY_ROLES, ...CUSTOMER_ROLES], userApi.components.schemas.UserInviteRoleCode.enum);
   assert.deepEqual([...USER_STATUS_OPTIONS], userApi.components.schemas.UserView.properties.status.enum);
   const settingsApi = readJson('contracts/rest/admin-settings-api.json') as {
     components: { schemas: { SettingKey: { enum: string[] } } };

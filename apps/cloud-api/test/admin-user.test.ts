@@ -21,6 +21,7 @@ import type { ActorContext } from '@fdp/auth';
 import {
   activateInvitedUserOnAuthenticatedRequest,
   assignUserRoles,
+  createAdminAuditHandlers,
   createAdminUserHandlers,
   inviteUser,
   setUserScope,
@@ -397,21 +398,29 @@ describe('BE-RBAC-01 邀请用户', () => {
     const h = createAdminUserHandlers(userDeps(port));
     const res = await h.inviteUser(
       req(superAdmin, {
-        body: { email: 'New.Admin@Example.com', displayName: 'New Admin', roles: ['Auditor'] },
+        body: {
+          email: 'New.Admin@Example.com',
+          displayName: 'New Admin',
+          roles: ['PlatformOperator', 'PlatformSuperAdmin'],
+        },
       }),
     );
     assert.equal(res.status, 201);
     const view = (res.body as DataBody).data;
     assert.equal(view.email, 'new.admin@example.com'); // 规范化
     assert.equal(view.status, 'INVITED');
-    assert.deepEqual(view.roles, ['Auditor']);
+    assert.deepEqual(view.roles, ['PlatformOperator', 'PlatformSuperAdmin']);
     assert.equal(view.customerId, null);
     expectNoCredentialLeak(res.body);
 
     // Cognito 同步：groups 去重、customerId null
     assert.equal(calls.length, 1);
     assert.equal(calls[0]?.method, 'inviteUser');
-    assert.deepEqual(calls[0]?.input, { email: 'new.admin@example.com', groups: ['Auditor'], customerId: null });
+    assert.deepEqual(calls[0]?.input, {
+      email: 'new.admin@example.com',
+      groups: ['PlatformOperator', 'PlatformSuperAdmin'],
+      customerId: null,
+    });
 
     const row = await prisma.user.findUnique({ where: { id: view.userId } });
     assert.ok(row?.cognitoSub);
@@ -422,6 +431,23 @@ describe('BE-RBAC-01 邀请用户', () => {
     assert.equal(audits.length, 1);
     assert.equal(audits[0]?.result, 'SUCCESS');
     assert.equal(audits[0]?.actorId, superAdmin.actorId);
+  });
+
+  test('R18 新邀请拒绝 Auditor，且不启动 Cognito 或审计写入', async () => {
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const email = 't13-denied-auditor@example.com';
+    const countIntents = () => prisma.outboxEvent.count({ where: { eventType: 'COGNITO_ADMIN_RECONCILIATION' } });
+    const before = await countIntents();
+    for (const roles of [['Auditor'], ['PlatformOperator', 'Auditor']]) {
+      const res = await h.inviteUser(req(superAdmin, { body: { email, displayName: 'Legacy invitation', roles } }));
+      assert.equal(res.status, 400);
+      assertOpenApiResponse('inviteUser', res.status, res.body);
+      assert.equal((res.body as ErrBody).error.code, 'VALIDATION_FAILED');
+    }
+    assert.deepEqual(calls, []);
+    assert.isNull(await prisma.user.findUnique({ where: { email } }));
+    assert.equal(await countIntents(), before);
   });
 
   test('成功：Customer 角色邀请 → scope 落库 + Cognito 携带 customerId', async () => {
@@ -471,7 +497,7 @@ describe('BE-RBAC-01 邀请用户', () => {
     const h = createAdminUserHandlers(userDeps(port));
     const beforeUsers = await prisma.user.count();
     const beforeAudits = await prisma.auditLog.count();
-    const valid = { email: 'strict@example.com', displayName: 'Strict', roles: ['Auditor'] };
+    const valid = { email: 'strict@example.com', displayName: 'Strict', roles: ['PlatformOperator'] };
     for (const body of [{ ...valid, password: 'NeverAcceptThis' }, { ...valid, requestedBy: 'spoof' }, []]) {
       const response = await h.inviteUser(req(superAdmin, { body }));
       assert.equal(response.status, 400, JSON.stringify(body));
@@ -524,7 +550,7 @@ describe('BE-RBAC-01 邀请用户', () => {
     const existingEmail = (await prisma.user.findUniqueOrThrow({ where: { id: existing.userId } })).email;
     const dup = await h.inviteUser(
       req(superAdmin, {
-        body: { email: existingEmail, displayName: 'Dup', roles: ['Auditor'] },
+        body: { email: existingEmail, displayName: 'Dup', roles: ['PlatformOperator'] },
       }),
     );
     assert.equal(dup.status, 409);
@@ -567,10 +593,56 @@ describe('BE-RBAC-01 邀请用户', () => {
   });
 });
 
+test('R18 存量多角色签名会话可继续读取用户和审计，且无账号写权限', async () => {
+  const { port, calls } = fakeCognito();
+  const roles = ['Auditor', 'PlatformOperator'] as const;
+  const target = await plantUser({ roles });
+  const keys = await generateTestKeySet();
+  const token = await signToken(keys, { sub: target.cognitoSub, groups: roles });
+  const h = createAdminUserHandlers(userDeps(port));
+  const audit = createAdminAuditHandlers({ client: prisma, now: () => NOW });
+  const router = createAdminLambdaRouter(
+    testConfig(keys.jwks),
+    (event) => {
+      if (event.path === '/api/v1/admin/audit-logs') return audit.listAuditLogs;
+      return event.httpMethod === 'POST' ? h.inviteUser : h.listUsers;
+    },
+    {
+      onAuthenticated: async (actor, requestId) => {
+        await activateInvitedUserOnAuthenticatedRequest({ client: prisma }, actor, requestId);
+      },
+    },
+  );
+  const event = { headers: { authorization: `Bearer ${token}` }, requestContext: { requestId: 't13-old-session' } };
+  const list = await router({
+    ...event,
+    path: '/api/v1/admin/users',
+    httpMethod: 'GET',
+    queryStringParameters: { roleType: 'platform', q: `planted-${seq}@` },
+  });
+  assert.equal(list.statusCode, 200);
+  const record = (JSON.parse(list.body) as ListBody).data.find(({ userId }) => userId === target.userId);
+  assert.deepEqual(record?.roles, [...roles]);
+  const logs = await router({ ...event, path: '/api/v1/admin/audit-logs', httpMethod: 'GET' });
+  assert.equal(logs.statusCode, 200);
+  const denied = await router({
+    ...event,
+    path: '/api/v1/admin/users',
+    httpMethod: 'POST',
+    body: JSON.stringify({
+      roles: ['PlatformSuperAdmin'],
+      displayName: 'No elevation',
+      email: 't13-ungranted@example.test',
+    }),
+  });
+  assert.equal(denied.statusCode, 403);
+  assert.deepEqual(calls, []);
+});
+
 // ---------- 角色分配 ----------
 
-describe('BE-RBAC-01 角色分配（整体替换）', () => {
-  test('成功：Cognito groups 先行 + 落库 + 审计（before/after）', async () => {
+describe('BE-RBAC-01 角色分配', () => {
+  test('R18 显式分配平台角色时，Cognito、DB 和审计保留已有 Auditor', async () => {
     const { port, calls } = fakeCognito();
     const h = createAdminUserHandlers(userDeps(port));
     const target = await plantUser({ roles: ['Auditor'] });
@@ -578,17 +650,81 @@ describe('BE-RBAC-01 角色分配（整体替换）', () => {
       req(superAdmin, { params: { userId: target.userId }, body: { roles: ['PlatformOperator'] } }),
     );
     assert.equal(res.status, 200);
-    assert.deepEqual((res.body as DataBody).data.roles, ['PlatformOperator']);
+    assert.deepEqual((res.body as DataBody).data.roles, ['Auditor', 'PlatformOperator']);
     assert.equal(calls.length, 1);
     assert.equal(calls[0]?.method, 'setUserGroups');
-    assert.deepEqual(calls[0]?.input, { cognitoSub: target.cognitoSub, groups: ['PlatformOperator'] });
+    assert.deepEqual(calls[0]?.input, { cognitoSub: target.cognitoSub, groups: ['Auditor', 'PlatformOperator'] });
 
     const audits = await prisma.auditLog.findMany({
       where: { objectType: 'user', objectId: target.userId, action: 'user.role.assign' },
     });
     assert.equal(audits.length, 1);
     assert.deepEqual(audits[0]?.beforeValue, { roles: ['Auditor'] });
-    assert.deepEqual(audits[0]?.afterValue, { roles: ['PlatformOperator'] });
+    assert.deepEqual(audits[0]?.afterValue, { roles: ['Auditor', 'PlatformOperator'] });
+  });
+
+  test('R18 旧客户端可回传已有 Auditor，平台账号不会被新授予该角色', async () => {
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const existing = await plantUser({ roles: ['Auditor', 'PlatformOperator'] });
+    const next = await h.assignRoles(
+      req(superAdmin, {
+        params: { userId: existing.userId },
+        body: { roles: ['Auditor'] },
+      }),
+    );
+    assert.equal(next.status, 200);
+    assert.deepEqual((next.body as DataBody).data.roles, ['Auditor']);
+    assert.deepEqual(calls[0]?.input.groups, ['Auditor']);
+
+    const target = await plantUser({ roles: ['PlatformOperator'] });
+    const params = { userId: target.userId };
+    for (const roles of [['Auditor'], ['PlatformSuperAdmin', 'Auditor']]) {
+      const denied = await h.assignRoles(req(superAdmin, { params, body: { roles } }));
+      assert.equal(denied.status, 400);
+      assertOpenApiResponse('assignUserRoles', denied.status, denied.body);
+      assert.equal((denied.body as ErrBody).error.code, 'VALIDATION_FAILED');
+    }
+    assert.lengthOf(calls, 1);
+    assert.equal(await prisma.outboxEvent.count({ where: { aggregateId: target.userId } }), 0);
+    assert.equal(await prisma.auditLog.count({ where: { objectId: target.userId } }), 0);
+    assert.deepEqual(
+      (await prisma.userRole.findMany({ where: { userId: target.userId } })).map((r) => r.roleCode),
+      ['PlatformOperator'],
+    );
+  });
+
+  test('R18 角色快照在写锁前变化时拒绝旧请求并保留最新角色', async () => {
+    const { port, calls } = fakeCognito();
+    const target = await plantUser({ roles: ['PlatformOperator'] });
+    const staleClient = prisma.$extends({
+      query: {
+        outboxEvent: {
+          async create({ args, query }) {
+            await prisma.userRole.create({ data: { userId: target.userId, roleCode: 'Auditor' } });
+            return query(args);
+          },
+        },
+      },
+    });
+    await expectReject(
+      assignUserRoles(
+        { ...userDeps(port), client: staleClient as unknown as UserAdminDeps['client'] },
+        superAdmin,
+        target.userId,
+        { roles: ['PlatformSuperAdmin'] },
+      ),
+      'CONFLICT',
+    );
+    assert.deepEqual(calls, []);
+    assert.deepEqual(
+      (await prisma.userRole.findMany({ where: { userId: target.userId }, orderBy: { roleCode: 'asc' } })).map(
+        (r) => r.roleCode,
+      ),
+      ['Auditor', 'PlatformOperator'],
+    );
+    const intent = await prisma.outboxEvent.findFirstOrThrow({ where: { aggregateId: target.userId } });
+    assert.equal(intent.status, 'PUBLISHED');
   });
 
   test('拒绝：自我角色变更（目标 cognitoSub === actor.actorId）→ 403', async () => {
@@ -707,7 +843,7 @@ describe('BE-RBAC-01 角色分配（整体替换）', () => {
     assert.isTrue(failed);
     const groupCalls = calls.filter((call) => call.method === 'setUserGroups');
     assert.equal(groupCalls.length, 2);
-    assert.deepEqual(groupCalls[0]?.input.groups, ['PlatformOperator']);
+    assert.deepEqual(groupCalls[0]?.input.groups, ['Auditor', 'PlatformOperator']);
     assert.deepEqual(groupCalls[1]?.input.groups, ['Auditor']);
     assert.deepEqual(
       (await prisma.userRole.findMany({ where: { userId: target.userId } })).map((role) => role.roleCode),

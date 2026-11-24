@@ -13,9 +13,23 @@
 
 ## 2. 关键设计
 
-**路由**（`apps/cloud-api/src/admin/user/handler.ts`，全部经 withAuthorization）：`GET /api/v1/admin/users`（user:read，筛选 roleType/status/customerId/q + 键集游标分页）；`POST /users`（邀请）、`PUT /users/{userId}/roles`（整体替换）、`PUT /users/{userId}/scope`、`POST /users/{userId}/disable` 与 `POST /users/{userId}/enable`（幂等回放）、`POST /users/{userId}/password-reset`（均 user:write——V1 矩阵中仅 PlatformSuperAdmin 持有，PlatformOperator/CustomerAdmin → 403）。
+**路由**（`apps/cloud-api/src/admin/user/handler.ts`，全部经 withAuthorization）：`GET /api/v1/admin/users`（user:read，筛选 roleType/status/customerId/q + 键集游标分页）；`POST /users`（邀请）、`PUT /users/{userId}/roles`（更新目标账号角色）、`PUT /users/{userId}/scope`、`POST /users/{userId}/disable` 与 `POST /users/{userId}/enable`（幂等回放）、`POST /users/{userId}/password-reset`（均 user:write——V1 矩阵中仅 PlatformSuperAdmin 持有，PlatformOperator/CustomerAdmin → 403）。
 
 **角色规则**：封闭集 5 角色；平台/Customer 角色禁止混绑（单一 actorType）；平台角色恒无 Customer scope（带 customerId → 400）；Customer 角色必须有可用 Customer（ACTIVE 且未软删除）；角色类型创建后不可变（customer → platform 提升 → 403）；平台角色变更服务层双重校验仅 SuperAdmin。
+
+**CMP F/T13 · R18 平台双角色**。平台用户页将 `PlatformSuperAdmin` 显示为“平台管理员”，将 `PlatformOperator` 显示为“运维人员”。邀请表单、平台账号的角色分配候选和 CMP-37 只读权限视图共用这两个角色，权限值来自共享 RBAC。会话身份继续使用 DEC-012 与 Cognito 组映射。
+
+平台邀请拒绝 `Auditor`。平台角色更新只允许新增上述两类。已分配的 `Auditor` 自动保留，旧客户端可在完整角色列表中带回已有 `Auditor`。仅持有 Auditor 的账号打开编辑时两项均未选中，按已选变动明确确认后才写入。已存在的多角色账号仍按组的权限并集授权。客户角色更新仍整体替换，客户邀请、Scope 及单设备用户管理沿用各自的权限和租户范围。后端更新在写锁内复核角色快照，遇到并发变化返回 409，由操作者刷新后重试。
+
+| 本地回归身份 | 管理入口与边界 |
+| --- | --- |
+| PlatformSuperAdmin | 平台用户页的邀请、分配、Scope、启停、重置和审计读取。 |
+| PlatformOperator | 设备运维；拒绝平台用户页直达和 `user:write`。 |
+| Auditor | 平台用户、业务设置及审计只读；使用现有组验证登录与启停。 |
+| CustomerAdmin / CustomerViewer | 所属客户的设备入口；前者具备既有设备用户管理权限，后者只读，跨租户访问拒绝。 |
+| Auditor + PlatformOperator | 存量多角色，保留审计读取和设备运维权限；明确编辑平台角色时保留 Auditor。 |
+
+本地使用受控 JWT、Cognito 适配器夹具、PGlite 与 Playwright。目标 Cognito 邮件、真实令牌及目标环境回归为 `NOT_RUN`，需部署经批准的候选版本和五类权限账号以及一组同租户和跨租户测试数据。
 
 **越权防护**：自我操作拒绝（目标 `cognitoSub === actor.actorId` 时角色变更/停用 → 403）；Customer actor 不得授权平台角色、不得跨 Customer（服务层双重防护，矩阵层已 403）；角色变更/停用事务先锁定 `roles.PlatformSuperAdmin` 行，再复核有效 SuperAdmin 基数，互相降级或停用/降级并发只能成功一个。
 

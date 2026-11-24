@@ -2,22 +2,20 @@ import { translate } from '../../i18n/i18n.js';
 /**
  * FE-16 用户/角色与业务设置纯逻辑：封闭角色集、邀请校验、设置 key 目录、CT-06 锚点。
  *
- * - 角色集合封闭（AUTH-01/DEC-012），V1 权限矩阵固定只读：页面仅允许分配已有角色，
- *   权限矩阵仅作只读展示；
- * - DEC-012 冻结显示名：PlatformOperator 界面名固定为“设备操作员”（不得使用“运维人员”）；
- * - 平台/Customer 角色禁止混绑（单一 actorType）；Customer 角色必填 customerId，平台角色必须省略；
+ * - 平台用户管理按 R18 展示双角色候选，从 AUTH-01 共享权限读取只读矩阵。
+ * - 存量平台角色只读保留，客户账号仍使用所属类型的角色集。
  * - 业务设置封闭 key 集四项；command.confirmation 的确认方式由 DEC-023 固定——UI 只读展示；
  * - 高风险权限变更（角色/停用/重置）必须明确确认。
  */
-import { PLATFORM_ROLES, ROLES, hasPermission } from '@fdp/auth/browser';
+import { PLATFORM_ROLES, hasPermission, isPlatformDeliveryRole } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import { validateBusinessSettingValue } from '@fdp/contracts/settings/business-settings-v1.js';
-import { roleDisplayName } from '../../menu/menu.js';
+import { roleDisplayName as sessionRoleDisplayName } from '../../menu/menu.js';
 import type { SettingKey, SettingRuntimeStatus, UserStatus } from './types.js';
 // ---------- 用户（BE-RBAC-01） ----------
-/** 封闭角色集（= AUTH-01 ROLES；parity 锁定契约 RoleCode 枚举）。 */
-export const ROLE_OPTIONS: readonly Role[] = ROLES;
-export { roleDisplayName };
+export function roleDisplayName(role: Role): string {
+  return role === 'PlatformOperator' ? translate('settings.roles.operator') : sessionRoleDisplayName(role);
+}
 export const USER_STATUS_OPTIONS: readonly UserStatus[] = ['INVITED', 'ACTIVE', 'DISABLED'];
 export const USER_STATUS_LABELS: Readonly<Record<UserStatus, string>> = {
   get INVITED() {
@@ -38,13 +36,9 @@ export interface InviteDraft {
   readonly email: string;
   readonly displayName: string;
   readonly roles: readonly Role[];
-  readonly customerId: string;
 }
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-/**
- * 邀请校验：email 格式；displayName 1~128；角色 1~3 且平台/Customer 禁止混绑；
- * Customer 角色必填 customerId，平台角色必须省略。表单不含永久密码字段（Cognito 临时凭证）。
- */
+/** 平台邀请使用 Cognito 临时凭证与已交付的角色。 */
 export function validateInvite(draft: InviteDraft): string | null {
   if (!EMAIL_PATTERN.test(draft.email.trim()) || draft.email.trim().length > 254) {
     return translate('ui.4b345c5007d0');
@@ -53,18 +47,8 @@ export function validateInvite(draft: InviteDraft): string | null {
   if (name.length === 0 || name.length > 128) {
     return translate('ui.a3ece6a764cf');
   }
-  if (draft.roles.length < 1 || draft.roles.length > 3) {
-    return translate('ui.3a2e1553df49');
-  }
-  const platformCount = draft.roles.filter(isPlatformRole).length;
-  if (platformCount > 0 && platformCount < draft.roles.length) {
-    return translate('ui.589ed5e42df0');
-  }
-  if (platformCount === 0 && draft.customerId.trim() === '') {
-    return translate('ui.f0927c92779a');
-  }
-  if (platformCount > 0 && draft.customerId.trim() !== '') {
-    return translate('ui.fdfd1a50ac0b');
+  if (draft.roles.length === 0 || !draft.roles.every(isPlatformDeliveryRole)) {
+    return translate('settings.roles.selectPlatformRole');
   }
   return null;
 }

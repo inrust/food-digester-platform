@@ -2,6 +2,7 @@ import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /** FE-16 平台用户管理：沿用 Cognito 邀请、角色分配、范围、启停和受控密码重置。 */
 import { useRef, useState } from 'react';
+import { CUSTOMER_ROLES, PLATFORM_DELIVERY_ROLES } from '@fdp/auth/browser';
 import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
@@ -11,7 +12,6 @@ import { TimeText } from '../../components/TimeText.js';
 import { PermissionMatrix } from './PermissionMatrix.js';
 import type { InviteUserInput, UserListFilter } from './users-api.js';
 import {
-  ROLE_OPTIONS,
   USER_STATUS_LABELS,
   USER_STATUS_OPTIONS,
   canManageUsers,
@@ -72,7 +72,6 @@ export function SettingsPage({
     email: '',
     displayName: '',
     roles: [],
-    customerId: '',
   });
   const [assignTarget, setAssignTarget] = useState<{
     user: UserView;
@@ -101,7 +100,12 @@ export function SettingsPage({
   const [busy, setBusy] = useState(false);
   const manageUsers = canManageUsers(role);
   const inviteError = validateInvite(inviteDraft);
-  const inviteHasCustomerRole = inviteDraft.roles.some((r) => !isPlatformRole(r));
+  const assignOptions = assignTarget?.user.roles.some(isPlatformRole) ? PLATFORM_DELIVERY_ROLES : CUSTOMER_ROLES;
+  const assignError = assignTarget === null ? null : validateRoleAssign(assignTarget.roles);
+  const assignChanged =
+    assignTarget !== null &&
+    (assignTarget.roles.length !== assignTarget.user.roles.length ||
+      assignTarget.roles.some((candidate) => !assignTarget.user.roles.includes(candidate)));
   const runAction = async (execute: () => Promise<string>, statusChange = false) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -137,11 +141,10 @@ export function SettingsPage({
         email: inviteDraft.email.trim(),
         displayName: inviteDraft.displayName.trim(),
         roles: inviteDraft.roles,
-        ...(inviteHasCustomerRole ? { customerId: inviteDraft.customerId.trim() } : {}),
       };
       const created = await onInviteUser(input);
       setInviteOpen(false);
-      setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
+      setInviteDraft({ email: '', displayName: '', roles: [] });
       return translate('page.c8e407df3590') + created.email + translate('page.9ee547c292e4');
     });
   const submitConfirm = () => {
@@ -267,7 +270,7 @@ export function SettingsPage({
             disabled={!manageUsers || busy}
             {...(!manageUsers ? { title: translate('page.47ccbd849cdf') } : {})}
             onClick={() => {
-              setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
+              setInviteDraft({ email: '', displayName: '', roles: [] });
               setInviteOpen(true);
             }}
           >
@@ -452,7 +455,7 @@ export function SettingsPage({
             className="role-option-list"
             data-testid="invite-roles"
           >
-            {ROLE_OPTIONS.map((r) => (
+            {PLATFORM_DELIVERY_ROLES.map((r) => (
               <label key={r} className="role-option">
                 <Input
                   type="checkbox"
@@ -472,17 +475,6 @@ export function SettingsPage({
             ))}
           </div>
         </div>
-        {inviteHasCustomerRole ? (
-          <div className="dialog-field">
-            <label htmlFor="invite-customer">{translate('page.f0cb172c1c06')}</label>
-            <Input
-              id="invite-customer"
-              data-testid="invite-customer"
-              value={inviteDraft.customerId}
-              onChange={(event) => setInviteDraft({ ...inviteDraft, customerId: event.target.value })}
-            />
-          </div>
-        ) : null}
         <p className="field-hint">{translate('page.2428917b2703')}</p>
         {inviteError !== null ? (
           <p className="field-hint" data-testid="invite-error">
@@ -515,14 +507,17 @@ export function SettingsPage({
         {assignTarget !== null ? (
           <div>
             {actionError !== null ? <ErrorNotice error={actionError} /> : null}
-            <p className="field-hint">{translate('page.3ae0cae155b4')}</p>
+            <p className="field-hint">{translate('settings.roles.confirmHint')}</p>
+            {assignTarget.user.roles.includes('Auditor') ? (
+              <p className="field-hint">{translate('settings.roles.retainedAuditor')}</p>
+            ) : null}
             <div
               role="group"
               aria-label={translate('page.6b26695e4dce')}
               className="role-option-list"
               data-testid="assign-roles"
             >
-              {ROLE_OPTIONS.map((r) => (
+              {assignOptions.map((r) => (
                 <label key={r} className="role-option">
                   <Input
                     type="checkbox"
@@ -541,9 +536,9 @@ export function SettingsPage({
                 </label>
               ))}
             </div>
-            {validateRoleAssign(assignTarget.roles) !== null ? (
+            {assignError !== null ? (
               <p className="field-hint" data-testid="assign-error">
-                {validateRoleAssign(assignTarget.roles)}
+                {assignError}
               </p>
             ) : null}
             <div className="dialog-actions">
@@ -554,7 +549,7 @@ export function SettingsPage({
                 type="button"
                 className="primary-button"
                 data-testid="assign-submit"
-                disabled={busy || validateRoleAssign(assignTarget.roles) !== null}
+                disabled={busy || assignError !== null || !assignChanged}
                 onClick={() => {
                   const target = assignTarget;
                   setConfirm({ kind: 'assignRoles', user: target.user, roles: target.roles });
@@ -620,8 +615,9 @@ export function SettingsPage({
               ? { description: translate('page.ab5cfb10b2d5') }
               : confirm?.kind === 'assignRoles'
                 ? {
-                    description:
-                      translate('page.72081201e4db') + ' ' + confirm.roles.map(roleDisplayName).join('、') + '\u3002',
+                    description: translate('settings.roles.confirmResult', {
+                      roles: confirm.roles.map(roleDisplayName).join('、'),
+                    }),
                     danger: true,
                   }
                 : {})}

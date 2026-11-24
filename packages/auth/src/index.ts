@@ -16,7 +16,15 @@ export {
   validationFailed,
 } from './errors.js';
 export type { AuthErrorCode } from './errors.js';
-export { actorTypeOf, isRole, CUSTOMER_ROLES, PLATFORM_ROLES, ROLES } from './roles.js';
+export {
+  actorTypeOf,
+  isRole,
+  isPlatformDeliveryRole,
+  CUSTOMER_ROLES,
+  PLATFORM_DELIVERY_ROLES,
+  PLATFORM_ROLES,
+  ROLES,
+} from './roles.js';
 export type { ActorContext, ActorType, CustomerRole, PlatformRole, Role } from './roles.js';
 export { hasPermission, permissionsOf, PERMISSION_MATRIX, PERMISSIONS } from './permissions.js';
 export type { Permission } from './permissions.js';

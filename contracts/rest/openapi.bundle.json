@@ -142,7 +142,7 @@
       },
       {
         "file": "admin-user-api.json",
-        "sha256": "1759cf8aa50c402acedc2236bb49818b27dc96101bbd1cdbbe40ae237db36880",
+        "sha256": "0be694ee4596b527c6f283d02aa65e08b98a08ae6f4f50aaeb8c372ed2300c59",
         "status": "implemented"
       },
       {
@@ -9239,6 +9239,7 @@
         ],
         "operationId": "inviteUser",
         "summary": "邀请用户：Cognito 生成临时凭证（API 不接收永久密码）→ 用户 INVITED（201）",
+        "description": "R18 平台邀请仅接受 PlatformSuperAdmin 和 PlatformOperator；客户邀请沿用 Customer 角色与客户范围。",
         "security": [
           {
             "CognitoJwt": []
@@ -9294,7 +9295,8 @@
           "admin"
         ],
         "operationId": "assignUserRoles",
-        "summary": "角色分配（整体替换；自我提权/提升平台角色越权/最后一个 SuperAdmin 移除均拒绝；同步 Cognito groups）",
+        "summary": "角色分配（同步 Cognito groups；保留已分配的 Auditor）",
+        "description": "平台账号只可新增 PlatformSuperAdmin 或 PlatformOperator。已有 Auditor 保持生效，兼容旧客户端在完整角色列表中带回已有 Auditor。客户角色仍按原作用域整体替换。禁止跨类型变更、自我提权和移除最后一位 SuperAdmin。",
         "security": [
           {
             "CognitoJwt": []
@@ -20712,6 +20714,15 @@
           "CustomerViewer"
         ]
       },
+      "AdminUserApi__UserInviteRoleCode": {
+        "type": "string",
+        "enum": [
+          "PlatformSuperAdmin",
+          "PlatformOperator",
+          "CustomerAdmin",
+          "CustomerViewer"
+        ]
+      },
       "AdminUserApi__UserInvite": {
         "type": "object",
         "required": [
@@ -20734,7 +20745,7 @@
           "roles": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AdminUserApi__RoleCode"
+              "$ref": "#/components/schemas/AdminUserApi__UserInviteRoleCode"
             },
             "minItems": 1,
             "maxItems": 3,
@@ -20762,7 +20773,7 @@
             },
             "minItems": 1,
             "maxItems": 3,
-            "description": "整体替换目标用户角色集"
+            "description": "仅可新增与目标同类型的角色；平台新增角色限 PlatformSuperAdmin 和 PlatformOperator，已有 Auditor 自动保留"
           }
         }
       },

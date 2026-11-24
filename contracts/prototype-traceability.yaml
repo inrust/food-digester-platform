@@ -255,9 +255,9 @@
       "feTasks": ["FE-16", "FE-09"],
       "beTasks": ["BE-RBAC-01", "BE-DUSR-01", "BE-DUSR-02"],
       "disposition": "Adapt",
-      "basis": "任务清单 §13.2：固定 RBAC；Cognito 邀请/重置。CMP B/T07：设备用户由单设备详情承接。CMP B/T08 R18：平台用户管理与 /business-settings 分开，分别按 user:read 与 settings:read 控制访问",
+      "basis": "任务清单 §13.2：固定 RBAC；Cognito 邀请/重置。CMP B/T07：设备用户由单设备详情承接。CMP B/T08 R18：平台用户管理与 /business-settings 分开，分别按 user:read 与 settings:read 控制访问。CMP F/T13 R18：平台邀请、分配候选与只读权限视图收口为平台管理员及运维人员；用途范围及存量身份沿用共享权限",
       "elements": [
-        { "id": "settings.button.addPlatformUser", "kind": "button", "name": "新建平台用户", "disposition": "Adapt", "basis": "BE-RBAC-01：Cognito 邀请流程，API 不接收管理员指定的永久密码", "source": { "taskId": "BE-RBAC-01", "api": "invitePlatformUser" } },
+        { "id": "settings.button.addPlatformUser", "kind": "button", "name": "新建平台用户", "disposition": "Adapt", "basis": "BE-RBAC-01 / CMP F/T13 R18：Cognito 平台邀请使用双角色候选，API 不接收管理员指定的永久密码", "source": { "taskId": "BE-RBAC-01", "api": "invitePlatformUser" } },
         { "id": "settings.button.resetPlatformUserPassword", "kind": "button", "name": "平台用户-重置密码", "disposition": "Adapt", "basis": "任务清单 §2.5：受控重置流程，不读取/回显/持久化密码", "source": { "taskId": "BE-RBAC-01", "api": "triggerPasswordReset" } },
         { "id": "settings.button.deletePlatformUser", "kind": "button", "name": "平台用户-删除", "disposition": "Adapt", "basis": "BE-RBAC-01：实现为停用；最后一个 SuperAdmin 不可移除", "source": { "taskId": "BE-RBAC-01", "api": "deactivatePlatformUser" } },
         { "id": "settings.field.permissionCheckboxes", "kind": "field", "name": "权限复选框", "disposition": "Defer", "basis": "DEC-012：V1 权限矩阵固定，复选框只读，仅允许分配已有角色" },

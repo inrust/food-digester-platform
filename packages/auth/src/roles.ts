@@ -13,7 +13,17 @@ export type PlatformRole = (typeof PLATFORM_ROLES)[number];
 export type CustomerRole = (typeof CUSTOMER_ROLES)[number];
 export type Role = (typeof ROLES)[number];
 
+/** Platform roles offered for new invitations and grants. Authentication keeps accepting all PLATFORM_ROLES. */
+export const PLATFORM_DELIVERY_ROLES = [
+  'PlatformSuperAdmin',
+  'PlatformOperator',
+] as const satisfies readonly PlatformRole[];
+
 export type ActorType = 'platform' | 'customer';
+
+export function isPlatformDeliveryRole(value: string): value is (typeof PLATFORM_DELIVERY_ROLES)[number] {
+  return (PLATFORM_DELIVERY_ROLES as readonly string[]).includes(value);
+}
 
 export function isRole(value: string): value is Role {
   return (ROLES as readonly string[]).includes(value);
