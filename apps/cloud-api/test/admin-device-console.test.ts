@@ -57,9 +57,9 @@ afterAll(async () => {
 });
 
 const storedCsv = new Map<string, string>();
-const deps = (): ActivityExportDeps => ({
+const deps = (now = NOW): ActivityExportDeps => ({
   client: prisma,
-  now: () => NOW,
+  now: () => now,
   storage: {
     async put(input) {
       storedCsv.set(input.key, input.body);
@@ -478,6 +478,51 @@ describe('BE-DEV-05 控制台组合查询', () => {
     assert.equal(v3.device.operationalStatus, 'Maintenance');
     assert.equal(v3.device.licenseStatus, 'Expired');
     assert.equal(v3.components.stale, true);
+  });
+
+  test('R03 DEC-024 includes 600s, preserves historical sensor values, and recovers on a new heartbeat', async () => {
+    const deviceId = 'con-r03-heartbeat';
+    await plantDevice(deviceId, customerAId, 'FW-r03');
+    const originalHeartbeat = new Date(NOW.getTime() - 600_000);
+    await prisma.deviceLatestState.create({
+      data: {
+        deviceId,
+        customerId: customerAId,
+        connectivity: 'OFFLINE',
+        lastHeartbeatAt: originalHeartbeat,
+        sensorStatus: { overall: 'NORMAL' },
+      },
+    });
+
+    const request = req(custActor(customerAId), { params: { deviceId } });
+    const readAt = async (now: Date) => {
+      const response = await createAdminDeviceConsoleHandlers(deps(now)).getDeviceConsole(request);
+      assert.equal(response.status, 200);
+      assertOpenApiResponse('getDeviceConsole', response.status, response.body);
+      return (response.body as DataBody).data;
+    };
+    const boundary = await readAt(NOW);
+    assert.equal(boundary.device.connectivity, 'ONLINE');
+    assert.equal(boundary.components.stale, false);
+    assert.equal(boundary.components.observedAt, originalHeartbeat.toISOString());
+
+    const afterBoundary = new Date(NOW.getTime() + 1);
+    const offline = await readAt(afterBoundary);
+    assert.equal(offline.device.connectivity, 'OFFLINE');
+    assert.equal(offline.components.stale, true);
+    assert.equal(offline.components.observedAt, originalHeartbeat.toISOString());
+    assert.equal(offline.components.status.overall, 'NORMAL');
+    assert.equal(offline.device.lifecycleStatus, boundary.device.lifecycleStatus);
+
+    await prisma.deviceLatestState.update({
+      where: { deviceId },
+      data: { lastHeartbeatAt: afterBoundary, sensorStatus: { overall: 'WARNING' } },
+    });
+    const recovered = await readAt(afterBoundary);
+    assert.equal(recovered.device.connectivity, 'ONLINE');
+    assert.equal(recovered.components.stale, false);
+    assert.equal(recovered.components.observedAt, afterBoundary.toISOString());
+    assert.equal(recovered.components.status.overall, 'WARNING');
   });
 
   test('跨 Customer 请求失败（404）；无 actor → 401；不存在设备 → 404', async () => {

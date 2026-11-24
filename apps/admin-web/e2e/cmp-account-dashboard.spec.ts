@@ -4,7 +4,7 @@ import { dashboard, json, layoutViolations, routeP0Apis, seedSession } from './q
 
 const accountPath = '**/api/v1/admin/account/profile';
 
-test('CMP-01/02 platform shows the full account identity on demand and previews ten of thirteen devices', async ({
+test('R01 CMP-01/02 platform shows account details on demand and previews ten of thirteen devices', async ({
   page,
   qa05,
 }) => {
@@ -53,9 +53,13 @@ test('CMP-01/02 platform shows the full account identity on demand and previews 
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: '账号详情' });
   await expect(dialog).toBeVisible();
-  for (const value of [displayName, userId, subject, username]) {
-    await expect(dialog.getByText(value, { exact: true })).toBeVisible();
-  }
+  await expect(dialog.locator('dt')).toHaveText(['当前显示名称', '角色', '已验证的登录邮箱']);
+  await expect(dialog.locator('dd')).toHaveText([
+    displayName,
+    await page.getByTestId('role-tag').innerText(),
+    'platform@example.test',
+  ]);
+  for (const value of [userId, subject, username]) await expect(dialog).not.toContainText(value);
   expect(await layoutViolations(page)).toEqual([]);
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -116,8 +120,12 @@ test('CMP-01/02 CustomerViewer uses the verified email fallback and opens the fi
   await expect(page.getByTestId('topbar-account-name')).toHaveText('viewer@example.test');
   await page.getByRole('button', { name: 'View account details for viewer@example.test' }).click();
   const dialog = page.getByRole('dialog', { name: 'Account details' });
-  await expect(dialog.getByText('fixture-customer-id', { exact: true })).toBeVisible();
-  await expect(dialog.getByText('Cognito subject (sub)', { exact: true })).toBeVisible();
+  await expect(dialog.locator('dt')).toHaveText(['Displayed name', 'Role', 'Verified sign-in email']);
+  await expect(dialog.locator('dd')).toHaveText([
+    'viewer@example.test',
+    await page.getByTestId('role-tag').innerText(),
+    'viewer@example.test',
+  ]);
   await dialog.getByRole('button', { name: 'Close' }).click();
 
   await expect(page.getByTestId('device-preview-scope')).toHaveText(
@@ -155,11 +163,30 @@ test('CMP-01/02 keeps the username fallback and list entry when profile and devi
   await expect(page.getByTestId('topbar-account-name')).toHaveText('legacy-customer');
   await page.getByTestId('topbar-account').click();
   const dialog = page.getByRole('dialog', { name: '账号详情' });
-  await expect(dialog.getByText('暂无', { exact: true })).toHaveCount(2);
+  await expect(dialog.locator('dt')).toHaveText(['当前显示名称', '角色']);
+  await expect(dialog.locator('dd')).toHaveText(['legacy-customer', await page.getByTestId('role-tag').innerText()]);
   await expect(dialog.getByText('unverified@example.test')).toHaveCount(0);
   await dialog.getByRole('button', { name: '关闭' }).click();
   await expect(page.getByTestId('metric-devices').locator('.value')).toHaveText('0');
   await expect(page.getByTestId('device-preview-count')).toHaveText('已显示 0 台，可见设备共 0 台。');
   await expect(page.getByTestId('devices-empty')).toBeVisible();
   await expect(page.getByRole('link', { name: '查看设备列表' })).toBeVisible();
+});
+
+test('R01 omits the email row when the session has no email claim', async ({ page }) => {
+  await seedSession(page, 'CustomerAdmin', { username: 'no-email', identityClaims: { email_verified: true } });
+  await page.route(accountPath, (route) =>
+    json(route, { data: { userId: 'fixture-id', displayName: '本地测试账号' } }),
+  );
+  await page.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard }));
+  await page.goto('/dashboard');
+  const account = page.getByTestId('topbar-account');
+  await expect(page.getByTestId('topbar-account-name')).toHaveText('本地测试账号');
+  await account.focus();
+  await page.keyboard.press('Space');
+  const dialog = page.getByRole('dialog', { name: '账号详情' });
+  await expect(dialog.locator('dt')).toHaveText(['当前显示名称', '角色']);
+  await expect(dialog.locator('dd')).toHaveText(['本地测试账号', await page.getByTestId('role-tag').innerText()]);
+  await dialog.getByRole('button', { name: '关闭' }).click();
+  await expect(account).toBeFocused();
 });

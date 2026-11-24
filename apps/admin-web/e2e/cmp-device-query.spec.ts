@@ -3,6 +3,44 @@ import type { Locator } from '@playwright/test';
 import { test } from './qa05-fixture.js';
 import { json, p0Console, p0Device, routeP0Apis, seedSession } from './qa05-api-fixtures.js';
 
+test('R03 refreshing the device console replaces offline history with newly reported component status', async ({
+  page,
+}) => {
+  await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
+  await routeP0Apis(page);
+  const oldHeartbeat = '2026-09-10T00:00:00.000Z';
+  const newHeartbeat = '2026-09-10T00:20:00.000Z';
+  let current = {
+    ...p0Console,
+    generatedAt: newHeartbeat,
+    device: { ...p0Console.device, connectivity: 'OFFLINE' },
+    components: { ...p0Console.components, stale: true, observedAt: oldHeartbeat },
+    latestMedia: null,
+  };
+  await page.route('**/api/v1/admin/devices/dev-p0/console', (route) => json(route, { data: current }));
+
+  await page.goto('/devices/view?deviceId=dev-p0');
+  const console = page.getByTestId('device-console');
+  const connectivity = console.locator('[data-axis="connectivity"]');
+  const heartbeat = console.getByTestId('console-last-heartbeat').locator('time');
+  const components = console.getByTestId('console-components');
+  await expect(connectivity).toHaveAttribute('data-value', 'OFFLINE');
+  await expect(heartbeat).toHaveAttribute('datetime', oldHeartbeat);
+  await expect(components.getByTestId('stale-tag')).toBeVisible();
+  await expect(components.getByTestId('component-overall')).toContainText('历史状态（正常）');
+
+  current = {
+    ...current,
+    device: { ...current.device, connectivity: 'ONLINE' },
+    components: { ...current.components, stale: false, observedAt: newHeartbeat },
+  };
+  await page.getByRole('button', { name: '刷新设备状态' }).click();
+  await expect(connectivity).toHaveAttribute('data-value', 'ONLINE');
+  await expect(heartbeat).toHaveAttribute('datetime', newHeartbeat);
+  await expect(components.getByTestId('stale-tag')).toHaveCount(0);
+  await expect(components.getByTestId('component-overall').locator('.value')).toHaveText('正常');
+});
+
 test('CMP-05 scoped picker recovers from errors and supports tagged and untagged sites', async ({ page }) => {
   await seedSession(page, 'CustomerViewer', { customerId: 'cust-a' });
   const untagged = {

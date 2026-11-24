@@ -39,6 +39,7 @@ export function Topbar({
   const accountName = accountProfile?.displayName ?? session.verifiedEmail ?? session.username;
   const crumbs = breadcrumbsFor(path);
   const primaryRole = session.roles[0];
+  const roleName = primaryRole === undefined ? null : roleDisplayName(primaryRole);
   const { timeZone, setTimeZone } = useUserTimeZone();
   const { language, setLanguage, t } = useI18n();
 
@@ -127,9 +128,9 @@ export function Topbar({
               {accountName}
             </span>
           </Button>
-          {primaryRole !== undefined ? (
+          {roleName !== null ? (
             <span className="role-tag" data-testid="role-tag">
-              {roleDisplayName(primaryRole)}
+              {roleName}
             </span>
           ) : null}
           <Button type="button" className="logout-button" data-testid="logout-button" onClick={onLogout}>
@@ -146,12 +147,12 @@ export function Topbar({
         <dl className="account-facts">
           <dt>{t('account.displayedName')}</dt>
           <dd>{accountName}</dd>
-          <dt>{t('account.businessId')}</dt>
-          <dd>{accountProfile?.userId ?? t('account.unavailable')}</dd>
-          <dt>{t('account.username')}</dt>
-          <dd>{session.username}</dd>
-          <dt>{t('account.subject')}</dt>
-          <dd>{session.subject ?? t('account.unavailable')}</dd>
+          {roleName !== null ? (
+            <>
+              <dt>{t('account.role')}</dt>
+              <dd>{roleName}</dd>
+            </>
+          ) : null}
           {session.verifiedEmail !== undefined ? (
             <>
               <dt>{t('account.verifiedEmail')}</dt>

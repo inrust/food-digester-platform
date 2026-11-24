@@ -7,6 +7,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import type { Role } from '@fdp/auth';
 import { AppShell } from '../src/shell/AppShell.js';
+import { Topbar } from '../src/shell/Topbar.js';
 import { TimeZoneProvider } from '../src/components/TimeText.js';
 import type { SessionSnapshot } from '../src/session/session-manager.js';
 
@@ -137,6 +138,38 @@ test('顶部隐藏未接入的通知，告警入口与用户区继续可用', as
   assert.ok(screen.getByText('zhang@example.com'));
   await user.click(screen.getByRole('button', { name: '登出' }));
   assert.ok(isLoggedOut());
+});
+
+test('R01 CMP-01 账号详情保留长名称与角色，键盘关闭后回收焦点', async () => {
+  const user = userEvent.setup();
+  const displayName = '合成账号名称用于查看完整文本'.repeat(8);
+  const renderAccount = (verifiedEmail?: string) => (
+    <Topbar
+      path="/dashboard"
+      session={{
+        ...sessionOf('PlatformOperator'),
+        subject: 'internal-subject',
+        ...(verifiedEmail === undefined ? {} : { verifiedEmail }),
+      }}
+      accountProfile={{ displayName, userId: 'internal-business-id' }}
+      onNavigate={() => {}}
+      onLogout={() => {}}
+      onOpenDrawer={() => {}}
+    />
+  );
+  const { rerender } = render(renderAccount('verified@example.test'));
+  const trigger = screen.getByTestId('topbar-account');
+  assert.equal(screen.getByTestId('topbar-account-name').textContent, displayName);
+  trigger.focus();
+  await user.keyboard('{Enter}');
+  const dialog = await screen.findByRole('dialog', { name: '账号详情' });
+  const facts = () => [...dialog.querySelectorAll('dd')].map((item) => item.textContent);
+  assert.deepEqual(facts(), [displayName, '设备操作员', 'verified@example.test']);
+  rerender(renderAccount());
+  assert.deepEqual(facts(), [displayName, '设备操作员']);
+  await user.keyboard('{Escape}');
+  assert.isNull(screen.queryByRole('dialog', { name: '账号详情' }));
+  assert.equal(document.activeElement, trigger);
 });
 
 test('用户时区：顶部栏选择后持久化偏好', async () => {

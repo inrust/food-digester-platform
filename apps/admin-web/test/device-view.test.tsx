@@ -194,6 +194,51 @@ test('stale 标记明确；observedAt=null 显示“无观测数据”', () => {
   assert.ok(sensors.textContent?.includes('无观测数据'));
 });
 
+test.each(['OFFLINE', 'ONLINE'] as const)('R03 %s 的历史部件状态带观测时间', (connectivity) => {
+  const view = makeConsole(DEVICE.id);
+  renderPage({
+    consoleState: {
+      status: 'ready',
+      console: {
+        ...view,
+        device: { ...view.device, connectivity },
+        components: { ...view.components, stale: connectivity === 'ONLINE' },
+      },
+    },
+  });
+  const observedAt = new Date(view.components.observedAt!).toISOString();
+  assert.equal(screen.getByTestId('console-last-heartbeat').querySelector('time')?.dateTime, observedAt);
+  assert.equal(screen.getByTestId('console-components').querySelector('time')?.dateTime, observedAt);
+  assert.equal(screen.getByTestId('component-overall').querySelector('.value')?.textContent, '历史状态（正常）');
+  assert.isNull(screen.getByTestId('component-overall').querySelector('.health-normal'));
+});
+
+test.each([null, '2026-09-06T03:59:00Z'])('R03 无部件上报时提示缺失，心跳时间为 %s', (observedAt) => {
+  const view = makeConsole(DEVICE.id);
+  renderPage({
+    consoleState: {
+      status: 'ready',
+      console: {
+        ...view,
+        device: { ...view.device, connectivity: observedAt === null ? 'OFFLINE' : 'ONLINE' },
+        components: {
+          observedAt,
+          stale: observedAt === null,
+          status: { overall: null, temperature: null, humidity: null, weight: null, gas: null },
+        },
+      },
+    },
+  });
+  const heartbeat = screen.getByTestId('console-last-heartbeat');
+  assert.equal(heartbeat.textContent?.includes('从未收到设备心跳'), observedAt === null);
+  assert.equal(
+    heartbeat.querySelector('time')?.dateTime,
+    observedAt === null ? undefined : new Date(observedAt).toISOString(),
+  );
+  assert.ok(within(screen.getByTestId('console-components')).getByText('尚未收到部件状态'));
+  assert.isNull(screen.queryByTestId('component-overall'));
+});
+
 test('媒体区：手动刷新语义；无播放按钮；不出现“实时”字样', async () => {
   const user = userEvent.setup();
   const { calls } = renderPage();

@@ -339,7 +339,8 @@ export async function getDeviceConsole(
 
   // 心跳类块：observedAt = lastHeartbeatAt；stale = 超 DEC-024 冻结的连接阈值
   const lastHeartbeatAt = state?.lastHeartbeatAt ?? null;
-  const heartbeatStale = deriveConnectivity(lastHeartbeatAt, now, DEFAULT_CONNECTIVITY_THRESHOLD_MS) === 'OFFLINE';
+  const connectivity = deriveConnectivity(lastHeartbeatAt, now, DEFAULT_CONNECTIVITY_THRESHOLD_MS);
+  const heartbeatStale = connectivity === 'OFFLINE';
   const heartbeatObservedAt = lastHeartbeatAt?.toISOString() ?? null;
 
   const sensorRaw = (state?.sensorStatus ?? null) as Record<string, unknown> | null;
@@ -386,7 +387,7 @@ export async function getDeviceConsole(
       model: device.model,
       lifecycleStatus: device.lifecycleStatus,
       operationalStatus: state?.operationalStatus ?? null,
-      connectivity: deriveConnectivity(lastHeartbeatAt, now, DEFAULT_CONNECTIVITY_THRESHOLD_MS),
+      connectivity,
       licenseStatus: state?.licenseStatus ?? null,
       firmwareVersion: state?.firmwareVersion ?? device.firmwareVersion,
     },

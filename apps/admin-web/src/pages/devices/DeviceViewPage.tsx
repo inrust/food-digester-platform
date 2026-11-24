@@ -122,6 +122,11 @@ function ConsoleContent({
   activityState: ActivityState;
   onLoadMoreActivities: (cursor: string) => void;
 }) {
+  // BE-DEV-05 binds the component observation timestamp to the same heartbeat as connectivity.
+  const lastHeartbeatAt = view.components.observedAt;
+  const hasComponentStatus = Object.values(view.components.status).some((value) => value != null);
+  const historicalComponents =
+    view.device.connectivity === 'OFFLINE' || view.components.stale || lastHeartbeatAt === null;
   return (
     <div className="device-console" key={view.device.deviceId} data-testid="device-console">
       <div className="console-header">
@@ -134,6 +139,11 @@ function ConsoleContent({
             license: view.device.licenseStatus,
           }}
         />
+        <span className="data-baseline" data-testid="console-last-heartbeat">
+          {translate('deviceConsole.lastHeartbeat')}
+          {' · '}
+          {lastHeartbeatAt === null ? translate('deviceConsole.noHeartbeat') : <TimeText iso={lastHeartbeatAt} />}
+        </span>
         <span className="data-baseline">
           {translate('page.7d0639497c7e')}
           <TimeText iso={view.generatedAt} />
@@ -142,21 +152,32 @@ function ConsoleContent({
 
       <section data-testid="console-components">
         <h5>{translate('page.73d4f3b8c647')}</h5>
-        <StaleTag block={view.components} />
-        <ObservedAt block={view.components} />
-        <div className="status-grid">
-          {(Object.keys(COMPONENT_LABELS) as (keyof typeof COMPONENT_LABELS)[]).map((key) => {
-            const value = view.components.status[key];
-            return (
-              <div className="status-item" key={key} data-testid={`component-${key}`}>
-                <span className="label">{COMPONENT_LABELS[key]}</span>
-                <span className={`value health-${(value ?? 'unknown').toLowerCase()}`}>
-                  {value !== null ? COMPONENT_HEALTH_LABELS[value] : '—'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        {hasComponentStatus ? (
+          <>
+            <StaleTag block={view.components} /> <ObservedAt block={view.components} />
+            <div className="status-grid">
+              {(Object.keys(COMPONENT_LABELS) as (keyof typeof COMPONENT_LABELS)[]).map((key) => {
+                const value = view.components.status[key] ?? null;
+                const label = value === null ? '—' : COMPONENT_HEALTH_LABELS[value];
+                const historical = value !== null && historicalComponents;
+                return (
+                  <div className="status-item" key={key} data-testid={`component-${key}`}>
+                    <span className="label">{COMPONENT_LABELS[key]}</span>{' '}
+                    <span
+                      className={
+                        historical ? 'value observed-at' : `value health-${(value ?? 'unknown').toLowerCase()}`
+                      }
+                    >
+                      {historical ? translate('deviceConsole.historicalStatus', { status: label }) : label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="empty-state">{translate('deviceConsole.noComponents')}</p>
+        )}
       </section>
 
       <section data-testid="console-sensors">
@@ -370,6 +391,11 @@ export function DeviceViewPage({
     <div className="device-view-page" data-testid="device-view-page">
       <header className="page-header">
         <h1>{translate('design.page.device-view')}</h1>
+        {consoleState.status === 'ready' || consoleState.status === 'loading' ? (
+          <Button type="button" onClick={onRefreshConsole} disabled={consoleState.status === 'loading'}>
+            {translate('deviceConsole.refreshStatus')}
+          </Button>
+        ) : null}
       </header>
       <div data-testid="view-filter-bar">
         <DeviceScopePicker
