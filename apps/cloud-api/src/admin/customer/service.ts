@@ -7,9 +7,15 @@
  * 删除为软删除（V1 不做物理删除），存在关联有效设备/有效 License 时拒绝（409 CONFLICT）。
  */
 import type { DbClient } from '@fdp/database';
-import { audited, recordAudit, withTransaction } from '@fdp/database';
+import { acquireTransactionLock, audited, recordAudit, withTransaction } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
-import { alreadySuspended, deleteConstrained, customerNotFound, validationFailed } from './errors.js';
+import {
+  AdminCustomerError,
+  alreadySuspended,
+  deleteConstrained,
+  customerNotFound,
+  validationFailed,
+} from './errors.js';
 import {
   countActiveDevices,
   countEffectiveLicenses,
@@ -39,13 +45,27 @@ function auditSnapshot(record: CustomerRecord): Record<string, unknown> {
   return { name: record.name, status: record.status, version: record.version };
 }
 
+async function lockCustomerName(tx: DbClient, name: string): Promise<void> {
+  const [normalized] = await tx.$queryRaw<[{ name: string }]>`SELECT lower(${name}) AS name`;
+  await acquireTransactionLock(tx, `customer:name:${normalized.name}`);
+}
+
 /** 创建：业务写入与审计同一事务（审计携带创建后的真实 customerId）。 */
 export async function createCustomer(
   rootClient: DbClient,
   actor: ActorContext,
-  input: { name: string },
+  input: { name: string; allowDuplicateName?: boolean },
 ): Promise<CustomerRecord> {
   return withTransaction(rootClient, async (tx) => {
+    await lockCustomerName(tx, input.name);
+    if (input.allowDuplicateName === false) {
+      const sameName = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM customers WHERE deleted_at IS NULL AND lower(name) = lower(${input.name}) LIMIT 1
+      `;
+      if (sameName.length > 0) {
+        throw new AdminCustomerError('CONFLICT', 'A customer with this name already exists');
+      }
+    }
     const created = await customers(tx).create({ data: { name: input.name, status: 'ACTIVE' } });
     await recordAudit(tx, {
       objectType: 'customer',
@@ -85,6 +105,7 @@ export async function updateCustomer(
     async (tx) => {
       const current = await findCustomerById(tx, input.customerId);
       if (!current) throw customerNotFound();
+      await lockCustomerName(tx, input.name);
       return updateCustomerWithVersion(tx, input.customerId, input.ifMatchVersion, { name: input.name });
     },
   );

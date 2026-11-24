@@ -23,7 +23,7 @@
         "tags": ["admin"],
         "operationId": "createContract",
         "summary": "创建 Contract（DRAFT；contractNumber 全局唯一）",
-        "description": "每个边界选择业务日期或原有 UTC 时间戳。日期以 Asia/Shanghai 计算，起始日 00:00 开始，结束日包含当天（次日 00:00 为排他边界）。起止同日有效。",
+        "description": "每个边界选择业务日期或原有 UTC 时间戳。日期以 Asia/Shanghai 计算，起始日 00:00 开始，结束日包含当天（次日 00:00 为排他边界）。起止同日有效。选择已有 customerId 或传入 newCustomer，两者互斥。新建客户另需 customer:write，客户、合约草稿和成功审计同事务提交。重复合同编号返回 409，可按编号查询已保存合约。",
         "security": [{ "CognitoJwt": [] }],
         "requestBody": {
           "required": true,
@@ -47,7 +47,7 @@
       "get": {
         "tags": ["admin"],
         "operationId": "listContracts",
-        "summary": "Contract 列表（按派生状态/customerId 筛选）",
+        "summary": "Contract 列表（按派生状态、客户或精确合同编号筛选）",
         "description": "status 筛选作用于查询时点派生状态（derivedStatus，不写回）。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
@@ -57,7 +57,14 @@
             "required": false,
             "schema": { "type": "string", "enum": ["DRAFT", "EFFECTIVE", "EXPIRING_SOON", "EXPIRED", "TERMINATED"] }
           },
-          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } }
+          { "name": "customerId", "in": "query", "required": false, "schema": { "type": "string" } },
+          {
+            "name": "contractNumber",
+            "in": "query",
+            "required": false,
+            "description": "精确匹配唯一合同编号，用于恢复提交结果未知或已冲突的合约。",
+            "schema": { "type": "string", "minLength": 1, "maxLength": 100 }
+          }
         ],
         "responses": {
           "200": {
@@ -300,8 +307,9 @@
       },
       "ContractCreateRequest": {
         "type": "object",
-        "required": ["contractNumber", "name", "customerId"],
+        "required": ["contractNumber", "name"],
         "allOf": [
+          { "oneOf": [{ "required": ["customerId"] }, { "required": ["newCustomer"] }] },
           { "oneOf": [{ "required": ["startDate"] }, { "required": ["startAt"] }] },
           { "oneOf": [{ "required": ["endDate"] }, { "required": ["endAt"] }] }
         ],
@@ -310,6 +318,19 @@
           "contractNumber": { "type": "string", "minLength": 1, "maxLength": 100, "description": "全局唯一" },
           "name": { "type": "string", "minLength": 1, "maxLength": 200 },
           "customerId": { "type": "string", "minLength": 1 },
+          "newCustomer": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "allowDuplicateName": {
+                "type": "boolean",
+                "default": false,
+                "description": "存在同名未删除客户时，须明确确认另建，否则返回 409。选择已有客户使用 customerId。"
+              }
+            }
+          },
           "contact": { "type": "string", "maxLength": 200, "description": "Customer 联系方式（最小权限返回）" },
           "startDate": {
             "$ref": "#/components/schemas/ContractBusinessDate",

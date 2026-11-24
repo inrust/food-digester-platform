@@ -186,6 +186,8 @@ export const REQUIRED_TITLES = [
   'B/T07 R15 旧授权直达定位合约或存量设备，并拒绝迟到详情覆盖',
   'B/T08 R18 business settings save reaches FE-18 and preserves CMP-34 runtime labels',
   'B/T08 R18 old settings links follow destination permissions and keep device context',
+  'C/T09 R12 same-name customers remain distinct and existing and new inputs are explicit',
+  'C/T09 R12 R16 duplicate recovery opens the saved draft and makes the customer available for onboarding',
 ];
 function reportSpecs(report) {
   const specs = [];

@@ -92,7 +92,7 @@ test('Schema 封闭：五态枚举/唯一编号/强制原因/派生状态/最小
   assert.ok(contract.properties.contact.description.includes('最小权限'), 'contact 最小权限说明');
   const createReq = doc.components.schemas.ContractCreateRequest;
   assert.equal(createReq.additionalProperties, false);
-  assert.deepEqual(createReq.required.sort(), ['contractNumber', 'name', 'customerId'].sort());
+  assert.deepEqual(createReq.required, ['contractNumber', 'name']);
   assert.ok(createReq.properties.contractNumber.description.includes('唯一'));
   const updateReq = doc.components.schemas.ContractUpdateRequest;
   assert.deepEqual(updateReq.required, ['reason'], '编辑强制原因');
@@ -108,7 +108,7 @@ test('R11 写入支持日期及旧时间戳，同一边界只允许一种表示'
   const { ContractBusinessDate, ContractCreateRequest, ContractUpdateRequest, ContractRenewRequest, Contract } =
     doc.components.schemas;
   assert.equal(ContractBusinessDate.format, 'date');
-  assert.deepEqual(ContractCreateRequest.allOf, [
+  assert.deepEqual(ContractCreateRequest.allOf.slice(1), [
     { oneOf: [{ required: ['startDate'] }, { required: ['startAt'] }] },
     { oneOf: [{ required: ['endDate'] }, { required: ['endAt'] }] },
   ]);
@@ -126,6 +126,23 @@ test('R11 写入支持日期及旧时间戳，同一边界只允许一种表示'
   for (const key of ['startAt', 'endAt']) {
     assert.equal(Contract.properties[key].$ref, 'openapi-base.json#/components/schemas/UtcTimestamp');
   }
+});
+
+test('R12 既有客户 ID 与内联客户二选一，R16 可按唯一合同编号精确查询', () => {
+  const { ContractCreateRequest } = doc.components.schemas;
+  assert.deepEqual(ContractCreateRequest.allOf[0], {
+    oneOf: [{ required: ['customerId'] }, { required: ['newCustomer'] }],
+  });
+  const { newCustomer } = ContractCreateRequest.properties;
+  assert.equal(newCustomer.additionalProperties, false);
+  assert.deepEqual(newCustomer.required, ['name']);
+  assert.equal(newCustomer.properties.allowDuplicateName.default, false);
+  const { get, post } = doc.paths['/api/v1/admin/contracts'];
+  const lookup = get.parameters.find((parameter: { name: string }) => parameter.name === 'contractNumber');
+  assert.equal(lookup.in, 'query');
+  assert.equal(lookup.schema.type, 'string');
+  assert.equal(post.responses['409'].$ref, '#/components/responses/Conflict');
+  assert.ok(post.description.includes('重复合同编号返回 409'));
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

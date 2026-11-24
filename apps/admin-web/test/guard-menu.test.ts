@@ -24,7 +24,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（B/T08 /business-settings；FE-05 /customers、/sites；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（B/T08 /business-settings；FE-05 /sites；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
@@ -37,7 +37,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/contracts',
     '/settings',
     '/business-settings',
-    '/customers',
     '/sites',
     '/audit-logs',
   ],
@@ -50,7 +49,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
-    '/customers',
     '/sites',
   ],
   Auditor: [
@@ -62,7 +60,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/contracts',
     '/settings',
     '/business-settings',
-    '/customers',
     '/sites',
     '/audit-logs',
   ],
@@ -110,6 +107,17 @@ test('设备侧栏采用原型四项，旧工作台路径保留共享读取权�
   }
 });
 
+test('T09 客户资料从合约上下文访问，旧路径保留共享读取权限', () => {
+  for (const role of ROLES) {
+    for (const path of ['/customers', '/contracts/customers']) {
+      assert.isFalse(menuPaths([role]).includes(path));
+      assert.equal(
+        resolveRoute(path, sessionOf(role)).kind,
+        hasPermission(role, 'customer:read') ? 'allow' : 'forbidden',
+      );
+    }
+  }
+});
 test('T08 平台用户与业务设置入口按共享 RBAC 独立守卫，旧标签定位固定路由', () => {
   for (const [path, permission] of [
     ['/settings', 'user:read'],

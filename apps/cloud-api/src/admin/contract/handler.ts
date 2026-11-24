@@ -31,7 +31,9 @@ import {
   terminateContract,
   updateContract,
 } from './service.js';
-import type { ContractDeps } from './service.js';
+import { AdminCustomerError } from '../customer/errors.js';
+import { parseCustomerName } from '../customer/service.js';
+import type { ContractCustomerInput, ContractDeps } from './service.js';
 import { parseStrictObject } from '../shared/strict-object.js';
 import { assertOptionalStringFields } from '../shared/strict-object.js';
 
@@ -144,8 +146,26 @@ function requireReason(body: Record<string, unknown>): string {
   return reason;
 }
 
+function parseContractCustomer(body: Record<string, unknown>): ContractCustomerInput {
+  if ((body.customerId === undefined) === (body.newCustomer === undefined)) {
+    throw contractValidationFailed('Provide exactly one of customerId and newCustomer');
+  }
+  if (body.newCustomer === undefined) {
+    const id = body.customerId;
+    if (typeof id !== 'string' || id.trim() === '') throw contractValidationFailed('customerId is required');
+    return { customerId: id.trim() };
+  }
+  const customer = parseStrictObject(body.newCustomer, ['name', 'allowDuplicateName'], contractValidationFailed);
+  if (customer.allowDuplicateName !== undefined && typeof customer.allowDuplicateName !== 'boolean') {
+    throw contractValidationFailed('allowDuplicateName must be a boolean');
+  }
+  return {
+    newCustomer: { name: parseCustomerName(customer.name), allowDuplicateName: customer.allowDuplicateName === true },
+  };
+}
+
 function toErrorResponse(err: unknown, req: AdminHttpRequest): AdminHttpResponse {
-  if (err instanceof AuthError || err instanceof AdminContractError) {
+  if (err instanceof AuthError || err instanceof AdminContractError || err instanceof AdminCustomerError) {
     const message = SENSITIVE_LEAK_PATTERN.test(err.message) ? 'The request failed' : err.message;
     return { status: err.httpStatus, body: { error: { code: err.code, message, requestId: req.requestId } } };
   }
@@ -187,6 +207,7 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
         'contractNumber',
         'name',
         'customerId',
+        'newCustomer',
         'contact',
         'startAt',
         'endAt',
@@ -198,13 +219,11 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
       const contractNumber = optionalString(body.contractNumber, 'contractNumber', 100);
       const name = optionalString(body.name, 'name', 200);
       if (!contractNumber || !name) throw contractValidationFailed('contractNumber and name are required');
-      if (typeof body.customerId !== 'string' || body.customerId.trim().length === 0) {
-        throw contractValidationFailed('customerId is required');
-      }
-      const view = await createContract(deps, actorOf(req), {
+      const actor = actorOf(req);
+      const view = await createContract(deps, actor, {
         contractNumber,
         name,
-        customerId: body.customerId.trim(),
+        ...parseContractCustomer(body),
         ...(typeof body.contact === 'string' ? { contact: body.contact } : {}),
         startAt: parseBoundary(body, 'startDate', 'startAt', 'start', true),
         endAt: parseBoundary(body, 'endDate', 'endAt', 'end', true),
@@ -215,7 +234,9 @@ export function createAdminContractHandlers(deps: AdminContractHandlerDeps): Adm
   );
 
   const list = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'contract:read' }, async (req) => {
+    const contractNumber = optionalString(req.query?.contractNumber, 'contractNumber', 100);
     const items = await listContracts(deps, actorOf(req), {
+      ...(contractNumber !== undefined ? { contractNumber } : {}),
       ...(req.query?.status !== undefined ? { status: req.query.status } : {}),
       ...(req.query?.customerId !== undefined ? { customerId: req.query.customerId } : {}),
     });

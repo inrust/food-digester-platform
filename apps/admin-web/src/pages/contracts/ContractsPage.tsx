@@ -34,6 +34,7 @@ export interface ContractsPageProps {
   /** 设备计数（容器经 listContractDevices 确定性计数；缺省显示 —）。 */
   readonly deviceCounts?: Readonly<Record<string, number>>;
   readonly onOpenNew: () => void;
+  readonly onOpenCustomers?: () => void;
   readonly onOpenDetail: (contractId: string) => void;
   readonly onRefresh: () => void;
 }
@@ -48,6 +49,7 @@ export function ContractsPage({
   customerOptions,
   deviceCounts,
   onOpenNew,
+  onOpenCustomers,
   onOpenDetail,
   onRefresh,
 }: ContractsPageProps) {
@@ -63,16 +65,23 @@ export function ContractsPage({
     <div className="contracts-page" data-testid="contracts-page">
       <div className="page-header">
         <h3>{translate('page.b38179cfadeb')}</h3>
-        <Button
-          type="button"
-          className="primary-button"
-          data-testid="contract-new-open"
-          disabled={!canWrite}
-          {...(!canWrite ? { title: translate('page.bb48fc12271b') } : {})}
-          onClick={onOpenNew}
-        >
-          {translate('page.44c75e312909')}
-        </Button>
+        <div className="action-row">
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid="contract-new-open"
+            disabled={!canWrite}
+            {...(!canWrite ? { title: translate('page.bb48fc12271b') } : {})}
+            onClick={onOpenNew}
+          >
+            {translate('page.44c75e312909')}
+          </Button>
+          {onOpenCustomers ? (
+            <Button type="button" data-testid="contract-open-customers" onClick={onOpenCustomers}>
+              {translate('contract.manageCustomers')}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="filter-bar filter-bar--query">

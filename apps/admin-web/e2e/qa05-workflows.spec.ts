@@ -66,6 +66,7 @@ for (const role of ROLES)
       ([p]) =>
         ![
           '/devices/manage',
+          '/customers',
           '/contracts/new',
           '/contracts/detail',
           '/ota/packages',

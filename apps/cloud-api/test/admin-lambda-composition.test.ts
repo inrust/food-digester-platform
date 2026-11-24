@@ -212,6 +212,23 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     }
   });
 
+  test('C/T09 passes inline contract customer input and exact recovery query through the admin router', async () => {
+    const routes = routeSet();
+    const path = '/api/v1/admin/contracts';
+    const body = {
+      contractNumber: 'T09',
+      name: 'Contract',
+      startDate: '2028-02-29',
+      endDate: '2028-02-29',
+      newCustomer: { name: 'Customer', allowDuplicateName: true },
+    };
+    const query = { contractNumber: 'T09' };
+    await createAdminRoute({ httpMethod: 'POST', path }, routes)({ requestId: 't09-create', headers: {}, body });
+    expect(routes.contracts?.create).toHaveBeenCalledWith(expect.objectContaining({ body }));
+    await createAdminRoute({ httpMethod: 'GET', path }, routes)({ requestId: 't09-recover', headers: {}, query });
+    expect(routes.contracts?.list).toHaveBeenCalledWith(expect.objectContaining({ query }));
+  });
+
   test('B/T07 routes scoped license and device-user operations with their optimistic lock', async () => {
     const routes = routeSet();
     for (const [path, handler, query, params] of [

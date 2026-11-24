@@ -98,7 +98,8 @@ export interface AuditedOperation {
   readonly beforeValue?: unknown;
   /** 成功时的 afterValue：常量或基于业务结果的函数。 */
   readonly afterValue?: unknown | ((result: unknown) => unknown);
-  readonly customerId?: string | null;
+  /** 成功审计可使用本次事务创建的客户；失败记录不引用回滚的客户。 */
+  readonly customerId?: string | null | ((result: unknown) => string | null);
   /** 显式 actor（优先于 AsyncLocalStorage 上下文）。 */
   readonly actorId?: string;
   readonly actorRole?: string;
@@ -120,13 +121,21 @@ export async function audited<T>(
   if (!isRootClient(client)) {
     throw new DbError('audited() 必须使用根 PrismaClient，禁止在事务内嵌套');
   }
+  const { customerId, ...operation } = op;
   try {
     return await withTransaction(
       client,
       async (tx) => {
         const result = await fn(tx);
         const afterValue = typeof op.afterValue === 'function' ? op.afterValue(result) : op.afterValue;
-        const write = () => recordAudit(tx, { ...op, afterValue, result: 'SUCCESS' });
+        const scopedCustomer = typeof customerId === 'function' ? customerId(result) : customerId;
+        const write = () =>
+          recordAudit(tx, {
+            ...operation,
+            ...(scopedCustomer !== undefined ? { customerId: scopedCustomer } : {}),
+            afterValue,
+            result: 'SUCCESS',
+          });
         if (observe) await observeDataPathPhase('audit-success-write', write);
         else await write();
         return result;
@@ -136,7 +145,13 @@ export async function audited<T>(
     );
   } catch (err) {
     try {
-      const write = () => recordAudit(client, { ...op, afterValue: undefined, result: 'FAILURE' });
+      const write = () =>
+        recordAudit(client, {
+          ...operation,
+          ...(typeof customerId !== 'function' && customerId !== undefined ? { customerId } : {}),
+          afterValue: undefined,
+          result: 'FAILURE',
+        });
       if (observe) await observeDataPathPhase('audit-failure-write', write);
       else await write();
     } catch (auditErr) {

@@ -42,6 +42,7 @@ import {
 import { EMPTY_CONFIGURATION_FILTER, ConfigurationsPage } from '../pages/configuration/ConfigurationsPage.js';
 import type { ConfigurationDetailState, ConfigurationFilter } from '../pages/configuration/ConfigurationsPage.js';
 import type { ConfigurationSummaryView } from '../pages/configuration/types.js';
+import { customerOptionLabels } from '../pages/customers/customer-options.js';
 import { fetchCustomers } from '../pages/customers/customers-api.js';
 import {
   assignDevice,
@@ -293,10 +294,18 @@ export function DeviceManageController({
   }, [load]);
   useEffect(() => {
     let active = true;
-    void Promise.all([fetchCustomers(api, { limit: 100 }), fetchSites(api, undefined, { limit: 100 })]).then(
-      ([customerPage, sitePage]) => {
+    void Promise.all([
+      collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 })),
+      fetchSites(api, undefined, { limit: 100 }),
+    ]).then(
+      ([customerRows, sitePage]) => {
         if (!active) return;
-        setCustomers(customerPage.items.map((c) => option(c.id, c.name)));
+        const labels = customerOptionLabels(
+          customerRows,
+          (c) => c.id,
+          (c) => c.name,
+        );
+        setCustomers(customerRows.map((c) => option(c.id, labels.get(c.id) ?? c.name)));
         setSites(sitePage.items.map((s) => ({ ...option(s.id, s.name), customerId: s.customerId })));
       },
       () => {

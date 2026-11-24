@@ -17,6 +17,7 @@ import type {
 export interface ContractListFilter {
   readonly status?: ContractStatus | null;
   readonly customerId?: string | null;
+  readonly contractNumber?: string | null;
 }
 
 function buildQuery(filter: ContractListFilter): string {
@@ -39,15 +40,20 @@ export async function getContract(api: ApiClient, contractId: string): Promise<C
 }
 
 /** 创建输入（contact 可选；reason 可选）。 */
-export interface ContractCreateInput {
+export type ContractCreateInput = (
+  | { readonly customerId: string; readonly newCustomer?: never }
+  | {
+      readonly customerId?: never;
+      readonly newCustomer: { readonly name: string; readonly allowDuplicateName?: boolean };
+    }
+) & {
   readonly contractNumber: string;
   readonly name: string;
-  readonly customerId: string;
   readonly contact?: string;
   readonly startDate: string;
   readonly endDate: string;
   readonly reason?: string;
-}
+};
 
 export async function createContract(api: ApiClient, input: ContractCreateInput): Promise<ContractView> {
   const response = await api.request<{ data: ContractView }>('/admin/contracts', {

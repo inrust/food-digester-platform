@@ -177,6 +177,10 @@ function renderNew(overrides: Partial<ContractNewPageProps> = {}) {
   };
   const props: ContractNewPageProps = {
     customerOptions: CUSTOMERS,
+    canCreateCustomer: true,
+    onRefreshCustomers: async () => {},
+    onFindContract: async () => null,
+    onOpenContract: () => {},
     onCreate: async (input) => {
       calls.created.push(input);
       return makeContract({

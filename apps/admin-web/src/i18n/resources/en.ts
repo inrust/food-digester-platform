@@ -207,10 +207,23 @@ export const EN: Readonly<Record<string, string>> = {
   'auth.error.flowExpired': 'The sign-in flow has expired. Return to sign-in and start again.',
   'auth.error.accountConfiguration': 'The account permissions are misconfigured. Contact an administrator.',
   'auth.error.unknown': 'The sign-in request could not be completed. Try again or contact an administrator.',
+  'contract.customerMode': 'Customer source',
+  'contract.chooseExistingCustomer': 'Choose an existing customer',
+  'contract.createNewCustomer': 'Create a customer',
+  'contract.newCustomerName': 'New customer name',
+  'contract.customerNameRequired': 'Enter a customer name of 1 to 200 characters.',
+  'contract.sameNameCustomers':
+    'Customers with this name already exist. Choose a specific customer or confirm that you want a separate customer.',
+  'contract.useCustomer': 'Use {name} ({id})',
+  'contract.confirmDuplicateCustomer': 'Create a separate customer with the same name',
+  'contract.numberConflict':
+    'Contract number {number} already exists. Open that contract to continue or use a different number.',
+  'contract.openExisting': 'Open existing contract',
+  'contract.checkSaved': 'Check if the contract was saved',
+  'contract.noSavedContract': 'No contract was found with this number. You can keep your changes and retry.',
+  'contract.manageCustomers': 'Maintain customer records',
   'contract.dateBasis': 'Dates use Shanghai time. Both the start and end dates are included.',
   'contract.currentEndDate': 'The current end date is {date}.',
-  'contract.existingCustomer':
-    'Select an existing customer. If the customer is missing, add them in Customer Management, then return here to select them.',
   'contract.draftSaved':
     'Contract {number} has been saved as a draft. Associate devices now or continue later from the contract details.',
   'ui.consumableThresholdLoading': 'Loading the consumable display threshold source…',

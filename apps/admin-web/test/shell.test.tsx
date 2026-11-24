@@ -39,7 +39,7 @@ function renderShell(options: { path?: string; search?: string; role?: Role } = 
   return { ...utils, navigated, isLoggedOut: () => loggedOut > 0 };
 }
 
-test('菜单按角色过滤：PlatformSuperAdmin 见全部 13 项；CustomerViewer 不见受限项', () => {
+test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerViewer 不见受限项', () => {
   const { unmount } = renderShell({ role: 'PlatformSuperAdmin' });
   for (const label of [
     '概览',
@@ -52,7 +52,6 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 13 项；CustomerView
     '合约查询及修改',
     '平台用户管理',
     '业务设置',
-    '客户管理',
     '站点管理',
     '审计日志',
   ]) {

@@ -11,6 +11,8 @@ import { translate } from '../../i18n/i18n.js';
  *   eligible 之外的设备不可选（无自由文本入口）。
  */
 import { useRef, useState } from 'react';
+import { ApiClientError } from '../../api/errors.js';
+import { customerNameKey, customerOptionLabels } from '../customers/customer-options.js';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { validateContractForm } from './contract-state.js';
 import type { ContractFormDraft } from './contract-state.js';
@@ -19,6 +21,12 @@ import type { AvailableDeviceView, ContractView } from './types.js';
 import type { CustomerOption } from './ContractsPage.js';
 export interface ContractNewPageProps {
   readonly customerOptions: readonly CustomerOption[];
+  readonly customersLoading?: boolean;
+  readonly customersError?: unknown;
+  readonly canCreateCustomer: boolean;
+  readonly onRefreshCustomers: () => Promise<void>;
+  readonly onFindContract: (contractNumber: string) => Promise<ContractView | null>;
+  readonly onOpenContract: (contractId: string) => void;
   readonly onCreate: (input: ContractCreateInput) => Promise<ContractView>;
   /** 创建后加载 eligible 设备列表。 */
   readonly onListAvailable: (contractId: string) => Promise<readonly AvailableDeviceView[]>;
@@ -38,6 +46,12 @@ const EMPTY_DRAFT: ContractFormDraft = {
 };
 export function ContractNewPage({
   customerOptions,
+  customersLoading = false,
+  customersError,
+  canCreateCustomer,
+  onRefreshCustomers,
+  onFindContract,
+  onOpenContract,
   onCreate,
   onListAvailable,
   onBind,
@@ -45,6 +59,13 @@ export function ContractNewPage({
   onDone,
 }: ContractNewPageProps) {
   const [draft, setDraft] = useState<ContractFormDraft>(EMPTY_DRAFT);
+  const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing');
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [allowDuplicateName, setAllowDuplicateName] = useState(false);
+  const [foundContract, setFoundContract] = useState<ContractView | null>(null);
+  const [lookupError, setLookupError] = useState<unknown>(null);
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'missing'>('idle');
+  const lookupGeneration = useRef(0);
   const [created, setCreated] = useState<ContractView | null>(null);
   const [available, setAvailable] = useState<
     | { kind: 'loading' }
@@ -57,7 +78,32 @@ export function ContractNewPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
-  const fieldErrors = validateContractForm(draft);
+  const isNewCustomer = canCreateCustomer && customerMode === 'new';
+  const fieldErrors = validateContractForm(draft, undefined, isNewCustomer ? newCustomerName : undefined);
+  const customerLabels = customerOptionLabels(
+    customerOptions,
+    (option) => option.customerId,
+    (option) => option.name,
+  );
+  const nameKey = customerNameKey(newCustomerName);
+  const sameName =
+    isNewCustomer && nameKey ? customerOptions.filter((option) => customerNameKey(option.name) === nameKey) : [];
+  const missingExisting = !isNewCustomer && !customerOptions.some((item) => item.customerId === draft.customerId);
+  const checkSavedContract = async (contractNumber: string) => {
+    const generation = ++lookupGeneration.current;
+    setLookupError(null);
+    setLookupStatus('loading');
+    try {
+      const match = await onFindContract(contractNumber);
+      if (generation !== lookupGeneration.current) return;
+      setFoundContract(match);
+      setLookupStatus(match ? 'idle' : 'missing');
+    } catch (error) {
+      if (generation !== lookupGeneration.current) return;
+      setLookupError(error);
+      setLookupStatus('idle');
+    }
+  };
   const loadAvailable = async (contractId: string) => {
     setAvailable({ kind: 'loading' });
     setSelected([]);
@@ -84,15 +130,34 @@ export function ContractNewPage({
   const submitCreate = () =>
     runAction(async () => {
       if (fieldErrors !== null) throw new Error(Object.values(fieldErrors)[0] ?? translate('page.0b8b9963d904'));
+      lookupGeneration.current += 1;
+      setFoundContract(null);
+      setLookupError(null);
+      setLookupStatus('idle');
       const input: ContractCreateInput = {
         contractNumber: draft.contractNumber.trim(),
         name: draft.name.trim(),
-        customerId: draft.customerId,
+        ...(isNewCustomer
+          ? {
+              newCustomer: {
+                name: newCustomerName.trim(),
+                ...(allowDuplicateName ? { allowDuplicateName: true } : {}),
+              },
+            }
+          : { customerId: draft.customerId }),
         startDate: draft.startDate,
         endDate: draft.endDate,
         ...(draft.contact.trim() !== '' ? { contact: draft.contact.trim() } : {}),
       };
-      const contract = await onCreate(input);
+      let contract: ContractView;
+      try {
+        contract = await onCreate(input);
+      } catch (error) {
+        if (error instanceof ApiClientError && error.status === 409) {
+          await Promise.all([checkSavedContract(input.contractNumber), onRefreshCustomers()]);
+        }
+        throw error;
+      }
       setCreated(contract);
       void loadAvailable(contract.contractId);
       return translate('contract.draftSaved', { number: contract.contractNumber });
@@ -128,6 +193,32 @@ export function ContractNewPage({
         </p>
       ) : null}
       {actionError !== null ? <ErrorNotice error={actionError} /> : null}
+      {lookupError !== null ? <ErrorNotice error={lookupError} /> : null}
+      {created === null && lookupStatus === 'missing' ? (
+        <p role="status">{translate('contract.noSavedContract')}</p>
+      ) : null}
+      {created === null && foundContract !== null ? (
+        <div className="action-row" data-testid="contract-number-conflict">
+          <p>{translate('contract.numberConflict', { number: foundContract.contractNumber })}</p>
+          <Button
+            type="button"
+            data-testid="contract-open-existing"
+            onClick={() => onOpenContract(foundContract.contractId)}
+          >
+            {translate('contract.openExisting')}
+          </Button>
+        </div>
+      ) : null}
+      {created === null && actionError !== null && foundContract === null && draft.contractNumber.trim() !== '' ? (
+        <Button
+          type="button"
+          data-testid="contract-check-saved"
+          disabled={busy || lookupStatus === 'loading'}
+          onClick={() => void checkSavedContract(draft.contractNumber.trim())}
+        >
+          {translate('contract.checkSaved')}
+        </Button>
+      ) : null}
 
       <section data-testid="contract-form" aria-label={translate('page.82fe9340d299')}>
         <div className="dialog-field">
@@ -136,9 +227,15 @@ export function ContractNewPage({
             id="contract-number-input"
             data-testid="contract-number-input"
             maxLength={100}
-            disabled={created !== null}
+            disabled={created !== null || busy}
             value={draft.contractNumber}
-            onChange={(event) => setDraft({ ...draft, contractNumber: event.target.value })}
+            onChange={(event) => {
+              lookupGeneration.current += 1;
+              setFoundContract(null);
+              setLookupError(null);
+              setLookupStatus('idle');
+              setDraft({ ...draft, contractNumber: event.target.value });
+            }}
           />
           {fieldError('contractNumber')}
         </div>
@@ -148,41 +245,117 @@ export function ContractNewPage({
             id="contract-name-input"
             data-testid="contract-name-input"
             maxLength={200}
-            disabled={created !== null}
+            disabled={created !== null || busy}
             value={draft.name}
             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           />
           {fieldError('name')}
         </div>
-        <div className="dialog-field">
-          <label htmlFor="contract-customer-select">{translate('page.ccaf386a064a')}</label>
-          <select
-            id="contract-customer-select"
-            data-testid="contract-customer-select"
-            disabled={created !== null}
-            aria-describedby="contract-customer-help"
-            value={draft.customerId}
-            onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
-          >
-            <option value="">{translate('page.382f4b5559b3')}</option>
-            {customerOptions.map((customer) => (
-              <option key={customer.customerId} value={customer.customerId}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
-          <p className="field-hint" id="contract-customer-help">
-            {translate('contract.existingCustomer')}
-          </p>
-          {fieldError('customerId')}
-        </div>
+        {canCreateCustomer ? (
+          <div className="dialog-field">
+            <label htmlFor="contract-customer-mode">{translate('contract.customerMode')}</label>
+            <select
+              id="contract-customer-mode"
+              data-testid="contract-customer-mode"
+              value={customerMode}
+              disabled={created !== null || busy}
+              onChange={(event) => {
+                setCustomerMode(event.target.value === 'new' ? 'new' : 'existing');
+                setAllowDuplicateName(false);
+              }}
+            >
+              <option value="existing">{translate('contract.chooseExistingCustomer')}</option>
+              <option value="new">{translate('contract.createNewCustomer')}</option>
+            </select>
+          </div>
+        ) : null}
+        {customersError !== undefined && created === null ? (
+          <div>
+            <ErrorNotice error={customersError} />
+            <Button
+              type="button"
+              data-testid="contract-customers-retry"
+              disabled={customersLoading}
+              onClick={() => void onRefreshCustomers()}
+            >
+              {translate('detail.retry')}
+            </Button>
+          </div>
+        ) : null}
+        {customersLoading ? <p role="status">{translate('page.300ee3dee4dc')}</p> : null}
+        {isNewCustomer ? (
+          <div className="dialog-field">
+            <label htmlFor="contract-new-customer-name">{translate('contract.newCustomerName')}</label>
+            <Input
+              id="contract-new-customer-name"
+              data-testid="contract-new-customer-name"
+              maxLength={200}
+              value={newCustomerName}
+              disabled={created !== null || busy}
+              onChange={(event) => {
+                setNewCustomerName(event.target.value);
+                setAllowDuplicateName(false);
+              }}
+            />
+            {fieldError('newCustomer')}
+            {created === null && sameName.length > 0 ? (
+              <div data-testid="contract-same-name-customers">
+                <p>{translate('contract.sameNameCustomers')}</p>
+                {sameName.map((customer) => (
+                  <Button
+                    type="button"
+                    key={customer.customerId}
+                    data-testid={`contract-use-customer-${customer.customerId}`}
+                    disabled={busy}
+                    onClick={() => {
+                      setDraft({ ...draft, customerId: customer.customerId });
+                      setCustomerMode('existing');
+                      setAllowDuplicateName(false);
+                    }}
+                  >
+                    {translate('contract.useCustomer', { name: customer.name, id: customer.customerId })}
+                  </Button>
+                ))}
+                <label>
+                  <Input
+                    type="checkbox"
+                    data-testid="contract-confirm-duplicate-customer"
+                    checked={allowDuplicateName}
+                    disabled={busy}
+                    onChange={(event) => setAllowDuplicateName(event.target.checked)}
+                  />
+                  {translate('contract.confirmDuplicateCustomer')}
+                </label>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="dialog-field">
+            <label htmlFor="contract-customer-select">{translate('page.ccaf386a064a')}</label>
+            <select
+              id="contract-customer-select"
+              data-testid="contract-customer-select"
+              disabled={created !== null || busy || customersLoading}
+              value={draft.customerId}
+              onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
+            >
+              <option value="">{translate('page.382f4b5559b3')}</option>
+              {customerOptions.map((customer) => (
+                <option key={customer.customerId} value={customer.customerId}>
+                  {customerLabels.get(customer.customerId)}
+                </option>
+              ))}
+            </select>
+            {fieldError('customerId')}
+          </div>
+        )}
         <div className="dialog-field">
           <label htmlFor="contract-start-input">{translate('page.0ed8daddc54b')}</label>
           <Input
             id="contract-start-input"
             type="date"
             data-testid="contract-start-input"
-            disabled={created !== null}
+            disabled={created !== null || busy}
             value={draft.startDate}
             onChange={(event) => setDraft({ ...draft, startDate: event.target.value })}
           />
@@ -191,7 +364,7 @@ export function ContractNewPage({
             id="contract-end-input"
             type="date"
             data-testid="contract-end-input"
-            disabled={created !== null}
+            disabled={created !== null || busy}
             value={draft.endDate}
             onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
           />
@@ -204,7 +377,7 @@ export function ContractNewPage({
             id="contract-contact-input"
             data-testid="contract-contact-input"
             maxLength={200}
-            disabled={created !== null}
+            disabled={created !== null || busy}
             value={draft.contact}
             onChange={(event) => setDraft({ ...draft, contact: event.target.value })}
           />
@@ -216,7 +389,12 @@ export function ContractNewPage({
               type="button"
               className="primary-button"
               data-testid="contract-create-submit"
-              disabled={busy || fieldErrors !== null}
+              disabled={
+                busy ||
+                fieldErrors !== null ||
+                (!isNewCustomer && (customersLoading || missingExisting)) ||
+                (isNewCustomer && sameName.length > 0 && !allowDuplicateName)
+              }
               onClick={() => void submitCreate()}
             >
               {translate('page.68b24eeb6f4e')}

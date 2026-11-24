@@ -205,15 +205,25 @@ export const APP_ROUTES: readonly AppRoute[] = [
     menuGroup: 'platform',
   },
   // ---------- FE-05 扩展路由（CT-06 矩阵外；权限与 BE-CUS-01/02 契约一致） ----------
-  // customer:read 持有者 = 平台三角色；写操作 customer:write（SuperAdmin/Operator）在页面内按角色禁用
+  // /customers is a bookmark for the contextual customer maintenance page.
   {
     path: '/customers',
     pageState: 'customers',
     get label() {
-      return translate('ui.88c9f74936f0');
+      return translate('menu.customers');
     },
-    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
-    menuGroup: 'platform',
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'customer:read')),
+    menuGroup: null,
+  },
+  {
+    path: '/contracts/customers',
+    pageState: 'customers',
+    get label() {
+      return translate('menu.customers');
+    },
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'customer:read')),
+    menuGroup: null,
+    parentPath: '/contracts',
   },
   // site:read = 全部五角色；Customer 角色 scope 由服务端强制
   {

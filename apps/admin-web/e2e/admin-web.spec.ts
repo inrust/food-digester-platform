@@ -181,8 +181,8 @@ test('无 Token 安全回登录；五角色菜单和受限路由均由组合根�
   await anonymous.close();
 
   const cases: { role: Role; visible: string; forbidden: string }[] = [
-    { role: 'PlatformSuperAdmin', visible: '客户管理', forbidden: '/not-a-route' },
-    { role: 'PlatformOperator', visible: '客户管理', forbidden: '/settings' },
+    { role: 'PlatformSuperAdmin', visible: '合约查询及修改', forbidden: '/not-a-route' },
+    { role: 'PlatformOperator', visible: '合约查询及修改', forbidden: '/settings' },
     { role: 'Auditor', visible: '业务设置', forbidden: '/contracts/new' },
     { role: 'CustomerAdmin', visible: '站点管理', forbidden: '/settings' },
     { role: 'CustomerViewer', visible: '站点管理', forbidden: '/customers' },
@@ -903,7 +903,7 @@ test('A/T03 草稿可离开并从详情重试关联，上海日期不随显示�
   });
 
   await admin.goto('/contracts/new');
-  await expect(admin.locator('#contract-customer-help')).toContainText('客户管理');
+  await expect(admin.getByTestId('contract-customer-mode').locator('option')).toHaveText(['选择已有客户', '新建客户']);
   await admin.getByTestId('contract-number-input').fill('HT-E2E-ZERO');
   await admin.getByTestId('contract-name-input').fill('零设备合约');
   await admin.getByTestId('contract-customer-select').selectOption('cust-a');

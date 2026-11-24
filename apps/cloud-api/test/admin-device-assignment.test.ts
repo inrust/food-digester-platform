@@ -16,6 +16,7 @@ import { assert } from 'vitest';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import { ADMIN_ASSIGNMENT_ERROR_HTTP_STATUS, createAdminDeviceAssignmentHandlers } from '../src/index.js';
+import { createAdminContractHandlers } from '../src/admin/contract/handler.js';
 import type { AdminHttpRequest } from '../src/index.js';
 import { createTestDb } from './helpers.js';
 import { assertOpenApiResponse } from './openapi-response.js';
@@ -358,4 +359,33 @@ describe('契约一致性', () => {
       assert.ok(!/@fdp\/aws-clients|@aws-sdk|aws-sdk/.test(source), `${file} 引用了 AWS 客户端`);
     }
   });
+});
+
+test('C/T09 R16 an inline contract customer is available to the existing onboarding assignment service', async () => {
+  const result = await createAdminContractHandlers({ client: prisma, now: () => NOW }).create(
+    req(superAdmin, {
+      body: {
+        contractNumber: 'T09-ASSIGN',
+        name: 'T09 onboarding',
+        startDate: '2028-02-29',
+        endDate: '2028-02-29',
+        newCustomer: { name: 'T09 new customer for assignment' },
+      },
+    }),
+  );
+  assert.equal(result.status, 201, JSON.stringify(result.body));
+  const { customerId } = (result.body as { data: { customerId: string } }).data;
+  const site = await plantSite(customerId);
+  const device = await plantDevice('Onboarded');
+  const response = await handlers().assign(
+    req(superAdmin, {
+      params: { deviceId: device.id },
+      body: { customerId, siteId: site.id, reason: 'First assignment' },
+    }),
+  );
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  const saved = await prisma.device.findUniqueOrThrow({ where: { id: device.id } });
+  assert.equal(saved.customerId, customerId);
+  assert.equal(saved.siteId, site.id);
+  assert.equal(saved.lifecycleStatus, 'Assigned');
 });

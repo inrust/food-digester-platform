@@ -133,7 +133,7 @@ describe('管理后台浏览器冒烟', () => {
     expect(await screen.findByRole('heading', { name: '客户档案', hidden: true })).toBeDefined();
     expect(screen.getByLabelText('客户名称')).toBe(input);
     expect((input as HTMLInputElement).value).toBe('Unsaved customer');
-    expect(window.location.pathname).toBe('/customers');
+    expect(window.location.pathname).toBe('/contracts/customers');
     expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 });

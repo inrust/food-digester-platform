@@ -230,8 +230,8 @@ export function ContractsController({
   }, [api, filter]);
   useEffect(() => void load(), [load]);
   useEffect(() => {
-    void fetchCustomers(api, { limit: 100 }).then(
-      (page) => setCustomers(page.items.map((customer) => ({ customerId: customer.id, name: customer.name }))),
+    void collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 })).then(
+      (items) => setCustomers(items.map((customer) => ({ customerId: customer.id, name: customer.name }))),
       () => setCustomers([]),
     );
   }, [api]);
@@ -244,27 +244,61 @@ export function ContractsController({
       customerOptions={customers}
       deviceCounts={deviceCounts}
       onOpenNew={() => onNavigate('/contracts/new')}
+      {...(session.roles.some((role) => hasPermission(role, 'customer:read'))
+        ? { onOpenCustomers: () => onNavigate('/contracts/customers') }
+        : {})}
       onOpenDetail={(contractId) => onNavigate(`/contracts/detail?contractId=${encodeURIComponent(contractId)}`)}
       onRefresh={() => void load()}
     />
   );
 }
-export function ContractNewController({ api, onNavigate }: { readonly api: ApiClient; readonly onNavigate: Navigate }) {
-  const [customers, setCustomers] = useState<
-    readonly {
-      customerId: string;
-      name: string;
-    }[]
-  >([]);
-  useEffect(() => {
-    void fetchCustomers(api, { limit: 100 }).then(
-      (page) => setCustomers(page.items.map((customer) => ({ customerId: customer.id, name: customer.name }))),
-      () => setCustomers([]),
-    );
+export function ContractNewController({
+  api,
+  session,
+  onNavigate,
+}: {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+  readonly onNavigate: Navigate;
+}) {
+  const [customers, setCustomers] = useState<{
+    readonly items: readonly { customerId: string; name: string }[];
+    readonly loading: boolean;
+    readonly error?: unknown;
+  }>({ items: [], loading: true });
+  const generation = useRef(0);
+  const loadCustomers = useCallback(async () => {
+    const request = ++generation.current;
+    setCustomers((current) => ({ items: current.items, loading: true }));
+    try {
+      const items = await collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 }));
+      if (request === generation.current) {
+        setCustomers({
+          items: items.map((customer) => ({ customerId: customer.id, name: customer.name })),
+          loading: false,
+        });
+      }
+    } catch (error) {
+      if (request === generation.current) setCustomers((current) => ({ ...current, loading: false, error }));
+    }
   }, [api]);
+  useEffect(() => {
+    void loadCustomers();
+    return () => {
+      generation.current += 1;
+    };
+  }, [loadCustomers]);
   return (
     <ContractNewPage
-      customerOptions={customers}
+      customerOptions={customers.items}
+      customersLoading={customers.loading}
+      {...(customers.error !== undefined ? { customersError: customers.error } : {})}
+      canCreateCustomer={session.roles.some((role) => hasPermission(role, 'customer:write'))}
+      onRefreshCustomers={loadCustomers}
+      onFindContract={async (contractNumber) =>
+        (await listContracts(api, { contractNumber })).find((row) => row.contractNumber === contractNumber) ?? null
+      }
+      onOpenContract={(contractId) => onNavigate(`/contracts/detail?contractId=${encodeURIComponent(contractId)}`)}
       onCreate={(input) => createContract(api, input)}
       onListAvailable={(contractId) => listAvailableDevices(api, contractId)}
       onBind={(contractId, deviceIds, reason) => bindContractDevices(api, contractId, deviceIds, reason)}
@@ -317,10 +351,10 @@ export function ContractDetailController({
     if (results[0].status === 'fulfilled') {
       const nextContract = results[0].value;
       setContract(nextContract);
-      void fetchCustomers(api, { limit: 100 }).then(
-        (page) => {
+      void collectAll((cursor) => fetchCustomers(api, { cursor, limit: 100 })).then(
+        (items) => {
           if (generation === loadGeneration.current)
-            setCustomerName(page.items.find((customer) => customer.id === nextContract.customerId)?.name ?? null);
+            setCustomerName(items.find((customer) => customer.id === nextContract.customerId)?.name ?? null);
         },
         () => {
           if (generation === loadGeneration.current) setCustomerName(null);

@@ -128,9 +128,13 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     );
     return () => request.abort();
   }, [accountKey, services.api]);
-  const legacyTarget =
-    session === null ? null : legacySettingsTarget(location.pathname, location.search, location.hash);
   const verdict = resolveRoute(location.pathname, session);
+  const legacyTarget =
+    session === null
+      ? null
+      : location.pathname === '/customers' && verdict.kind === 'allow'
+        ? '/contracts/customers'
+        : legacySettingsTarget(location.pathname, location.search, location.hash);
   useEffect(() => {
     if (legacyTarget !== null) {
       navigate(legacyTarget, { replace: true });
@@ -346,7 +350,9 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'contract-new':
-      page = <ContractNewController api={services.api} onNavigate={navigateWithinApp} />;
+      page = (
+        <ContractNewController key={sessionScope} api={services.api} session={session} onNavigate={navigateWithinApp} />
+      );
       break;
     case 'contract-detail':
       page = (

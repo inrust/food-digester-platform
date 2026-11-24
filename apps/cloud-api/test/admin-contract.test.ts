@@ -574,3 +574,95 @@ describe('A/T03 R11 上海业务日期', () => {
 function handlersAt(timestamp: string) {
   return createAdminContractHandlers({ client: prisma, now: () => new Date(timestamp) });
 }
+
+test('C/T09 R12 R16 failed inline creation rolls back both writes and success audits, then safely recovers a repeated number', async () => {
+  const h = handlers();
+  const contractNumber = 'T09-RETRY';
+  const customerName = 'T09 atomic customer';
+  const body = {
+    contractNumber,
+    name: 'T09 draft',
+    newCustomer: { name: customerName },
+    startDate: '2028-02-29',
+    endDate: '2028-02-29',
+  };
+  const beforeCustomerAudits = await prisma.auditLog.count({ where: { action: 'customer.create' } });
+  await prisma.$executeRawUnsafe(`CREATE FUNCTION t09_fail_contract() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN
+      IF NEW.contract_number = 'T09-RETRY' THEN RAISE EXCEPTION 'controlled contract failure'; END IF;
+      RETURN NEW;
+    END $$`);
+  await prisma.$executeRawUnsafe(`CREATE TRIGGER t09_fail_contract BEFORE INSERT ON contracts
+    FOR EACH ROW EXECUTE FUNCTION t09_fail_contract()`);
+  try {
+    assert.equal((await h.create(req(superAdmin, { body }))).status, 500);
+    assert.equal(await prisma.customer.count({ where: { name: customerName } }), 0);
+    assert.equal(await prisma.contract.count({ where: { contractNumber } }), 0);
+    assert.equal(await auditCount(contractNumber, 'contract.create'), 0);
+    assert.equal(await prisma.auditLog.count({ where: { action: 'customer.create' } }), beforeCustomerAudits);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER t09_fail_contract ON contracts');
+    await prisma.$executeRawUnsafe('DROP FUNCTION t09_fail_contract()');
+  }
+
+  const create = () => h.create(req(superAdmin, { body }));
+  const attempts = await Promise.all([create(), create()]);
+  assert.deepEqual(attempts.map((r) => r.status).sort(), [201, 409]);
+  const saved = attempts.find((r) => r.status === 201)!;
+  assertOpenApiResponse('createContract', saved.status, saved.body);
+  const { contractId, customerId, status } = (saved.body as DataBody).data as {
+    contractId: string;
+    customerId: string;
+    status: string;
+  };
+  assert.equal(status, 'DRAFT');
+  assert.equal(await prisma.customer.count({ where: { name: customerName } }), 1);
+  assert.equal(
+    await prisma.auditLog.count({
+      where: { action: 'customer.create', objectId: customerId, customerId, result: 'SUCCESS' },
+    }),
+    1,
+  );
+  assert.equal(
+    await prisma.auditLog.count({
+      where: { action: 'contract.create', objectId: contractNumber, customerId, result: 'SUCCESS' },
+    }),
+    1,
+  );
+  const recovered = await h.list(req(operator, { query: { contractNumber } }));
+  assertOpenApiResponse('listContracts', recovered.status, recovered.body);
+  assert.deepEqual(
+    (recovered.body as { data: { contractId: string }[] }).data.map((row) => row.contractId),
+    [contractId],
+  );
+  assert.equal((await h.detail(req(operator, { params: { contractId } }))).status, 200);
+  assert.equal((await h.list(req(customerAdmin, { query: { contractNumber } }))).status, 403);
+});
+
+test('C/T09 R12 same-name customers require explicit confirmation or selection by ID', async () => {
+  const h = handlers();
+  const sameName = 'T09 Customer % label';
+  const base = {
+    name: 'T09 service',
+    startAt: START.toISOString(),
+    endAt: END.toISOString(),
+  };
+  const post = (contractNumber: string, customer: object, actor = superAdmin) =>
+    h.create(req(actor, { body: { ...base, contractNumber, ...customer } }));
+  const attempts = await Promise.all([
+    post('T09-SAME-1', { newCustomer: { name: sameName } }),
+    post('T09-SAME-2', { newCustomer: { name: sameName.toLowerCase() } }),
+  ]);
+  assert.deepEqual(attempts.map((r) => r.status).sort(), [201, 409]);
+  const created = attempts.find((r) => r.status === 201)!;
+  const firstId = (created.body as DataBody).data.customerId as string;
+  const match = await post('T09-SAME-3', { customerId: firstId });
+  assert.equal(match.status, 201);
+  assert.equal((match.body as DataBody).data.customerId, firstId);
+  assert.equal((await post('T09-SAME-4', { customerId: firstId, newCustomer: { name: sameName } })).status, 400);
+  assert.equal((await post('T09-SAME-5', {})).status, 400);
+  assert.equal((await post('T09-SAME-6', { newCustomer: { name: 'T09 forbidden' } }, operator)).status, 403);
+  const separate = await post('T09-SAME-7', { newCustomer: { name: sameName, allowDuplicateName: true } });
+  assert.equal(separate.status, 201);
+  assert.notEqual((separate.body as DataBody).data.customerId, firstId);
+});

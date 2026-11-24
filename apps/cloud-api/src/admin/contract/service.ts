@@ -15,7 +15,7 @@
  */
 import { observeDataPathPhase } from '@fdp/observability';
 import type { DbClient } from '@fdp/database';
-import { audited, observeContractLoad } from '@fdp/database';
+import { acquireTransactionLock, audited, observeContractLoad } from '@fdp/database';
 import { readContractForUpdate } from './load-candidate.js';
 import type { ContractUpdateReadRow } from './load-candidate.js';
 import {
@@ -28,6 +28,8 @@ import {
   renewContractWindow,
 } from '@fdp/domain';
 import type { ContractSnapshot, ContractStatus } from '@fdp/domain';
+import { requirePermission } from '@fdp/auth';
+import { createCustomer } from '../customer/service.js';
 import type { ActorContext } from '@fdp/auth';
 import { contractConflict, contractNotFound, contractValidationFailed, contractVersionConflict } from './errors.js';
 
@@ -151,15 +153,21 @@ function auditSnapshot(view: ContractView): Record<string, unknown> {
 
 // ---------- 写路径 ----------
 
-export interface CreateContractInput {
+export type ContractCustomerInput =
+  | { readonly customerId: string; readonly newCustomer?: never }
+  | {
+      readonly customerId?: never;
+      readonly newCustomer: { readonly name: string; readonly allowDuplicateName: boolean };
+    };
+
+export type CreateContractInput = ContractCustomerInput & {
   readonly contractNumber: string;
   readonly name: string;
-  readonly customerId: string;
   readonly contact?: string | undefined;
   readonly startAt: Date;
   readonly endAt: Date;
   readonly reason?: string | undefined;
-}
+};
 
 /** 创建（contract:write）：Customer 须存在；contractNumber 唯一（P2002 → 409）；初始 DRAFT。 */
 export async function createContract(
@@ -168,12 +176,7 @@ export async function createContract(
   input: CreateContractInput,
 ): Promise<ContractView> {
   assertContractWindow(input.startAt, input.endAt);
-  const customer = await (
-    (deps.client as unknown as Record<string, unknown>).customer as {
-      findFirst(args: Record<string, unknown>): Promise<{ id: string } | null>;
-    }
-  ).findFirst({ where: { id: input.customerId } });
-  if (!customer) throw contractNotFound();
+  if (input.newCustomer !== undefined) requirePermission(actor, 'customer:write');
 
   const at = deps.now?.() ?? new Date();
   try {
@@ -185,15 +188,27 @@ export async function createContract(
         action: 'contract.create',
         reason: input.reason ?? null,
         ...auditActor(actor),
-        customerId: input.customerId,
+        customerId: input.customerId ?? ((result: unknown) => (result as ContractView).customerId),
         afterValue: { contractNumber: input.contractNumber, status: 'DRAFT', version: 1 },
       },
       async (tx) => {
+        await acquireTransactionLock(tx, `contract:create:${input.contractNumber}`);
+        const existing = await contracts(tx).findFirst({ where: { contractNumber: input.contractNumber } });
+        if (existing) throw contractConflict('The contractNumber already exists');
+        let customerId: string;
+        if (input.newCustomer !== undefined) {
+          const customer = await createCustomer(tx, actor, input.newCustomer);
+          customerId = customer.id;
+        } else {
+          const customer = await tx.customer.findUnique({ where: { id: input.customerId }, select: { id: true } });
+          if (!customer) throw contractNotFound();
+          customerId = customer.id;
+        }
         const row = await contracts(tx).create({
           data: {
             contractNumber: input.contractNumber,
             name: input.name,
-            customerId: input.customerId,
+            customerId,
             contact: input.contact ?? null,
             startAt: input.startAt,
             endAt: input.endAt,
@@ -399,6 +414,7 @@ export interface ListContractsFilter {
   /** 按派生状态筛选（生效/即将到期/过期/终止/草稿）。 */
   readonly status?: string | undefined;
   readonly customerId?: string | undefined;
+  readonly contractNumber?: string | undefined;
 }
 
 /** 列表（contract:read）：读取时点派生 derivedStatus（不写回），按派生状态筛选。 */
@@ -415,7 +431,10 @@ export async function listContracts(
     throw contractValidationFailed('status must be one of DRAFT, EFFECTIVE, EXPIRING_SOON, EXPIRED, TERMINATED');
   }
   const rows = await contracts(deps.client).findMany({
-    where: { ...(filter.customerId !== undefined ? { customerId: filter.customerId } : {}) },
+    where: {
+      ...(filter.customerId !== undefined ? { customerId: filter.customerId } : {}),
+      ...(filter.contractNumber !== undefined ? { contractNumber: filter.contractNumber } : {}),
+    },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 100,
   });

@@ -103,13 +103,18 @@ export interface ContractFormDraft {
 export function validateContractForm(
   draft: ContractFormDraft,
   existing?: { readonly startAt: string; readonly endAt: string },
+  newCustomerName?: string,
 ): Record<string, string> | null {
   const errors: Record<string, string> = {};
   const number = draft.contractNumber.trim();
   if (number.length === 0 || number.length > 100) errors['contractNumber'] = translate('ui.867431bded5c');
   const name = draft.name.trim();
   if (name.length === 0 || name.length > 200) errors['name'] = translate('ui.044052bf73b1');
-  if (draft.customerId.trim() === '') errors['customerId'] = translate('ui.e10e42f6ba65');
+  if (newCustomerName === undefined) {
+    if (draft.customerId.trim() === '') errors['customerId'] = translate('ui.e10e42f6ba65');
+  } else if (newCustomerName.trim() === '' || newCustomerName.trim().length > 200) {
+    errors['newCustomer'] = translate('contract.customerNameRequired');
+  }
   if (draft.contact.trim().length > 200) errors['contact'] = translate('ui.4edb15bc2697');
   const start =
     existing && draft.startDate === displayContractDate(existing.startAt, 'start')
