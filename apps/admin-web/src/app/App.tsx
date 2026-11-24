@@ -97,6 +97,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
   const [account, setAccount] = useState<{ key: string; profile: OwnAccountProfile } | null>(null);
+  const navigateWithinApp = navigate;
   const toasts = useToastQueue();
   const session = services.session.current();
   useEffect(
@@ -229,13 +230,15 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <AuditLogsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'settings':
-      page = <SettingsController key={sessionScope} api={services.api} session={session} onNavigate={navigate} />;
+      page = (
+        <SettingsController key={sessionScope} api={services.api} session={session} onNavigate={navigateWithinApp} />
+      );
       break;
     case 'contract-modify':
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'contract-new':
-      page = <ContractNewController api={services.api} onNavigate={navigate} />;
+      page = <ContractNewController api={services.api} onNavigate={navigateWithinApp} />;
       break;
     case 'contract-detail':
       page = (
@@ -265,7 +268,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
         path={location.pathname}
         session={session}
         accountProfile={account?.key === accountKey ? account.profile : null}
-        onNavigate={navigate}
+        onNavigate={navigateWithinApp}
         onLogout={() => void services.auth.logout()}
       >
         {page}
