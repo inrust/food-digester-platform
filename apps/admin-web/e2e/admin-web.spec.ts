@@ -183,8 +183,8 @@ test('无 Token 安全回登录；五角色菜单和受限路由均由组合根�
   const cases: { role: Role; visible: string; forbidden: string }[] = [
     { role: 'PlatformSuperAdmin', visible: '客户管理', forbidden: '/not-a-route' },
     { role: 'PlatformOperator', visible: '客户管理', forbidden: '/settings' },
-    { role: 'Auditor', visible: '客户管理', forbidden: '/settings' },
-    { role: 'CustomerAdmin', visible: '用户管理', forbidden: '/customers' },
+    { role: 'Auditor', visible: '业务设置', forbidden: '/contracts/new' },
+    { role: 'CustomerAdmin', visible: '站点管理', forbidden: '/settings' },
     { role: 'CustomerViewer', visible: '站点管理', forbidden: '/customers' },
   ];
   for (const item of cases) {
@@ -1158,7 +1158,7 @@ test('CMP T02 R07 R08 启停、失败重试、刷新和成功 Toast 自动消失
 
 test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源', async ({ page }) => {
   await seedSession(page, 'PlatformSuperAdmin');
-  const calls = { invite: 0, roles: 0, scope: 0, reset: 0, settings: 0, refresh: 0 };
+  const calls = { invite: 0, roles: 0, scope: 0, reset: 0, settings: 0, refresh: 0, settingsReads: 0 };
   const user = {
     userId: 'usr-fe16',
     email: 'viewer@example.test',
@@ -1242,6 +1242,7 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
         409,
       );
     }
+    calls.settingsReads += 1;
     return json(route, { data: [setting] });
   });
 
@@ -1292,10 +1293,15 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
   await expect.poll(() => calls.scope).toBe(1);
 
   await page.getByTestId('user-reset-usr-fe16').click();
+  const beforeResetRefresh = calls.refresh;
   await page.getByTestId('confirm-dialog').getByRole('button').last().click();
   await expect.poll(() => calls.reset).toBe(1);
+  await expect.poll(() => calls.refresh).toBeGreaterThan(beforeResetRefresh);
 
-  await page.getByTestId('tab-business-settings').click();
+  expect(calls.settingsReads).toBe(0);
+  const userReadsBeforeBusinessSettings = calls.refresh;
+  await page.getByTestId('menu-item-/business-settings').click();
+  await expect(page).toHaveURL(/\/business-settings$/);
   const editSetting = page.getByTestId('setting-edit-alarm.thresholds');
   await editSetting.click();
   const settingForm = page.getByTestId('setting-edit-form');
@@ -1308,9 +1314,10 @@ test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源'
   await expect(settingForm.getByTestId('setting-value-input')).toHaveValue(JSON.stringify(setting.value, null, 2));
   await page.getByTestId('setting-submit').click();
   await expect(page.getByTestId('error-version-conflict')).toContainText('数据已被他人修改');
-  const beforeRefresh = calls.refresh;
+  const beforeRefresh = calls.settingsReads;
   await page.getByTestId('error-version-conflict').getByRole('button', { name: '刷新' }).click();
-  await expect.poll(() => calls.refresh).toBeGreaterThan(beforeRefresh);
+  await expect.poll(() => calls.settingsReads).toBeGreaterThan(beforeRefresh);
+  expect(calls.refresh).toBe(userReadsBeforeBusinessSettings);
 });
 
 test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界', async ({ page }) => {
@@ -1517,6 +1524,7 @@ const layoutRoutes = [
   '/esg/devices',
   '/contracts',
   '/settings',
+  '/business-settings',
   '/customers',
   '/sites',
   '/licenses',
@@ -1529,10 +1537,10 @@ const layoutRoutes = [
   '/ota/packages',
 ];
 
-// Each language/viewport gets a fresh page and its own time budget for 22 navigations.
+// Each language/viewport gets a fresh page and its own time budget for 23 navigations.
 for (const language of ['zh-CN', 'en'] as const) {
   for (const width of [375, 768, 1440]) {
-    test(`FE-19 Chromium 22 个生产路由：${language} / ${width}px`, async ({ page }) => {
+    test(`FE-19 Chromium 23 个生产路由：${language} / ${width}px`, async ({ page }) => {
       await seedSession(page, 'PlatformSuperAdmin');
       await page.route('**/api/v1/admin/**', (route) =>
         json(route, { error: { code: 'FORBIDDEN', message: 'layout probe', requestId: 'req-layout' } }, 403),

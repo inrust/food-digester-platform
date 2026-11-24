@@ -39,7 +39,7 @@ function renderShell(options: { path?: string; search?: string; role?: Role } = 
   return { ...utils, navigated, isLoggedOut: () => loggedOut > 0 };
 }
 
-test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerViewer 不见受限项', () => {
+test('菜单按角色过滤：PlatformSuperAdmin 见全部 13 项；CustomerViewer 不见受限项', () => {
   const { unmount } = renderShell({ role: 'PlatformSuperAdmin' });
   for (const label of [
     '概览',
@@ -50,7 +50,8 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerView
     'ESG概览',
     '设备ESG信息',
     '合约查询及修改',
-    '用户管理',
+    '平台用户管理',
+    '业务设置',
     '客户管理',
     '站点管理',
     '审计日志',
@@ -64,7 +65,7 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 12 项；CustomerView
     assert.ok(screen.getByRole('link', { name: label }));
   }
   assert.equal(screen.queryByRole('link', { name: '设备用户' }), null);
-  for (const label of ['操作设备', '配置管理', '合约查询及修改', '授权管理', '用户管理', '客户管理', '审计日志']) {
+  for (const label of ['操作设备', '配置管理', '合约查询及修改', '授权管理', '平台用户管理', '客户管理', '审计日志']) {
     assert.equal(screen.queryByRole('link', { name: label }), null, `${label} 应对 CustomerViewer 隐藏`);
   }
   // 空分组（合约管理）整体隐藏

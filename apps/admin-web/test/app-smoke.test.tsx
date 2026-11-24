@@ -62,7 +62,7 @@ describe('管理后台浏览器冒烟', () => {
     window.history.replaceState({}, '', '/sites?status=ACTIVE#list');
     render(<AdminWebApp services={services()} />);
     expect(await screen.findByRole('heading', { name: '厨余机云平台' })).toBeDefined();
-    expect(decodeURIComponent(window.location.search)).toContain('/sites?status=ACTIVE');
+    expect(decodeURIComponent(window.location.search)).toContain('/sites?status=ACTIVE#list');
   });
 
   it('已登录会话通过组合根请求 API 并渲染客户页面', async () => {
@@ -90,6 +90,7 @@ describe('管理后台浏览器冒烟', () => {
 
   it.each([
     ['/settings', 'settings-page'],
+    ['/business-settings', 'business-settings-page'],
     ['/contracts', 'contracts-page'],
     ['/contracts/new', 'contract-new-page'],
     ['/contracts/detail?contractId=contract-1', 'contract-detail-page'],
@@ -104,8 +105,8 @@ describe('管理后台浏览器冒烟', () => {
     window.localStorage.setItem('fdp.admin.lang.v1', 'en');
     window.history.replaceState({}, '', '/settings');
     render(<AdminWebApp services={establishedServices()} />);
-    expect(await screen.findByRole('heading', { name: 'User Management' })).toBeDefined();
-    expect(screen.getByTestId('tab-platform-users').textContent).toContain('Platform role/user management');
+    expect(await screen.findByRole('heading', { name: 'Platform User Management' })).toBeDefined();
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toContain('Platform User Management');
   });
 
   it('当前业务页面和打开的表单即时切换语言，同时保留未保存输入且不重新请求', async () => {

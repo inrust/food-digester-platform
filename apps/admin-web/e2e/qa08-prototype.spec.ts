@@ -520,6 +520,8 @@ for (const width of VIEWPORTS)
       if (menu) {
         if (width === 375) await page.getByTestId('drawer-open').click();
         await expect(page.getByTestId(`menu-item-${menu.routeId}`)).toBeVisible();
+        if (menu.runtimeLabel)
+          await expect(page.getByTestId(`menu-item-${menu.routeId}`)).toHaveText(menu.runtimeLabel);
         await page.getByTestId(`menu-item-${menu.routeId}`).click();
         await expect(page).toHaveURL(new RegExp(menu.routeId + '$'));
         q.menus.push(menu.menuId);

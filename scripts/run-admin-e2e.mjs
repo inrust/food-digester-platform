@@ -35,7 +35,8 @@ export const ROUTES = Object.fromEntries([
   ['/audit-logs', ['PlatformSuperAdmin', 'Auditor']],
   ['/contracts/new', ['PlatformSuperAdmin']],
   ['/consumables', ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin', 'CustomerViewer']],
-  ['/settings', ['PlatformSuperAdmin', 'CustomerAdmin']],
+  ['/settings', ['PlatformSuperAdmin', 'Auditor']],
+  ['/business-settings', ['PlatformSuperAdmin', 'Auditor']],
 ]);
 const BUTTONS = {
   'create-customer': ['/customers', platform.slice(0, 2)],
@@ -58,7 +59,7 @@ export const PROOFS = {
   ),
   'QA-09 设备管理长别名和序列号在375px完整换行且不裁切': ['manageLongValues'],
   'H-01 API 拒绝停用会话后清除浏览器会话并返回登录': ['disabledSessionLogout'],
-  'M-01 CustomerViewer 从菜单查询设备用户详情，全部写入口隐藏': ['viewerOwnRead', 'viewerReadOnly'],
+  'M-01 CustomerViewer 从设备详情查询设备用户详情，全部写入口隐藏': ['viewerOwnRead', 'viewerReadOnly'],
   ...Object.fromEntries(
     [1366, 1440, 1920].map((width, index) => [
       `UI redesign: all business routes at ${width}x${[768, 900, 1080][index]}`,
@@ -135,12 +136,12 @@ export const REQUIRED_TITLES = [
   'FE-06 至 FE-10 在 403/404、Customer scope、详情焦点与重复提交场景失败关闭',
   'FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒体签发与审计详情',
   'FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关闭',
-  'FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭',
+  'A/T03 草稿可离开并从详情重试关联，上海日期不随显示时区切换',
   'FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状态机',
   'FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源',
   'FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License 边界',
   ...['zh-CN', 'en'].flatMap((language) =>
-    [375, 768, 1440].map((width) => `FE-19 Chromium 22 个生产路由：${language} / ${width}px`),
+    [375, 768, 1440].map((width) => `FE-19 Chromium 23 个生产路由：${language} / ${width}px`),
   ),
   'FE-19 语言选择在刷新后保持',
   ...ROLES.map((role) => `QA05 role route and button matrix ${role}`),
@@ -148,7 +149,7 @@ export const REQUIRED_TITLES = [
   ...Object.keys(IMAGE_PROOFS),
   // CMP acceptance cases. Keep discovery fail-closed for unregistered titles.
   'CMP-11/12 详情加载和拒绝可重试，提交后从已拒绝标签读回',
-  'CMP-01/02 platform shows the full account identity on demand and previews ten of thirteen devices',
+  'R01 CMP-01/02 platform shows account details on demand and previews ten of thirteen devices',
   'CMP-01/02 CustomerViewer uses the verified email fallback and opens the fixed customer device list',
   'CMP-01/02 keeps the username fallback and list entry when profile and device data are absent',
   'CMP-35/37 platform users expose full values and the searchable matrix stays read-only',
@@ -175,7 +176,16 @@ export const REQUIRED_TITLES = [
   'CMP-43 resets all audit filters and rejects stale pages in en',
   'CMP-09 one device-group reset returns to scoped page one and clears every editable filter',
   'CMP-23 media requests the current order and ignores a late response after switching direction',
-  'CMP-34 settings expose API runtime facts and FE-18 reads only the consumable warning and major thresholds',
+  'R01 omits the email row when the session has no email claim',
+  'R03 refreshing the device console replaces offline history with newly reported component status',
+  'CMP T02 R07 R08 启停、失败重试、刷新和成功 Toast 自动消失',
+  'A/T04 R10 设备用户创建、列表与详情刷新按同一客户归属读回',
+  'B/T06 R04–R06 原型入口、设备范围、面包屑及返回筛选',
+  'B/T06 R05–R06 旧直达链接校验设备后才读取数据，跨租户和冲突范围失败关闭',
+  'B/T07 R10 R17 创建并分配可重试，解除当前设备不等于停用账号',
+  'B/T07 R15 旧授权直达定位合约或存量设备，并拒绝迟到详情覆盖',
+  'B/T08 R18 business settings save reaches FE-18 and preserves CMP-34 runtime labels',
+  'B/T08 R18 old settings links follow destination permissions and keep device context',
 ];
 function reportSpecs(report) {
   const specs = [];

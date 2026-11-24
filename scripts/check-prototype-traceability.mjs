@@ -359,6 +359,12 @@ export function checkMatrix(matrix, references = { operations: new Map(), routes
   for (const m of matrix.menus) {
     const where = `menu[${m.menuId ?? '?'}]`;
     if (!DISPOSITIONS.includes(m.disposition)) err(where, `缺少合法处置结论（${m.disposition}）`);
+    if (
+      m.runtimeLabel !== undefined &&
+      (m.disposition !== 'Adapt' || !m.basis || typeof m.runtimeLabel !== 'string' || m.runtimeLabel.trim() === '')
+    ) {
+      err(where, '运行时菜单改名须登记 Adapt、名称与依据，label 保留原型文本');
+    }
     if (!ROUTE_ID.test(m.routeId ?? '')) err(where, `routeId 格式非法: ${m.routeId}`);
     if (!TASK_ID.test(m.feTask ?? '')) err(where, `feTask 格式非法: ${m.feTask}`);
     if (!Array.isArray(m.roles) || m.roles.length === 0) err(where, 'roles 必须非空');

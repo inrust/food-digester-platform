@@ -25,6 +25,7 @@ export type PageState =
   | 'esg-device'
   | 'contract-modify'
   | 'settings'
+  | 'business-settings'
   | 'device-manage'
   | 'contract-new'
   | 'contract-detail'
@@ -189,9 +190,18 @@ export const APP_ROUTES: readonly AppRoute[] = [
     path: '/settings',
     pageState: 'settings',
     get label() {
-      return translate('page.baf84751a2a2');
+      return translate('menu.settings');
     },
-    roles: ['PlatformSuperAdmin', 'CustomerAdmin'],
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'user:read')),
+    menuGroup: 'platform',
+  },
+  {
+    path: '/business-settings',
+    pageState: 'business-settings',
+    get label() {
+      return translate('menu.business-settings');
+    },
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'settings:read')),
     menuGroup: 'platform',
   },
   // ---------- FE-05 扩展路由（CT-06 矩阵外；权限与 BE-CUS-01/02 契约一致） ----------
@@ -305,4 +315,19 @@ export const APP_ROUTES: readonly AppRoute[] = [
 ];
 export function findRoute(path: string): AppRoute | null {
   return APP_ROUTES.find((route) => route.path === path) ?? null;
+}
+
+/** Resolve known Settings bookmarks to routes that enforce their own permissions. */
+export function legacySettingsTarget(path: string, search: string, hash: string): string | null {
+  if (path !== '/settings') return null;
+  const params = new URLSearchParams(search);
+  const tab = params.get('tab') ?? hash.slice(1);
+  if (tab === 'business-settings') return '/business-settings';
+  if (tab === 'platform-users') return '/settings';
+  if (tab !== 'device-users') return null;
+  const device = new URLSearchParams();
+  for (const key of ['deviceId', 'deviceUserId']) {
+    for (const value of params.getAll(key)) device.append(key, value);
+  }
+  return device.size > 0 ? `/device-users?${device}` : '/device-users';
 }

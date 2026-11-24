@@ -1,16 +1,6 @@
-import { Button, Input, TextArea } from '../../components/ui.js';
+import { Button, Input } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
-/**
- * FE-16 用户角色和业务设置页（/settings）：平台用户、业务设置及设备用户导航。
- *
- * - 平台用户（BE-RBAC-01）：邀请（Cognito 临时凭证，表单无永久密码字段）、角色整体替换、
- *   Customer scope 变更、启停、受控重置；角色集封闭（DEC-012），高风险权限变更明确确认；
- *   界面显示名用“设备操作员”（不使用“运维人员”）；
- * - RBAC 权限矩阵只读展示（DEC-012：V1 固定，仅可分配已有角色）；
- * - 业务设置（BE-SET-01）：封闭 key 集四项，乐观锁 version 更新（409 → 刷新恢复）；
- *   command.confirmation 确认方式 DEC-023 固定——只读不提供编辑；固定协议枚举/AWS 运维配置不可编辑；
- * - 自我提权/越权由服务端 403 拒绝并正确呈现；不管理 IAM/CloudWatch/Budget/生产账号。
- */
+/** FE-16 平台用户管理：沿用 Cognito 邀请、角色分配、范围、启停和受控密码重置。 */
 import { useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
@@ -22,23 +12,16 @@ import { PermissionMatrix } from './PermissionMatrix.js';
 import type { InviteUserInput, UserListFilter } from './users-api.js';
 import {
   ROLE_OPTIONS,
-  RUNTIME_STATUS_LABELS,
-  SETTING_KEY_LABELS,
-  SETTING_READONLY_KEYS,
   USER_STATUS_LABELS,
   USER_STATUS_OPTIONS,
   canManageUsers,
-  canReadSettings,
-  canReadUsers,
-  canWriteSettings,
   isPlatformRole,
   roleDisplayName,
   validateInvite,
   validateRoleAssign,
-  validateSettingJson,
 } from './settings-state.js';
 import type { InviteDraft } from './settings-state.js';
-import type { ListState, PasswordResetResult, SettingKey, SettingView, UserStatus, UserView } from './types.js';
+import type { ListState, PasswordResetResult, UserStatus, UserView } from './types.js';
 export interface SettingsPageProps {
   readonly role: Role;
   readonly users: ListState<UserView>;
@@ -52,22 +35,8 @@ export interface SettingsPageProps {
   readonly onEnableUser: (userId: string) => Promise<UserView>;
   readonly onStatusSuccess: (message: string) => void;
   readonly onResetPassword: (userId: string) => Promise<PasswordResetResult>;
-  readonly settings: {
-    readonly rows: readonly SettingView[] | null;
-    readonly error?: unknown;
-  };
-  readonly onUpdateSetting: (key: SettingKey, value: unknown, version: number) => Promise<SettingView>;
   readonly onRefresh: () => void | Promise<void>;
 }
-type SettingsTab = 'platform-users' | 'business-settings';
-const TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
-  get 'platform-users'() {
-    return translate('page.192c9887b3e0');
-  },
-  get 'business-settings'() {
-    return translate('page.60735b2edd9f');
-  },
-};
 type ConfirmTarget =
   | {
       readonly kind: 'disable' | 'enable' | 'reset';
@@ -95,15 +64,8 @@ export function SettingsPage({
   onEnableUser,
   onStatusSuccess,
   onResetPassword,
-  settings,
-  onUpdateSetting,
   onRefresh,
 }: SettingsPageProps) {
-  const visibleTabs: readonly SettingsTab[] = [
-    ...(canReadUsers(role) ? (['platform-users'] as const) : []),
-    ...(canReadSettings(role) ? (['business-settings'] as const) : []),
-  ];
-  const [tab, setTab] = useState<SettingsTab | null>(visibleTabs[0] ?? null);
   const [profile, setProfile] = useState<UserView | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteDraft, setInviteDraft] = useState<InviteDraft>({
@@ -121,10 +83,6 @@ export function SettingsPage({
     customerId: string;
   } | null>(null);
   const [confirm, setConfirm] = useState<ConfirmTarget | null>(null);
-  const [settingEdit, setSettingEdit] = useState<{
-    setting: SettingView;
-    raw: string;
-  } | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
   const [statusActionFailed, setStatusActionFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -142,7 +100,6 @@ export function SettingsPage({
   const inFlight = useRef(false);
   const [busy, setBusy] = useState(false);
   const manageUsers = canManageUsers(role);
-  const writeSettings = canWriteSettings(role);
   const inviteError = validateInvite(inviteDraft);
   const inviteHasCustomerRole = inviteDraft.roles.some((r) => !isPlatformRole(r));
   const runAction = async (execute: () => Promise<string>, statusChange = false) => {
@@ -219,376 +176,248 @@ export function SettingsPage({
       setScopeTarget(null);
       return translate('page.10981eeb16f3') + ' ' + scopeTarget.customerId.trim();
     });
-  const submitSetting = () =>
-    runAction(async () => {
-      if (settingEdit === null) return '';
-      const jsonError = validateSettingJson(settingEdit.setting.key, settingEdit.raw);
-      if (jsonError !== null) throw new Error(jsonError);
-      const updated = await onUpdateSetting(
-        settingEdit.setting.key,
-        JSON.parse(settingEdit.raw),
-        settingEdit.setting.version,
-      );
-      setSettingEdit(null);
-      return (
-        translate('page.7debf9cb0372') +
-        ' ' +
-        SETTING_KEY_LABELS[updated.key] +
-        (' ' + translate('page.3395e930dfa7')) +
-        updated.version +
-        '\uFF0C' +
-        RUNTIME_STATUS_LABELS[updated.runtimeStatus] +
-        '\uFF09'
-      );
-    });
   return (
     <div className="settings-page" data-testid="settings-page">
-      <div className="page-header">
-        <h3>{translate('page.baf84751a2a2')}</h3>
-      </div>
-
-      <nav className="tab-bar" data-testid="settings-tabs" aria-label={translate('page.578c6cd1c080')}>
-        {visibleTabs.map((t) => (
-          <Button
-            key={t}
-            type="button"
-            data-testid={`tab-${t}`}
-            aria-pressed={tab === t}
-            className={tab === t ? 'tab active' : 'tab'}
-            onClick={() => setTab(t)}
-          >
-            {TAB_LABELS[t]}
-          </Button>
-        ))}
-      </nav>
+      <header className="page-header">
+        <h1>{translate('menu.settings')}</h1>
+      </header>
 
       {notice !== null ? (
         <p className="action-notice" role="status" data-testid="action-notice">
           {notice}
         </p>
       ) : null}
-      {actionError !== null && assignTarget === null && settingEdit === null ? (
+      {actionError !== null && assignTarget === null ? (
         <>
           <ErrorNotice error={actionError} onRefresh={onRefresh} />
           {statusActionFailed ? <p>{translate('settings.account.retryHint')}</p> : null}
         </>
       ) : null}
 
-      {tab === 'platform-users' ? (
-        <section data-testid="platform-users-tab" aria-label={translate('page.5da6c051fbdc')}>
-          <div className="filter-bar">
-            <div className="filter-field">
-              <label htmlFor="user-filter-role-type">{translate('page.cb23226152c7')}</label>
-              <select
-                id="user-filter-role-type"
-                data-testid="user-filter-role-type"
-                value={draftFilter.roleType}
-                onChange={(event) =>
-                  setDraftFilter({ ...draftFilter, roleType: event.target.value as 'platform' | 'customer' | '' })
-                }
-              >
-                <option value="">{translate('page.778fc8f99453')}</option>
-                <option value="platform">{translate('page.736a37d8b701')}</option>
-                <option value="customer">{translate('page.2f9d2e2775b9')}</option>
-              </select>
-            </div>
-            <div className="filter-field">
-              <label htmlFor="user-filter-status">{translate('page.62e951a692ff')}</label>
-              <select
-                id="user-filter-status"
-                data-testid="user-filter-status"
-                value={draftFilter.status}
-                onChange={(event) => setDraftFilter({ ...draftFilter, status: event.target.value as UserStatus | '' })}
-              >
-                <option value="">{translate('page.778fc8f99453')}</option>
-                {USER_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {USER_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="filter-field">
-              <label htmlFor="user-filter-customer">{translate('page.a20148b7e39a')}</label>
-              <Input
-                id="user-filter-customer"
-                data-testid="user-filter-customer"
-                value={draftFilter.customerId}
-                onChange={(event) => setDraftFilter({ ...draftFilter, customerId: event.target.value })}
-              />
-            </div>
-            <div className="filter-field">
-              <label htmlFor="user-filter-q">{translate('page.cc1b21e80080')}</label>
-              <Input
-                id="user-filter-q"
-                data-testid="user-filter-q"
-                value={draftFilter.q}
-                onChange={(event) => setDraftFilter({ ...draftFilter, q: event.target.value })}
-              />
-            </div>
-            <Button
-              type="button"
-              className="primary-button"
-              data-testid="user-filter-search"
-              onClick={() =>
-                onApplyUserFilter({
-                  roleType: draftFilter.roleType === '' ? null : draftFilter.roleType,
-                  status: draftFilter.status === '' ? null : draftFilter.status,
-                  customerId: draftFilter.customerId.trim() === '' ? null : draftFilter.customerId.trim(),
-                  q: draftFilter.q.trim() === '' ? null : draftFilter.q.trim(),
-                })
+      <section data-testid="platform-users-tab" aria-label={translate('menu.settings')}>
+        <div className="filter-bar">
+          <div className="filter-field">
+            <label htmlFor="user-filter-role-type">{translate('page.cb23226152c7')}</label>
+            <select
+              id="user-filter-role-type"
+              data-testid="user-filter-role-type"
+              value={draftFilter.roleType}
+              onChange={(event) =>
+                setDraftFilter({ ...draftFilter, roleType: event.target.value as 'platform' | 'customer' | '' })
               }
             >
-              {translate('page.dcce9a144a40')}
-            </Button>
-            <Button
-              type="button"
-              className="primary-button"
-              data-testid="user-invite-open"
-              disabled={!manageUsers || busy}
-              {...(!manageUsers ? { title: translate('page.47ccbd849cdf') } : {})}
-              onClick={() => {
-                setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
-                setInviteOpen(true);
-              }}
-            >
-              {translate('page.d3e63cf5b87c')}
-            </Button>
+              <option value="">{translate('page.778fc8f99453')}</option>
+              <option value="platform">{translate('page.736a37d8b701')}</option>
+              <option value="customer">{translate('page.2f9d2e2775b9')}</option>
+            </select>
           </div>
-
-          <div className="platform-user-list">
-            <CursorTable
-              keyboardScrollable
-              ariaLabel={translate('page.b3d9235f9207')}
-              columns={[
-                {
-                  key: 'email',
-                  header: translate('page.9ed627bcf63d'),
-                  width: 175,
-                  render: (u) => accountPreview(u.email),
-                },
-                {
-                  key: 'displayName',
-                  header: translate('page.c10bbf5ddd2d'),
-                  width: 145,
-                  render: (u) => accountPreview(u.displayName),
-                },
-                {
-                  key: 'roles',
-                  header: translate('page.6b26695e4dce'),
-                  width: 140,
-                  render: (u) => (
-                    <ul className="status-tag-list">
-                      {u.roles.map((r) => (
-                        <li key={r}>
-                          <span className="detail-status-badge">{roleDisplayName(r)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ),
-                },
-                {
-                  key: 'status',
-                  header: translate('page.62e951a692ff'),
-                  width: 82,
-                  render: (u) => (
-                    <span className="detail-status-badge" data-user-status={u.status}>
-                      {USER_STATUS_LABELS[u.status]}
-                    </span>
-                  ),
-                },
-                {
-                  key: 'mfaEnabled',
-                  header: 'MFA',
-                  width: 62,
-                  render: (u) => (u.mfaEnabled ? translate('page.25d284315063') : translate('page.8bb38ef00ccc')),
-                },
-                {
-                  key: 'customerId',
-                  header: translate('page.467c1137f479'),
-                  width: 125,
-                  render: (u) => accountPreview(u.customerId ?? translate('page.79dd9422df51')),
-                },
-                {
-                  key: 'updatedAt',
-                  header: translate('page.093dea88c930'),
-                  width: 132,
-                  render: (u) => <TimeText iso={u.updatedAt} />,
-                },
-                {
-                  key: 'actions',
-                  header: translate('page.f3ea6d345e2a'),
-                  width: 243,
-                  render: (u) => (
-                    <div className="platform-user-actions">
-                      <Button type="button" data-testid={`user-profile-${u.userId}`} onClick={() => setProfile(u)}>
-                        {translate('detail.user.viewFull')}
-                      </Button>
-                      <Button
-                        type="button"
-                        data-testid={`user-roles-${u.userId}`}
-                        disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                        onClick={() => {
-                          setActionError(null);
-                          setAssignTarget({ user: u, roles: u.roles });
-                        }}
-                      >
-                        {translate('page.6b26695e4dce')}
-                      </Button>
-                      {u.roles.every((r) => !isPlatformRole(r)) ? (
-                        <Button
-                          type="button"
-                          data-testid={`user-scope-${u.userId}`}
-                          disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                          onClick={() => setScopeTarget({ user: u, customerId: u.customerId ?? '' })}
-                        >
-                          Scope
-                        </Button>
-                      ) : null}
-                      <Button
-                        type="button"
-                        data-testid={`user-reset-${u.userId}`}
-                        disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                        onClick={() => setConfirm({ kind: 'reset', user: u })}
-                      >
-                        {translate('page.7e422146dd5b')}
-                      </Button>
-                      <Button
-                        type="button"
-                        className={u.status === 'DISABLED' ? undefined : 'danger-button'}
-                        data-testid={`user-${u.status === 'DISABLED' ? 'enable' : 'disable'}-${u.userId}`}
-                        disabled={!manageUsers || busy || users.loading === true}
-                        onClick={() => setConfirm({ kind: u.status === 'DISABLED' ? 'enable' : 'disable', user: u })}
-                      >
-                        {translate(u.status === 'DISABLED' ? 'settings.account.enable' : 'page.d989e55188c9')}
-                      </Button>
-                    </div>
-                  ),
-                },
-              ]}
-              rows={users.rows === null ? null : [...users.rows]}
-              rowKey={(u) => u.userId}
-              {...(users.loading !== undefined ? { loading: users.loading } : {})}
-              {...(users.error !== undefined ? { error: users.error } : {})}
-              {...(users.nextCursor !== undefined ? { nextCursor: users.nextCursor } : {})}
-              onNextPage={onLoadMoreUsers}
-              onRefresh={onRefresh}
-              emptyText={translate('page.3d268bdd3945')}
+          <div className="filter-field">
+            <label htmlFor="user-filter-status">{translate('page.62e951a692ff')}</label>
+            <select
+              id="user-filter-status"
+              data-testid="user-filter-status"
+              value={draftFilter.status}
+              onChange={(event) => setDraftFilter({ ...draftFilter, status: event.target.value as UserStatus | '' })}
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {USER_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {USER_STATUS_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="user-filter-customer">{translate('page.a20148b7e39a')}</label>
+            <Input
+              id="user-filter-customer"
+              data-testid="user-filter-customer"
+              value={draftFilter.customerId}
+              onChange={(event) => setDraftFilter({ ...draftFilter, customerId: event.target.value })}
             />
           </div>
-
-          <PermissionMatrix />
-
-          <Modal
-            open={profile !== null}
-            title={translate('detail.user.profile')}
-            testid="user-profile-dialog"
-            onClose={() => setProfile(null)}
+          <div className="filter-field">
+            <label htmlFor="user-filter-q">{translate('page.cc1b21e80080')}</label>
+            <Input
+              id="user-filter-q"
+              data-testid="user-filter-q"
+              value={draftFilter.q}
+              onChange={(event) => setDraftFilter({ ...draftFilter, q: event.target.value })}
+            />
+          </div>
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid="user-filter-search"
+            onClick={() =>
+              onApplyUserFilter({
+                roleType: draftFilter.roleType === '' ? null : draftFilter.roleType,
+                status: draftFilter.status === '' ? null : draftFilter.status,
+                customerId: draftFilter.customerId.trim() === '' ? null : draftFilter.customerId.trim(),
+                q: draftFilter.q.trim() === '' ? null : draftFilter.q.trim(),
+              })
+            }
           >
-            {profile !== null ? (
-              <div className="detail-card">
-                <dl>
-                  <dt>{translate('page.9ed627bcf63d')}</dt>
-                  <dd>{profile.email}</dd>
-                  <dt>{translate('page.c10bbf5ddd2d')}</dt>
-                  <dd>{profile.displayName}</dd>
-                  <dt>{translate('page.467c1137f479')}</dt>
-                  <dd>{profile.customerId ?? translate('page.79dd9422df51')}</dd>
-                </dl>
-              </div>
-            ) : null}
-          </Modal>
-        </section>
-      ) : null}
+            {translate('page.dcce9a144a40')}
+          </Button>
+          <Button
+            type="button"
+            className="primary-button"
+            data-testid="user-invite-open"
+            disabled={!manageUsers || busy}
+            {...(!manageUsers ? { title: translate('page.47ccbd849cdf') } : {})}
+            onClick={() => {
+              setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
+              setInviteOpen(true);
+            }}
+          >
+            {translate('page.d3e63cf5b87c')}
+          </Button>
+        </div>
 
-      {tab === 'business-settings' ? (
-        <section
-          className="detail-stack"
-          data-testid="business-settings-tab"
-          aria-label={translate('page.60735b2edd9f')}
-        >
-          {settings.error !== undefined ? (
-            <ErrorNotice error={settings.error} onRefresh={onRefresh} />
-          ) : settings.rows === null ? (
-            <div role="status" data-testid="settings-loading">
-              {translate('page.300ee3dee4dc')}
-            </div>
-          ) : settings.rows.length === 0 ? (
-            <p className="empty-state">{translate('common.empty')}</p>
-          ) : (
-            <div className="detail-grid">
-              {settings.rows.map((setting) => {
-                const readonly = SETTING_READONLY_KEYS.includes(setting.key);
-                const consumer = setting.runtimeConsumer;
-                const activeConsumer = setting.runtimeStatus === 'ACTIVE' ? consumer : null;
-                const effect =
-                  setting.key === 'alarm.thresholds' && activeConsumer === 'FE-18'
-                    ? translate('settings.effect.FE-18')
-                    : setting.key === 'command.confirmation' && activeConsumer === 'BE-CMD-01'
-                      ? translate('settings.effect.BE-CMD-01')
-                      : setting.runtimeStatus === 'STORED_ONLY'
-                        ? translate('settings.effect.stored')
-                        : null;
-                return (
-                  <article key={setting.key} className="detail-card" data-testid={`setting-${setting.key}`}>
-                    <h4>{SETTING_KEY_LABELS[setting.key]}</h4>
-                    <code>{setting.key}</code>
-                    <p>{translate(`settings.purpose.${setting.key}`)}</p>
-                    <dl>
-                      <dt>{translate('settings.runtime')}</dt>
-                      <dd data-testid={`setting-runtime-${setting.key}`}>
-                        <span className="detail-status-badge" data-enabled={setting.runtimeStatus === 'ACTIVE'}>
-                          {RUNTIME_STATUS_LABELS[setting.runtimeStatus]}
-                        </span>
-                      </dd>
-                      <dt>{translate('settings.consumer')}</dt>
-                      <dd data-testid={`setting-consumer-${setting.key}`}>
-                        {consumer === 'FE-18' || consumer === 'BE-CMD-01'
-                          ? translate(`settings.consumer.${consumer}`)
-                          : (consumer ?? translate('settings.consumer.none'))}
-                      </dd>
-                      <dt>{translate('settings.editability')}</dt>
-                      <dd data-testid={`setting-access-${setting.key}`}>
-                        {readonly ? (
-                          <span data-testid={`setting-readonly-${setting.key}`}>{translate('page.f2b79f39e053')}</span>
-                        ) : (
-                          translate(writeSettings ? 'settings.editable' : 'settings.readOnlyForRole')
-                        )}
-                      </dd>
-                    </dl>
-                    {effect !== null ? <p className="field-hint">{effect}</p> : null}
-                    <p className="field-hint">
-                      v{setting.version} · {setting.updatedBy ?? '—'} · <TimeText iso={setting.updatedAt} />
-                    </p>
-                    <pre
-                      className="setting-value"
-                      tabIndex={0}
-                      role="region"
-                      aria-label={setting.key}
-                      data-testid={`setting-value-${setting.key}`}
+        <div className="platform-user-list">
+          <CursorTable
+            keyboardScrollable
+            ariaLabel={translate('page.b3d9235f9207')}
+            columns={[
+              {
+                key: 'email',
+                header: translate('page.9ed627bcf63d'),
+                width: 175,
+                render: (u) => accountPreview(u.email),
+              },
+              {
+                key: 'displayName',
+                header: translate('page.c10bbf5ddd2d'),
+                width: 145,
+                render: (u) => accountPreview(u.displayName),
+              },
+              {
+                key: 'roles',
+                header: translate('page.6b26695e4dce'),
+                width: 140,
+                render: (u) => (
+                  <ul className="status-tag-list">
+                    {u.roles.map((r) => (
+                      <li key={r}>
+                        <span className="detail-status-badge">{roleDisplayName(r)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ),
+              },
+              {
+                key: 'status',
+                header: translate('page.62e951a692ff'),
+                width: 82,
+                render: (u) => (
+                  <span className="detail-status-badge" data-user-status={u.status}>
+                    {USER_STATUS_LABELS[u.status]}
+                  </span>
+                ),
+              },
+              {
+                key: 'mfaEnabled',
+                header: 'MFA',
+                width: 62,
+                render: (u) => (u.mfaEnabled ? translate('page.25d284315063') : translate('page.8bb38ef00ccc')),
+              },
+              {
+                key: 'customerId',
+                header: translate('page.467c1137f479'),
+                width: 125,
+                render: (u) => accountPreview(u.customerId ?? translate('page.79dd9422df51')),
+              },
+              {
+                key: 'updatedAt',
+                header: translate('page.093dea88c930'),
+                width: 132,
+                render: (u) => <TimeText iso={u.updatedAt} />,
+              },
+              {
+                key: 'actions',
+                header: translate('page.f3ea6d345e2a'),
+                width: 243,
+                render: (u) => (
+                  <div className="platform-user-actions">
+                    <Button type="button" data-testid={`user-profile-${u.userId}`} onClick={() => setProfile(u)}>
+                      {translate('detail.user.viewFull')}
+                    </Button>
+                    <Button
+                      type="button"
+                      data-testid={`user-roles-${u.userId}`}
+                      disabled={!manageUsers || busy || u.status === 'DISABLED'}
+                      onClick={() => {
+                        setActionError(null);
+                        setAssignTarget({ user: u, roles: u.roles });
+                      }}
                     >
-                      {JSON.stringify(setting.value, null, 2)}
-                    </pre>
-                    {!readonly ? (
+                      {translate('page.6b26695e4dce')}
+                    </Button>
+                    {u.roles.every((r) => !isPlatformRole(r)) ? (
                       <Button
                         type="button"
-                        data-testid={`setting-edit-${setting.key}`}
-                        disabled={!writeSettings || busy}
-                        onClick={() => {
-                          setActionError(null);
-                          setSettingEdit({ setting, raw: JSON.stringify(setting.value, null, 2) });
-                        }}
+                        data-testid={`user-scope-${u.userId}`}
+                        disabled={!manageUsers || busy || u.status === 'DISABLED'}
+                        onClick={() => setScopeTarget({ user: u, customerId: u.customerId ?? '' })}
                       >
-                        {translate('page.a7f814c0a40d')}
+                        Scope
                       </Button>
                     ) : null}
-                  </article>
-                );
-              })}
+                    <Button
+                      type="button"
+                      data-testid={`user-reset-${u.userId}`}
+                      disabled={!manageUsers || busy || u.status === 'DISABLED'}
+                      onClick={() => setConfirm({ kind: 'reset', user: u })}
+                    >
+                      {translate('page.7e422146dd5b')}
+                    </Button>
+                    <Button
+                      type="button"
+                      className={u.status === 'DISABLED' ? undefined : 'danger-button'}
+                      data-testid={`user-${u.status === 'DISABLED' ? 'enable' : 'disable'}-${u.userId}`}
+                      disabled={!manageUsers || busy || users.loading === true}
+                      onClick={() => setConfirm({ kind: u.status === 'DISABLED' ? 'enable' : 'disable', user: u })}
+                    >
+                      {translate(u.status === 'DISABLED' ? 'settings.account.enable' : 'page.d989e55188c9')}
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+            rows={users.rows === null ? null : [...users.rows]}
+            rowKey={(u) => u.userId}
+            {...(users.loading !== undefined ? { loading: users.loading } : {})}
+            {...(users.error !== undefined ? { error: users.error } : {})}
+            {...(users.nextCursor !== undefined ? { nextCursor: users.nextCursor } : {})}
+            onNextPage={onLoadMoreUsers}
+            onRefresh={onRefresh}
+            emptyText={translate('page.3d268bdd3945')}
+          />
+        </div>
+
+        <PermissionMatrix />
+
+        <Modal
+          open={profile !== null}
+          title={translate('detail.user.profile')}
+          testid="user-profile-dialog"
+          onClose={() => setProfile(null)}
+        >
+          {profile !== null ? (
+            <div className="detail-card">
+              <dl>
+                <dt>{translate('page.9ed627bcf63d')}</dt>
+                <dd>{profile.email}</dd>
+                <dt>{translate('page.c10bbf5ddd2d')}</dt>
+                <dd>{profile.displayName}</dd>
+                <dt>{translate('page.467c1137f479')}</dt>
+                <dd>{profile.customerId ?? translate('page.79dd9422df51')}</dd>
+              </dl>
             </div>
-          )}
-        </section>
-      ) : null}
+          ) : null}
+        </Modal>
+      </section>
 
       <Modal
         open={inviteOpen}
@@ -764,67 +593,6 @@ export function SettingsPage({
                 onClick={() => void submitScope()}
               >
                 {translate('page.f528cd729593')}
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </Modal>
-
-      <Modal
-        open={settingEdit !== null}
-        title={
-          settingEdit !== null
-            ? translate('page.9596698bebd1') + SETTING_KEY_LABELS[settingEdit.setting.key]
-            : translate('page.5c87c6154ebd')
-        }
-        testid="setting-edit-form"
-        onClose={() => setSettingEdit(null)}
-      >
-        {settingEdit !== null ? (
-          <div>
-            {actionError !== null ? (
-              <ErrorNotice
-                error={actionError}
-                onRefresh={() => {
-                  setSettingEdit(null);
-                  setActionError(null);
-                  onRefresh();
-                }}
-              />
-            ) : null}
-            <p className="field-hint">
-              {translate('page.0239b8ffa350')}
-              {settingEdit.setting.version}
-              {translate('page.77df378c18b2')}
-              {RUNTIME_STATUS_LABELS[settingEdit.setting.runtimeStatus]}。
-            </p>
-            <div className="dialog-field">
-              <label htmlFor="setting-value-input">{translate('page.9ac6be10cbd4')}</label>
-              <TextArea
-                id="setting-value-input"
-                data-testid="setting-value-input"
-                rows={10}
-                value={settingEdit.raw}
-                onChange={(event) => setSettingEdit({ ...settingEdit, raw: event.target.value })}
-              />
-            </div>
-            {validateSettingJson(settingEdit.setting.key, settingEdit.raw) !== null ? (
-              <p className="field-hint" data-testid="setting-value-error">
-                {validateSettingJson(settingEdit.setting.key, settingEdit.raw)}
-              </p>
-            ) : null}
-            <div className="dialog-actions">
-              <Button type="button" onClick={() => setSettingEdit(null)}>
-                {translate('common.cancel')}
-              </Button>
-              <Button
-                type="button"
-                className="primary-button"
-                data-testid="setting-submit"
-                disabled={busy || validateSettingJson(settingEdit.setting.key, settingEdit.raw) !== null}
-                onClick={() => void submitSetting()}
-              >
-                {translate('page.bb79ec7c152f')}
               </Button>
             </div>
           </div>

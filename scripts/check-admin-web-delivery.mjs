@@ -44,6 +44,14 @@ const REQUIRED_P0_ROUTES = new Map([
   ['/media', { pageState: 'media', controller: 'MediaController', testId: 'media-page' }],
   ['/audit-logs', { pageState: 'audit-logs', controller: 'AuditLogsController', testId: 'audit-logs-page' }],
   ['/settings', { pageState: 'settings', controller: 'SettingsController', testId: 'settings-page' }],
+  [
+    '/business-settings',
+    {
+      pageState: 'business-settings',
+      controller: 'BusinessSettingsController',
+      testId: 'business-settings-page',
+    },
+  ],
   ['/contracts', { pageState: 'contract-modify', controller: 'ContractsController', testId: 'contracts-page' }],
   ['/contracts/new', { pageState: 'contract-new', controller: 'ContractNewController', testId: 'contract-new-page' }],
   [

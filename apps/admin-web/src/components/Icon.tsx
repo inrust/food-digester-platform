@@ -36,7 +36,7 @@ export function pageIcon(state: string): string {
   if (state.startsWith('esg')) return 'leaf';
   if (state.includes('contract') || state === 'licenses') return 'file';
   if (state.includes('users') || state === 'customers') return 'users';
-  if (state === 'settings' || state === 'configurations') return 'settings';
+  if (state === 'settings' || state === 'business-settings' || state === 'configurations') return 'settings';
   if (state === 'sites') return 'pin';
   if (state === 'audit-logs') return 'shield';
   if (state === 'alarms') return 'bell';

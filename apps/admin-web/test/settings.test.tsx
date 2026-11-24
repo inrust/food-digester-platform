@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * FE-16 用户角色和业务设置页测试：
- * - 用户和设置标签按权限可见，设备用户链接前往独立页面；
+ * FE-16 平台用户管理与业务设置测试：
+ * - 平台用户和业务设置使用独立页面；
  * - 平台用户：邀请（无永久密码字段/提交体不含 password）、角色整体替换（高风险确认）、
  *   scope 变更、停用、受控重置（不接触密码）；
  * - RBAC 矩阵只读；DEC-012“设备操作员”显示名；
@@ -14,6 +14,8 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError, ForbiddenError } from '../src/api/errors.js';
 import type { ApiClient, ApiRequestOptions } from '../src/api/http-client.js';
+import { BusinessSettingsPage } from '../src/pages/settings/BusinessSettingsPage.js';
+import type { BusinessSettingsPageProps } from '../src/pages/settings/BusinessSettingsPage.js';
 import { SettingsPage } from '../src/pages/settings/SettingsPage.js';
 import type { SettingsPageProps } from '../src/pages/settings/SettingsPage.js';
 import { inviteUser, assignUserRoles } from '../src/pages/settings/users-api.js';
@@ -61,7 +63,6 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
     enabled: [] as string[],
     statusNotices: [] as string[],
     reset: [] as string[],
-    settingUpdated: [] as { key: string; value: unknown; version: number }[],
     filterApplied: [] as unknown[],
     refreshed: 0,
   };
@@ -102,28 +103,6 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
       calls.reset.push(userId);
       return { userId, status: 'RESET_TRIGGERED' };
     },
-    settings: {
-      rows: [
-        makeSetting(),
-        makeSetting({
-          key: 'command.confirmation',
-          value: { ttlSec: 300, maxFutureSec: 60 },
-          runtimeStatus: 'ACTIVE',
-          runtimeConsumer: 'BE-CMD-01',
-        }),
-        makeSetting({ key: 'dictionary.displayNames', value: {}, runtimeStatus: 'STORED_ONLY', runtimeConsumer: null }),
-        makeSetting({
-          key: 'notification.business',
-          value: { eventTypes: [], channels: [] },
-          runtimeStatus: 'STORED_ONLY',
-          runtimeConsumer: null,
-        }),
-      ],
-    },
-    onUpdateSetting: async (key, value, version) => {
-      calls.settingUpdated.push({ key, value, version });
-      return makeSetting({ key, value, version: version + 1 });
-    },
     onRefresh: () => {
       calls.refreshed += 1;
     },
@@ -133,19 +112,19 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
   return { calls, unmount: utils.unmount };
 }
 
-// ---------- 标签页可见性 ----------
-
-test('平台用户和业务设置标签按权限显示', () => {
+test('平台用户管理页面仅渲染平台用户工作区，审计角色只读', () => {
   const { unmount } = renderPage();
-  assert.ok(screen.getByTestId('tab-platform-users'));
+  assert.ok(screen.getByRole('heading', { name: '平台用户管理', level: 1 }));
+  assert.ok(screen.getByTestId('platform-users-tab'));
+  assert.equal(screen.queryByTestId('settings-tabs'), null);
   assert.equal(screen.queryByTestId('settings-device-users-link'), null);
-  assert.ok(screen.getByTestId('tab-business-settings'));
+  assert.equal(screen.queryByTestId('business-settings-content'), null);
   unmount();
 
-  renderPage({ role: 'CustomerAdmin' });
-  assert.equal(screen.queryByTestId('tab-platform-users'), null);
-  assert.equal(screen.queryByTestId('settings-device-users-link'), null);
-  assert.equal(screen.queryByTestId('tab-business-settings'), null);
+  renderPage({ role: 'Auditor' });
+  assert.ok(screen.getByTestId('platform-users-tab'));
+  assert.isTrue((screen.getByTestId('user-invite-open') as HTMLButtonElement).disabled);
+  assert.isTrue((screen.getByTestId('user-disable-usr-001') as HTMLButtonElement).disabled);
 });
 
 // ---------- 平台用户 ----------
@@ -334,10 +313,51 @@ test('用户列表筛选回调（roleType/status/customerId/q）', async () => {
 
 // ---------- 业务设置 ----------
 
-test('业务设置：封闭 key 集四项渲染；command.confirmation 只读无编辑入口', async () => {
-  const user = userEvent.setup();
-  renderPage();
-  await user.click(screen.getByTestId('tab-business-settings'));
+function renderBusinessPage(overrides: Partial<BusinessSettingsPageProps> = {}) {
+  const calls = { settingUpdated: [] as { key: string; value: unknown; version: number }[], refreshed: 0 };
+  const props: BusinessSettingsPageProps = {
+    writeSettings: true,
+    settings: {
+      rows: [
+        makeSetting(),
+        makeSetting({
+          key: 'command.confirmation',
+          value: { ttlSec: 300, maxFutureSec: 60 },
+          runtimeStatus: 'ACTIVE',
+          runtimeConsumer: 'BE-CMD-01',
+        }),
+        makeSetting({ key: 'dictionary.displayNames', value: {}, runtimeStatus: 'STORED_ONLY', runtimeConsumer: null }),
+        makeSetting({
+          key: 'notification.business',
+          value: { eventTypes: [], channels: [] },
+          runtimeStatus: 'STORED_ONLY',
+          runtimeConsumer: null,
+        }),
+      ],
+    },
+    onUpdateSetting: async (key, value, version) => {
+      calls.settingUpdated.push({ key, value, version });
+      return makeSetting({ key, value, version: version + 1 });
+    },
+    onRefresh: () => {
+      calls.refreshed += 1;
+    },
+    ...overrides,
+  };
+  render(<BusinessSettingsPage {...props} />);
+  return { calls };
+}
+
+test('业务设置审计角色只读，页面独立于用户管理', () => {
+  renderBusinessPage({ writeSettings: false });
+  assert.ok(screen.getByRole('heading', { name: '业务设置', level: 1 }));
+  assert.equal(screen.queryByTestId('platform-users-tab'), null);
+  assert.isTrue((screen.getByTestId('setting-edit-alarm.thresholds') as HTMLButtonElement).disabled);
+  assert.match(screen.getByTestId('setting-access-alarm.thresholds').textContent ?? '', /只读/);
+});
+
+test('业务设置：封闭 key 集四项渲染；command.confirmation 只读无编辑入口', () => {
+  renderBusinessPage();
   for (const key of ['alarm.thresholds', 'command.confirmation', 'dictionary.displayNames', 'notification.business']) {
     assert.ok(screen.getByTestId(`setting-${key}`), key);
   }
@@ -363,8 +383,7 @@ test('业务设置：封闭 key 集四项渲染；command.confirmation 只读无
 
 test('设置编辑：非法 JSON 禁用提交；合法提交携 version 乐观锁', async () => {
   const user = userEvent.setup();
-  const { calls } = renderPage();
-  await user.click(screen.getByTestId('tab-business-settings'));
+  const { calls } = renderBusinessPage();
   await user.click(screen.getByTestId('setting-edit-alarm.thresholds'));
   const form = screen.getByTestId('setting-edit-form');
   const input = within(form).getByTestId('setting-value-input');
@@ -387,12 +406,11 @@ test('设置编辑：非法 JSON 禁用提交；合法提交携 version 乐观�
 
 test('并发冲突可恢复：409 VERSION_CONFLICT → 提示刷新并回调 onRefresh', async () => {
   const user = userEvent.setup();
-  const { calls } = renderPage({
+  const { calls } = renderBusinessPage({
     onUpdateSetting: async () => {
       throw new ApiClientError(409, 'VERSION_CONFLICT', 'version mismatch', 'req-409');
     },
   });
-  await user.click(screen.getByTestId('tab-business-settings'));
   await user.click(screen.getByTestId('setting-edit-alarm.thresholds'));
   await user.click(screen.getByTestId('setting-submit'));
   const error = await screen.findByTestId('error-version-conflict');

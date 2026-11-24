@@ -19,7 +19,7 @@
     { "menuId": "menu.esg-overview", "label": "ESG概览", "pageState": "esg-overview", "routeId": "/esg/overview", "feTask": "FE-11", "roles": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"], "disposition": "Adopt", "source": { "taskId": "FE-11" } },
     { "menuId": "menu.esg-device", "label": "设备ESG信息", "pageState": "esg-device", "routeId": "/esg/devices", "feTask": "FE-11", "roles": ["PlatformSuperAdmin", "PlatformOperator", "Auditor", "CustomerAdmin", "CustomerViewer"], "disposition": "Adopt", "source": { "taskId": "FE-11" } },
     { "menuId": "menu.contract-modify", "label": "合约查询及修改", "pageState": "contract-modify", "routeId": "/contracts", "feTask": "FE-17", "roles": ["PlatformSuperAdmin", "PlatformOperator", "Auditor"], "disposition": "Adopt", "source": { "taskId": "FE-17" } },
-    { "menuId": "menu.settings", "label": "用户管理", "pageState": "settings", "routeId": "/settings", "feTask": "FE-16", "roles": ["PlatformSuperAdmin", "CustomerAdmin"], "disposition": "Adopt", "source": { "taskId": "FE-16" } }
+    { "menuId": "menu.settings", "label": "用户管理", "runtimeLabel": "平台用户管理", "pageState": "settings", "routeId": "/settings", "feTask": "FE-16", "roles": ["PlatformSuperAdmin", "Auditor"], "disposition": "Adapt", "basis": "CMP B/T08 R18：平台用户管理独立于业务设置", "source": { "taskId": "FE-16" } }
   ],
   "pages": [
     {
@@ -255,7 +255,7 @@
       "feTasks": ["FE-16", "FE-09"],
       "beTasks": ["BE-RBAC-01", "BE-DUSR-01", "BE-DUSR-02"],
       "disposition": "Adapt",
-      "basis": "任务清单 §13.2：固定 RBAC；Cognito 邀请/重置；平台用户与设备用户分离",
+      "basis": "任务清单 §13.2：固定 RBAC；Cognito 邀请/重置。CMP B/T07：设备用户由单设备详情承接。CMP B/T08 R18：平台用户管理与 /business-settings 分开，分别按 user:read 与 settings:read 控制访问",
       "elements": [
         { "id": "settings.button.addPlatformUser", "kind": "button", "name": "新建平台用户", "disposition": "Adapt", "basis": "BE-RBAC-01：Cognito 邀请流程，API 不接收管理员指定的永久密码", "source": { "taskId": "BE-RBAC-01", "api": "invitePlatformUser" } },
         { "id": "settings.button.resetPlatformUserPassword", "kind": "button", "name": "平台用户-重置密码", "disposition": "Adapt", "basis": "任务清单 §2.5：受控重置流程，不读取/回显/持久化密码", "source": { "taskId": "BE-RBAC-01", "api": "triggerPasswordReset" } },

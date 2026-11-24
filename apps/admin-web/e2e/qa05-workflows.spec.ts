@@ -25,7 +25,8 @@ const routes: [string, Role[]][] = [
   ['/contracts/new', ['PlatformSuperAdmin']],
   ['/contracts/detail', platform],
   ['/consumables', ['PlatformSuperAdmin', 'PlatformOperator', 'CustomerAdmin', 'CustomerViewer']],
-  ['/settings', ['PlatformSuperAdmin', 'CustomerAdmin']],
+  ['/settings', ['PlatformSuperAdmin', 'Auditor']],
+  ['/business-settings', ['PlatformSuperAdmin', 'Auditor']],
   ['/ota/packages', platform],
   ['/ota/campaigns', platform],
 ];
@@ -100,10 +101,15 @@ for (const role of ROLES)
     if (role === 'PlatformSuperAdmin' || role === 'CustomerAdmin') {
       const readsBeforeSettings = deviceUserReads.length;
       await page.goto('/settings');
-      await expect(page.getByTestId('settings-device-users-link')).toHaveCount(0);
+      if (role === 'CustomerAdmin') {
+        await expect(page.getByRole('heading', { name: '403' })).toBeVisible();
+      } else {
+        await expect(page.getByRole('heading', { name: '平台用户管理' })).toBeVisible();
+        await expect(page.getByTestId('settings-device-users-link')).toHaveCount(0);
+        await expect(page.getByTestId('business-settings-content')).toHaveCount(0);
+      }
       await expect(page.getByTestId('device-users-page')).toHaveCount(0);
       expect(deviceUserReads).toHaveLength(readsBeforeSettings);
-      if (role === 'CustomerAdmin') await expect(page.getByTestId('tab-business-settings')).toHaveCount(0);
       await page.goto('/devices/manage?deviceId=dev-p0');
       await page.getByTestId('manage-device-users').click();
       await expect(page).toHaveURL(/\/device-users\?deviceId=dev-p0$/);
@@ -115,7 +121,7 @@ for (const role of ROLES)
       ['/customers', 'create-customer', platform.slice(0, 2), true],
       ['/sites', 'create-site', platform.slice(0, 2), true],
       ['/device-users', 'device-user-create', ['PlatformSuperAdmin', 'CustomerAdmin'], true],
-      ['/settings', 'user-invite-open', ['PlatformSuperAdmin'], true],
+      ['/settings', 'user-invite-open', ['PlatformSuperAdmin'], false],
       ['/consumables', 'consumable-request-create-open', platform.slice(0, 2), false],
       ['/licenses', 'license-create', platform.slice(0, 2), true],
       ['/configurations', 'config-create', platform.slice(0, 2), true],

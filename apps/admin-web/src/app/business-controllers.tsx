@@ -45,7 +45,8 @@ import { ConsumablesPage } from '../pages/consumables/ConsumablesPage.js';
 import type { ConsumableRequestView, ConsumableStatusView } from '../pages/consumables/types.js';
 import { fetchCustomers } from '../pages/customers/customers-api.js';
 import { getSetting, listSettings, updateSetting } from '../pages/settings/settings-api.js';
-import { canReadSettings, canReadUsers } from '../pages/settings/settings-state.js';
+import { canReadSettings, canReadUsers, canWriteSettings } from '../pages/settings/settings-state.js';
+import { BusinessSettingsPage } from '../pages/settings/BusinessSettingsPage.js';
 import { SettingsPage } from '../pages/settings/SettingsPage.js';
 import type { SettingView, UserView } from '../pages/settings/types.js';
 import {
@@ -98,17 +99,16 @@ export function SettingsController({
   readonly session: SessionSnapshot;
   readonly onStatusSuccess: (message: string) => void;
 }) {
-  const role = roleOf(session);
+  const role =
+    session.roles.find((candidate) => hasPermission(candidate, 'user:write')) ??
+    session.roles.find(canReadUsers) ??
+    roleOf(session);
   const [filter, setFilter] = useState<UserListFilter>({});
   const [users, setUsers] = useState<{
     rows: readonly UserView[] | null;
     loading?: boolean;
     error?: unknown;
     nextCursor?: string | null;
-  }>({ rows: null });
-  const [settings, setSettings] = useState<{
-    rows: readonly SettingView[] | null;
-    error?: unknown;
   }>({ rows: null });
   const latestUsersRequest = useRef(0);
   const loadUsers = useCallback(
@@ -129,19 +129,12 @@ export function SettingsController({
     },
     [api, filter, role],
   );
-  const loadSettings = useCallback(async () => {
-    if (!canReadSettings(role)) return setSettings({ rows: [] });
-    try {
-      setSettings({ rows: await listSettings(api) });
-    } catch (error) {
-      setSettings({ rows: [], error });
-    }
-  }, [api, role]);
-  const refresh = useCallback(async () => {
-    await Promise.all([loadUsers(), loadSettings()]);
-  }, [loadSettings, loadUsers]);
-  useEffect(() => void loadUsers(), [loadUsers]);
-  useEffect(() => void loadSettings(), [loadSettings]);
+  useEffect(() => {
+    void loadUsers();
+    return () => {
+      latestUsersRequest.current += 1;
+    };
+  }, [loadUsers]);
   return (
     <SettingsPage
       role={role}
@@ -156,9 +149,44 @@ export function SettingsController({
       onEnableUser={(userId) => enableUser(api, userId)}
       onStatusSuccess={onStatusSuccess}
       onResetPassword={(userId) => triggerUserPasswordReset(api, userId)}
+      onRefresh={loadUsers}
+    />
+  );
+}
+export function BusinessSettingsController({
+  api,
+  session,
+}: {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+}) {
+  const writeSettings = session.roles.some(canWriteSettings);
+  const [settings, setSettings] = useState<{
+    rows: readonly SettingView[] | null;
+    error?: unknown;
+  }>({ rows: null });
+  const generation = useRef(0);
+  const loadSettings = useCallback(async () => {
+    const request = ++generation.current;
+    try {
+      const rows = await listSettings(api);
+      if (generation.current === request) setSettings({ rows });
+    } catch (error) {
+      if (generation.current === request) setSettings({ rows: [], error });
+    }
+  }, [api]);
+  useEffect(() => {
+    void loadSettings();
+    return () => {
+      generation.current += 1;
+    };
+  }, [loadSettings]);
+  return (
+    <BusinessSettingsPage
+      writeSettings={writeSettings}
       settings={settings}
       onUpdateSetting={(key, value, version) => updateSetting(api, key, value, version)}
-      onRefresh={refresh}
+      onRefresh={loadSettings}
     />
   );
 }

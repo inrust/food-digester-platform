@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { resetUserTimeZonePreference, TimeZoneProvider } from '../components/TimeText.js';
 import { I18nProvider, useI18n } from '../i18n/i18n.js';
+import { legacySettingsTarget } from '../router/routes.js';
 import { resolveRoute } from '../router/guard.js';
 import { fetchOwnAccountProfile } from '../session/account-profile.js';
 import type { OwnAccountProfile } from '../session/account-profile.js';
@@ -33,6 +34,7 @@ import { deviceGroupsReturnPath, deviceWorkbenchId, uniqueQueryId } from '../rou
 import { ValidatedDeviceWorkbench } from './DeviceWorkbench.js';
 import { safeReturnPath, useBrowserRouter } from './browser-router.js';
 import {
+  BusinessSettingsController,
   ConsumablesController,
   ContractDetailController,
   ContractNewController,
@@ -60,6 +62,7 @@ export const IMPLEMENTED_PAGE_STATES = [
   'media',
   'audit-logs',
   'settings',
+  'business-settings',
   'contract-modify',
   'contract-new',
   'contract-detail',
@@ -125,22 +128,30 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     );
     return () => request.abort();
   }, [accountKey, services.api]);
+  const legacyTarget =
+    session === null ? null : legacySettingsTarget(location.pathname, location.search, location.hash);
   const verdict = resolveRoute(location.pathname, session);
   useEffect(() => {
-    if (verdict.kind === 'redirect-login') {
-      navigate(`/login?returnTo=${encodeURIComponent(`${verdict.returnTo}${location.search}`)}`, { replace: true });
+    if (legacyTarget !== null) {
+      navigate(legacyTarget, { replace: true });
+    } else if (verdict.kind === 'redirect-login') {
+      navigate(`/login?returnTo=${encodeURIComponent(`${verdict.returnTo}${location.search}${location.hash}`)}`, {
+        replace: true,
+      });
     } else if (verdict.kind === 'redirect-home') {
       navigate(verdict.home, { replace: true });
     }
   }, [
     location.pathname,
     location.search,
+    location.hash,
+    legacyTarget,
     navigate,
     verdict.kind,
     verdict.kind === 'redirect-login' ? verdict.returnTo : '',
     verdict.kind === 'redirect-home' ? verdict.home : '',
   ]);
-  if (verdict.kind === 'redirect-login' || verdict.kind === 'redirect-home') return null;
+  if (legacyTarget !== null || verdict.kind === 'redirect-login' || verdict.kind === 'redirect-home') return null;
   if (verdict.kind === 'not-found') return <NotFoundPage onNavigate={navigate} />;
   if (verdict.kind === 'forbidden' || verdict.route.pageState === 'forbidden')
     return <ForbiddenPage onNavigate={navigate} />;
@@ -327,6 +338,9 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
           onStatusSuccess={(message) => toasts.push('success', message)}
         />
       );
+      break;
+    case 'business-settings':
+      page = <BusinessSettingsController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'contract-modify':
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;

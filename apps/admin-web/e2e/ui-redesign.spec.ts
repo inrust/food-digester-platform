@@ -41,6 +41,7 @@ for (const viewport of [
       '/ota/campaigns',
       '/ota/packages',
       '/settings',
+      '/business-settings',
       '/customers',
       '/sites',
       '/audit-logs',

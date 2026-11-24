@@ -4,7 +4,7 @@ import { hasPermission, ROLES } from '@fdp/auth';
 import { menuForRoles, homePathForRoles, roleDisplayName } from '../src/menu/menu.js';
 import type { MenuNode } from '../src/menu/menu.js';
 import { resolveRoute } from '../src/router/guard.js';
-import { FORBIDDEN_PATH, LOGIN_PATH } from '../src/router/routes.js';
+import { FORBIDDEN_PATH, LOGIN_PATH, legacySettingsTarget } from '../src/router/routes.js';
 import type { SessionSnapshot } from '../src/session/session-manager.js';
 
 function menuPaths(roles: readonly Role[]): string[] {
@@ -24,7 +24,7 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（B/T08 /business-settings；FE-05 /customers、/sites；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
@@ -36,6 +36,7 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/devices',
     '/contracts',
     '/settings',
+    '/business-settings',
     '/customers',
     '/sites',
     '/audit-logs',
@@ -59,6 +60,8 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/esg/overview',
     '/esg/devices',
     '/contracts',
+    '/settings',
+    '/business-settings',
     '/customers',
     '/sites',
     '/audit-logs',
@@ -71,7 +74,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/consumables',
     '/esg/overview',
     '/esg/devices',
-    '/settings',
     '/sites',
   ],
   CustomerViewer: [
@@ -106,6 +108,26 @@ test('设备侧栏采用原型四项，旧工作台路径保留共享读取权�
       assert.isFalse(menuPaths([role]).includes(path));
     }
   }
+});
+
+test('T08 平台用户与业务设置入口按共享 RBAC 独立守卫，旧标签定位固定路由', () => {
+  for (const [path, permission] of [
+    ['/settings', 'user:read'],
+    ['/business-settings', 'settings:read'],
+  ] as const) {
+    assert.equal(resolveRoute(path, null).kind, 'redirect-login');
+    for (const role of ROLES) {
+      assert.equal(resolveRoute(path, sessionOf(role)).kind, hasPermission(role, permission) ? 'allow' : 'forbidden');
+    }
+  }
+  assert.equal(legacySettingsTarget('/settings', '', '#business-settings'), '/business-settings');
+  assert.equal(legacySettingsTarget('/settings', '?tab=platform-users', ''), '/settings');
+  assert.equal(
+    legacySettingsTarget('/settings', '?tab=device-users&deviceId=d&deviceUserId=u&next=https://example.test', ''),
+    '/device-users?deviceId=d&deviceUserId=u',
+  );
+  assert.equal(legacySettingsTarget('/settings', '', ''), null);
+  assert.equal(legacySettingsTarget('/settings', '?tab=https://example.test', ''), null);
 });
 
 test('设备用户路由与菜单遵循共享读取权限；写权限保持独立', () => {
@@ -160,7 +182,7 @@ test('根路径作为后台入口：未登录转登录并以 dashboard 为返回
 test('角色不符 → forbidden（403 无权界面），会话保留', () => {
   const verdict = resolveRoute('/contracts', sessionOf('CustomerViewer'));
   assert.equal(verdict.kind, 'forbidden');
-  const verdict2 = resolveRoute('/settings', sessionOf('Auditor'));
+  const verdict2 = resolveRoute('/business-settings', sessionOf('CustomerAdmin'));
   assert.equal(verdict2.kind, 'forbidden');
 });
 
