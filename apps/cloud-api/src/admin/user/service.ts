@@ -13,7 +13,7 @@
  *   事务内，DB 失败确定性恢复 Groups/Scope/Enabled 状态；结果不确定或补偿失败时保留
  *   PENDING 对账意图并写 reconciliation_required 失败审计，禁止静默形成权限漂移；
  * - 所有权限变化审计（DOM-03）：user.invite / user.activate / user.role.assign /
- *   user.scope.change / user.disable / user.password_reset.trigger；
+ *   user.scope.change / user.disable / user.enable / user.password_reset.trigger；
  * - 功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。
  */
 import { randomUUID } from 'node:crypto';
@@ -51,6 +51,7 @@ interface UserRow {
   readonly displayName: string;
   readonly cognitoSub: string | null;
   readonly status: string;
+  readonly lastDisabledAt: Date | null;
   readonly mfaEnabled: boolean;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -215,6 +216,18 @@ export interface AuthenticatedUserSyncDeps {
   readonly now?: () => Date;
 }
 
+function assertAccountAuthentication(
+  account: { status: string; lastDisabledAt: Date | null } | null,
+  actor: ActorContext,
+): void {
+  if (account?.status === 'DISABLED') throw unauthenticated();
+  if (account?.lastDisabledAt) {
+    const authenticatedAt = Date.parse(actor.authenticatedAt ?? '');
+    // Cognito auth_time has second precision; reject sessions from the disable second as well.
+    if (!(authenticatedAt > account.lastDisabledAt.getTime())) throw unauthenticated();
+  }
+}
+
 /**
  * 每个通过验签的管理 API 请求均检查业务账号状态，拒绝已停用账号的旧 Token。
  * Cognito 完成首次登录后，把对应 INVITED 业务用户激活。
@@ -232,19 +245,19 @@ export async function activateInvitedUserOnAuthenticatedRequest(
     () => readAuthenticatedAccount(deps.client, actor.actorId, deps.accountReadCandidate),
     { processCpu: deps.observeProcessCpu === true },
   );
-  if (target?.status === 'DISABLED') throw unauthenticated();
+  assertAccountAuthentication(target, actor);
   if (!target || target.status !== 'INVITED') return false;
 
   return observeDataPathPhase('admin-account-activation', () =>
     withTransaction(deps.client, async (tx) => {
       const updated = await users(tx).updateMany({
-        where: { id: target.id, cognitoSub: actor.actorId, status: 'INVITED' },
+        where: { id: target.id, cognitoSub: actor.actorId, status: 'INVITED', lastDisabledAt: target.lastDisabledAt },
         data: { status: 'ACTIVE', updatedAt: now },
       });
       if (updated.count !== 1) {
         // 停用可能在首次查询与条件激活之间提交，不能把失败的激活当作可继续访问。
         const current = (await users(tx).findFirst({ where: { id: target.id } })) as unknown as UserRow | null;
-        if (current?.status === 'DISABLED') throw unauthenticated();
+        assertAccountAuthentication(current, actor);
         return false;
       }
 
@@ -341,9 +354,9 @@ export async function getOwnAccountProfile(
 ): Promise<{ userId: string | null; displayName: string | null }> {
   const account = await deps.client.user.findUnique({
     where: { cognitoSub: actor.actorId },
-    select: { id: true, displayName: true, status: true },
+    select: { id: true, displayName: true, status: true, lastDisabledAt: true },
   });
-  if (account?.status === 'DISABLED') throw unauthenticated();
+  assertAccountAuthentication(account, actor);
   return {
     userId: account?.id ?? null,
     displayName: account?.displayName.trim() || null,
@@ -683,78 +696,160 @@ export async function setUserScope(
   }
 }
 
-// ---------- 停用 ----------
+// ---------- 启停 ----------
 
-export async function disableUser(deps: UserAdminDeps, actor: ActorContext, userId: string): Promise<UserView> {
-  const now = deps.now?.() ?? new Date();
-  const target = (await users(deps.client).findFirst({ where: { id: userId } })) as unknown as UserRow | null;
+async function lockAccountStatus(client: DbClient, userId: string): Promise<UserRow> {
+  // Role changes share the first lock. The row lock also serializes first-login activation.
+  await lockSuperAdminInvariant(client);
+  await client.$queryRaw`SELECT id FROM "users" WHERE id = ${userId} FOR UPDATE`;
+  const target = await client.user.findUnique({ where: { id: userId } });
   if (!target) throw userNotFound();
-  if (target.status === 'DISABLED') return toUserView(deps.client, target); // 幂等回放
-  assertNotSelf(target, actor, 'disable');
-  const roles = (
-    (await userRoles(deps.client).findMany({
-      where: { userId },
-    })) as unknown as UserRoleRow[]
-  ).map((r) => r.roleCode);
-  if (!target.cognitoSub) throw userConflict('The user has no Cognito identity');
-  const intentId = await startCognitoReconciliationIntent(deps.client, userId, 'DISABLE', {
-    cognitoSub: target.cognitoSub,
-    before: { status: target.status, roles },
-    after: { status: 'DISABLED' },
+  return target;
+}
+
+async function restoredStatus(client: DbClient, userId: string): Promise<'INVITED' | 'ACTIVE'> {
+  const activated = await client.auditLog.findFirst({
+    where: {
+      objectType: 'user',
+      objectId: userId,
+      result: 'SUCCESS',
+      OR: [
+        { action: 'user.activate' },
+        { action: 'user.disable', beforeValue: { path: ['status'], equals: 'ACTIVE' } },
+      ],
+    },
+    select: { id: true },
   });
-  let cognitoApplied = false;
+  // Legacy rows without activation evidence use the normal first-authentication transition.
+  return activated ? 'ACTIVE' : 'INVITED';
+}
+
+function setCognitoEnabled(cognito: CognitoAdminPort, cognitoSub: string, enabled: boolean): Promise<void> {
+  return enabled ? cognito.enableUser({ cognitoSub }) : cognito.disableUser({ cognitoSub });
+}
+
+async function changeUserEnabled(
+  deps: UserAdminDeps,
+  actor: ActorContext,
+  userId: string,
+  enabled: boolean,
+): Promise<UserView> {
+  const target = await deps.client.user.findUnique({ where: { id: userId } });
+  if (!target) throw userNotFound();
+  const cognitoSub = target.cognitoSub;
+  if (!cognitoSub) {
+    if (!enabled && target.status === 'DISABLED') return toUserView(deps.client, target);
+    throw userConflict('The user has no Cognito identity');
+  }
+  const now = deps.now ?? (() => new Date());
+  const action = enabled ? 'ENABLE' : 'DISABLE';
+  const intentId = await startCognitoReconciliationIntent(deps.client, userId, action, { cognitoSub });
+  const audit = {
+    objectType: 'user',
+    objectId: userId,
+    action: enabled ? 'user.enable' : 'user.disable',
+    actorId: actor.actorId,
+    actorRole: actor.roles[0],
+    customerId: null,
+  };
+  let beforeValue: { status: string } | undefined;
   let cognitoAttempted = false;
   try {
-    const result = await audited<UserView>(
-      deps.client,
-      {
-        objectType: 'user',
-        objectId: userId,
-        action: 'user.disable',
-        reason: `${target.status} → DISABLED`,
-        actorId: actor.actorId,
-        actorRole: actor.roles[0],
-        customerId: null,
-        beforeValue: { status: target.status },
-        afterValue: { status: 'DISABLED' },
-      },
-      async (tx) => {
-        await lockSuperAdminInvariant(tx);
-        const lockedTarget = (await users(tx).findFirst({ where: { id: userId } })) as unknown as UserRow | null;
-        if (!lockedTarget) throw userNotFound();
-        if (lockedTarget.status === 'DISABLED') return toUserView(tx, lockedTarget);
-        const lockedRoles = ((await userRoles(tx).findMany({ where: { userId } })) as unknown as UserRoleRow[]).map(
-          (role) => role.roleCode,
-        );
-        await assertNotLastSuperAdmin(tx, lockedTarget, lockedRoles.includes(SUPER_ADMIN_ROLE));
-        cognitoAttempted = true;
-        await deps.cognito.disableUser({ cognitoSub: target.cognitoSub! });
-        cognitoApplied = true;
-        await users(tx).updateMany({ where: { id: userId }, data: { status: 'DISABLED', updatedAt: now } });
-        const fresh = (await users(tx).findFirst({ where: { id: userId } })) as unknown as UserRow;
-        return toUserView(tx, fresh);
-      },
-    );
-    await resolveCognitoIntent(deps.client, intentId, now).catch(() => undefined);
-    return result;
-  } catch (err) {
-    if (cognitoApplied) {
-      await compensateCognito(
-        deps,
-        actor,
-        userId,
-        intentId,
-        'DISABLE',
-        () => deps.cognito.enableUser({ cognitoSub: target.cognitoSub! }),
-        now,
+    return await withTransaction(deps.client, async (tx) => {
+      const locked = await lockAccountStatus(tx, userId);
+      beforeValue = { status: locked.status };
+      if (locked.cognitoSub !== cognitoSub) throw userConflict('The user identity changed; refresh and retry');
+      const changing = (locked.status !== 'DISABLED') !== enabled;
+      if (changing) {
+        assertNotSelf(locked, actor, enabled ? 'enable' : 'disable');
+        if (!enabled) {
+          const superAdminRole = await tx.userRole.findFirst({ where: { userId, roleCode: SUPER_ADMIN_ROLE } });
+          await assertNotLastSuperAdmin(tx, locked, superAdminRole !== null);
+        }
+      }
+      const pending = await tx.outboxEvent.findMany({
+        where: {
+          aggregateId: userId,
+          aggregateType: 'user',
+          eventType: 'COGNITO_ADMIN_RECONCILIATION',
+          status: 'PENDING',
+          AND: [
+            { payload: { path: ['cognitoSub'], equals: cognitoSub } },
+            { OR: ['ENABLE', 'DISABLE'].map((value) => ({ payload: { path: ['action'], equals: value } })) },
+          ],
+        },
+        select: { id: true, lastError: true, createdAt: true },
+      });
+      // Include ambiguous failures and abandoned requests. Fresh queued requests keep their own intent.
+      const abandonedBefore = Date.now() - 60_000; // Longer than the Admin API Lambda can run.
+      const unresolved = pending.filter(
+        (intent) =>
+          intent.id !== intentId &&
+          (intent.lastError === 'RECONCILIATION_REQUIRED' || intent.createdAt.getTime() < abandonedBefore),
       );
-    } else if (cognitoAttempted) {
-      await markCognitoReconciliationRequired(deps, actor, userId, intentId, 'DISABLE');
+      if (changing || unresolved.length > 0) {
+        if (!pending.some((intent) => intent.id === intentId)) {
+          throw userConflict('The account status changed; refresh and retry');
+        }
+        const status = changing ? (enabled ? await restoredStatus(tx, userId) : 'DISABLED') : locked.status;
+        const startedAt = now();
+        cognitoAttempted = true;
+        await setCognitoEnabled(deps.cognito, cognitoSub, enabled);
+        if (changing) {
+          const changedAt = now();
+          let lastDisabledAt = changedAt;
+          if (enabled) {
+            // A previous API version may have disabled the account without updating the cutoff.
+            lastDisabledAt =
+              locked.lastDisabledAt && locked.lastDisabledAt >= locked.updatedAt ? locked.lastDisabledAt : startedAt;
+          }
+          await tx.user.updateMany({ where: { id: userId }, data: { status, updatedAt: changedAt, lastDisabledAt } });
+          await recordAudit(tx, {
+            ...audit,
+            result: 'SUCCESS',
+            reason: `${locked.status} → ${status}`,
+            beforeValue,
+            afterValue: { status },
+          });
+        }
+        await tx.outboxEvent.updateMany({
+          where: { id: { in: unresolved.map((intent) => intent.id) }, status: 'PENDING' },
+          data: { status: 'PUBLISHED', publishedAt: now(), lastError: null },
+        });
+      }
+      await resolveCognitoIntent(tx, intentId, now());
+      const fresh = await tx.user.findUniqueOrThrow({ where: { id: userId } });
+      return toUserView(tx, fresh);
+    });
+  } catch (err) {
+    if (cognitoAttempted) {
+      try {
+        await withTransaction(deps.client, async (tx) => {
+          // A later request may already have committed. Reconcile against the locked DB state.
+          const current = await lockAccountStatus(tx, userId);
+          const pending = await tx.outboxEvent.findFirst({ where: { id: intentId, status: 'PENDING' } });
+          if (!pending) return;
+          if (current.cognitoSub !== cognitoSub) throw userConflict('The user identity changed');
+          await setCognitoEnabled(deps.cognito, cognitoSub, current.status !== 'DISABLED');
+          await resolveCognitoIntent(tx, intentId, now());
+        });
+      } catch {
+        await markCognitoReconciliationRequired(deps, actor, userId, intentId, action);
+      }
     } else {
-      await resolveCognitoIntent(deps.client, intentId, now).catch(() => undefined);
+      await resolveCognitoIntent(deps.client, intentId, now()).catch(() => undefined);
     }
+    await recordAudit(deps.client, { ...audit, result: 'FAILURE', beforeValue }).catch(() => undefined);
     throw err;
   }
+}
+
+export function disableUser(deps: UserAdminDeps, actor: ActorContext, userId: string): Promise<UserView> {
+  return changeUserEnabled(deps, actor, userId, false);
+}
+
+export function enableUser(deps: UserAdminDeps, actor: ActorContext, userId: string): Promise<UserView> {
+  return changeUserEnabled(deps, actor, userId, true);
 }
 
 // ---------- 受控密码重置触发 ----------

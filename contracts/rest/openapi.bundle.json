@@ -142,7 +142,7 @@
       },
       {
         "file": "admin-user-api.json",
-        "sha256": "59ab4175489d99bdb2fe8e920b6c02e24f4de37bc4145292ee36a34e937adf9c",
+        "sha256": "1759cf8aa50c402acedc2236bb49818b27dc96101bbd1cdbbe40ae237db36880",
         "status": "implemented"
       },
       {
@@ -9181,6 +9181,67 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminUserApi__BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/AdminUserApi__Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/AdminUserApi__Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/AdminUserApi__NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/AdminUserApi__Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/AdminUserApi__InternalError"
+          }
+        },
+        "x-source-document": "admin-user-api.json",
+        "x-contract-status": "implemented"
+      }
+    },
+    "/api/v1/admin/users/{userId}/enable": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "operationId": "enableUser",
+        "summary": "启用用户（同步 Cognito EnableUser；恢复停用前状态；幂等回放）",
+        "description": "需要 user:write。启用后返回 ACTIVE 或 INVITED。未完成邀请及无停用历史的账号恢复为 INVITED，首次认证后转为 ACTIVE。已启用的账号返回当前状态。",
+        "security": [
+          {
+            "CognitoJwt": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "用户已启用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserApi__UserSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AdminUserApi__BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/AdminUserApi__Unauthorized"

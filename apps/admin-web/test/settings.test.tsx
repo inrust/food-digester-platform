@@ -9,7 +9,7 @@
  * - 封闭 key 集四项；command.confirmation（DEC-023 固定）只读无编辑入口。
  */
 import { PERMISSIONS, ROLES, hasPermission } from '@fdp/auth/browser';
-import { afterEach, assert, test } from 'vitest';
+import { afterEach, assert, test, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { ApiClientError, ForbiddenError } from '../src/api/errors.js';
@@ -58,6 +58,8 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
     assigned: [] as { userId: string; roles: readonly string[] }[],
     scoped: [] as { userId: string; customerId: string }[],
     disabled: [] as string[],
+    enabled: [] as string[],
+    statusNotices: [] as string[],
     reset: [] as string[],
     settingUpdated: [] as { key: string; value: unknown; version: number }[],
     filterApplied: [] as unknown[],
@@ -92,6 +94,11 @@ function renderPage(overrides: Partial<SettingsPageProps> = {}) {
       calls.disabled.push(userId);
       return makeUser({ userId, status: 'DISABLED' });
     },
+    onEnableUser: async (userId) => {
+      calls.enabled.push(userId);
+      return makeUser({ userId, status: 'ACTIVE' });
+    },
+    onStatusSuccess: (message) => calls.statusNotices.push(message),
     onResetPassword: async (userId) => {
       calls.reset.push(userId);
       return { userId, status: 'RESET_TRIGGERED' };
@@ -240,19 +247,49 @@ test('停用与重置：明确确认；重置提示不接触密码', async () =>
   await user.click(screen.getByTestId('user-disable-usr-002'));
   await user.click(within(screen.getByTestId('confirm-dialog')).getByText('确认停用'));
   assert.deepEqual(calls.disabled, ['usr-002']);
-  let notice = await screen.findByTestId('action-notice');
-  assert.ok(notice.textContent?.includes('已停用'));
+  assert.deepEqual(calls.statusNotices, ['账号已停用']);
+  assert.isNull(screen.queryByTestId('action-notice'));
 
   await user.click(screen.getByTestId('user-reset-usr-001'));
   assert.ok(screen.getByTestId('confirm-dialog').textContent?.includes('不是登录密码'));
   assert.ok(screen.getByTestId('confirm-dialog').textContent?.includes('原密码将失效'));
   await user.click(within(screen.getByTestId('confirm-dialog')).getByText('触发重置'));
   assert.deepEqual(calls.reset, ['usr-001']);
-  notice = await screen.findByTestId('action-notice');
+  const notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('不接触密码'));
   assert.ok(notice.textContent?.includes('重置验证码'));
   assert.ok(notice.textContent?.includes('已有重置验证码'));
   assert.ok(!notice.textContent?.includes('临时凭证'));
+});
+
+test('停用行显示启用，只有管理员可操作；提交期间保护重复操作', async () => {
+  const user = userEvent.setup();
+  const users = { rows: [makeUser({ status: 'DISABLED' })] };
+  const readonlyPage = renderPage({ role: 'Auditor', users });
+  assert.isTrue((screen.getByTestId('user-enable-usr-001') as HTMLButtonElement).disabled);
+  readonlyPage.unmount();
+
+  let resolveEnable!: (view: UserView) => void;
+  const enable = vi.fn(
+    () =>
+      new Promise<UserView>((resolve) => {
+        resolveEnable = resolve;
+      }),
+  );
+  const { calls } = renderPage({ users, onEnableUser: enable });
+  await user.click(screen.getByTestId('user-enable-usr-001'));
+  const submit = within(screen.getByTestId('confirm-dialog')).getByRole('button', { name: '确认启用' });
+  await user.click(submit);
+  assert.isTrue((submit as HTMLButtonElement).disabled);
+  await user.click(submit);
+  assert.equal(enable.mock.calls.length, 1);
+  assert.deepEqual(calls.statusNotices, []);
+  resolveEnable(makeUser({ status: 'ACTIVE' }));
+  await vi.waitFor(() => {
+    assert.deepEqual(calls.statusNotices, ['账号已启用']);
+    assert.equal(calls.refreshed, 1);
+    assert.isNull(screen.queryByTestId('confirm-dialog'));
+  });
 });
 
 test('自我提权/越权：403 经 ErrorNotice 正确呈现', async () => {

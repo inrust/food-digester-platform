@@ -29,7 +29,7 @@ function collectRefs(node: unknown, out: string[] = []): string[] {
   return out;
 }
 
-test('端点齐备且 CognitoJwt 认证：列表/邀请/角色/scope/停用/密码重置', () => {
+test('端点齐备且 CognitoJwt 认证：列表/邀请/角色/scope/启停/密码重置', () => {
   assert.equal(doc.openapi, '3.1.0');
   const basePath = '/api/v1/admin/users';
   const expectations: Array<[string, string, string, string[]]> = [
@@ -38,7 +38,8 @@ test('端点齐备且 CognitoJwt 认证：列表/邀请/角色/scope/停用/密�
     [basePath, 'post', 'inviteUser', ['201', '400', '401', '403', '404', '409']],
     [`${basePath}/{userId}/roles`, 'put', 'assignUserRoles', ['200', '400', '401', '403', '404', '409']],
     [`${basePath}/{userId}/scope`, 'put', 'setUserScope', ['200', '400', '401', '403', '404', '409']],
-    [`${basePath}/{userId}/disable`, 'post', 'disableUser', ['200', '401', '403', '404', '409']],
+    [`${basePath}/{userId}/disable`, 'post', 'disableUser', ['200', '400', '401', '403', '404', '409', '500']],
+    [`${basePath}/{userId}/enable`, 'post', 'enableUser', ['200', '400', '401', '403', '404', '409', '500']],
     [`${basePath}/{userId}/password-reset`, 'post', 'triggerUserPasswordReset', ['200', '401', '403', '404']],
   ];
   for (const [path, method, operationId, codes] of expectations) {

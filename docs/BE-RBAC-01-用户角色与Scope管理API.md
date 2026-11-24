@@ -8,20 +8,26 @@
 |---|---|
 | 任务 | BE-RBAC-01（P2 / 用户与权限），依赖 AUTH-01（角色模型 + V1 权限矩阵 + withAuthorization）、DOM-03（审计）、DEC-012@1.0.0（原型「平台管理员/运维人员」→ PlatformSuperAdmin/PlatformOperator，矩阵固定只读） |
 | 事实源 | 实施方案 RBAC 章节；AUTH-01 运行时事实源：角色 ↔ Cognito User Pool Groups（`cognito:groups`）、Customer scope ↔ `custom:customer_id` |
-| Schema 变更 | 无结构变更；`roles` 表补 5 角色种子（PlatformSuperAdmin/PlatformOperator/Auditor/CustomerAdmin/CustomerViewer，`user_roles` 外键依赖） |
+| Schema 变更 | T02 为 `users` 增加可空的 `last_disabled_at`；`roles` 表包含 5 角色种子（PlatformSuperAdmin/PlatformOperator/Auditor/CustomerAdmin/CustomerViewer，`user_roles` 外键依赖） |
 | 功能边界 | 不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复 |
 
 ## 2. 关键设计
 
-**路由**（`apps/cloud-api/src/admin/user/handler.ts`，全部经 withAuthorization）：`GET /api/v1/admin/users`（user:read，筛选 roleType/status/customerId/q + 键集游标分页）；`POST /users`（邀请）、`PUT /users/{userId}/roles`（整体替换）、`PUT /users/{userId}/scope`、`POST /users/{userId}/disable`（幂等回放）、`POST /users/{userId}/password-reset`（均 user:write——V1 矩阵中仅 PlatformSuperAdmin 持有，PlatformOperator/CustomerAdmin → 403）。
+**路由**（`apps/cloud-api/src/admin/user/handler.ts`，全部经 withAuthorization）：`GET /api/v1/admin/users`（user:read，筛选 roleType/status/customerId/q + 键集游标分页）；`POST /users`（邀请）、`PUT /users/{userId}/roles`（整体替换）、`PUT /users/{userId}/scope`、`POST /users/{userId}/disable` 与 `POST /users/{userId}/enable`（幂等回放）、`POST /users/{userId}/password-reset`（均 user:write——V1 矩阵中仅 PlatformSuperAdmin 持有，PlatformOperator/CustomerAdmin → 403）。
 
 **角色规则**：封闭集 5 角色；平台/Customer 角色禁止混绑（单一 actorType）；平台角色恒无 Customer scope（带 customerId → 400）；Customer 角色必须有可用 Customer（ACTIVE 且未软删除）；角色类型创建后不可变（customer → platform 提升 → 403）；平台角色变更服务层双重校验仅 SuperAdmin。
 
 **越权防护**：自我操作拒绝（目标 `cognitoSub === actor.actorId` 时角色变更/停用 → 403）；Customer actor 不得授权平台角色、不得跨 Customer（服务层双重防护，矩阵层已 403）；角色变更/停用事务先锁定 `roles.PlatformSuperAdmin` 行，再复核有效 SuperAdmin 基数，互相降级或停用/降级并发只能成功一个。
 
-**Cognito 一致性闭环**：每次外部变更前先持久化 `COGNITO_ADMIN_RECONCILIATION` 意图；Groups/Scope/Disable 在受审计事务内调用，后续 DB 失败时恢复旧 Groups/Scope 或重新 Enable，邀请失败删除已创建用户。调用结果不确定、补偿失败或不可逆密码重置的提交状态不确定时，意图保持 PENDING，并写 `user.cognito.reconciliation_required` 失败审计供告警/对账。生产 adapter 实现 AdminCreate/Delete/Enable/Disable、组整体同步、Customer 属性和 Reset，IAM 限定当前 User Pool。**API 不接收永久密码，响应不含任何凭证材料**。
+**Cognito 一致性闭环**：每次外部变更前先持久化 `COGNITO_ADMIN_RECONCILIATION` 意图；Groups/Scope 在受审计事务内调用，后续 DB 失败时恢复旧 Groups/Scope，邀请失败删除已创建用户。调用结果不确定、补偿失败或不可逆密码重置的提交状态不确定时，意图保持 PENDING，并写 `user.cognito.reconciliation_required` 失败审计供告警/对账。生产 adapter 实现 AdminCreate/Delete/Enable/Disable、组整体同步、Customer 属性和 Reset，IAM 限定当前 User Pool。**API 不接收永久密码，响应不含任何凭证材料**。
 
-**审计（DOM-03）**：`user.invite` / `user.role.assign` / `user.scope.change` / `user.disable` / `user.password_reset.trigger` 经 `audited` 同事务写入（before/after 值齐备）。
+**审计（DOM-03）**：`user.invite` / `user.role.assign` / `user.scope.change` / `user.disable` / `user.enable` / `user.password_reset.trigger` 的成功审计与业务状态同事务写入（before/after 值齐备）。
+
+**账号启停（CMP A/T02，R07、R08）**。成功调用 Cognito 后，业务状态、成功审计和当前启停意图的关闭同事务提交。曾成功激活或已有从 `ACTIVE` 停用记录的账号恢复为 `ACTIVE`。其余账号恢复为 `INVITED`，首次认证后转为 `ACTIVE`。启用保留原角色、租户和邀请凭证流程。停用前的会话在重新启用后仍被管理 API 拒绝，账号需重新登录。
+
+Cognito 结果不确定或提交失败时，事务回滚后重新加锁，按最新业务状态补偿 Cognito。补偿失败保留 PENDING 意图和失败审计。后续启停，包括同状态重试，会同步 Cognito 并关闭可恢复的启停意图。管理页从列表重新读回，成功 Toast 约四秒后消失。
+
+发布顺序为数据库迁移、管理 API、管理页面。迁移字段可空，旧版本可继续读写旧字段。后台页面可单独回退，管理 API 需保留旧会话截止校验，直到启用过账号的旧令牌过期。
 
 **密码重置语义**：邀请的 `AdminCreateUser` 邮件含临时密码；管理员重置的 `AdminResetUserPassword` 会使原密码失效并发送重置验证码，邮件验证码不能作为登录密码。用户在登录页选择“已有重置验证码”，通过 `ConfirmForgotPassword` 提交邮箱、验证码及自己设置的新密码，再使用新密码登录。登录返回 `PasswordResetRequiredException` 时直接进入该确认页；错误或过期验证码支持重新获取。管理员/API 不接触用户新密码。参见 [AWS 接口说明](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminResetUserPassword.html)。
 
@@ -36,11 +42,11 @@
 | 邀请/重置无密码材料 | 响应 JSON 无 password/hash/cognitoSub；重置响应仅 `{userId,status}`；契约测试禁止 UserInvite 含 password 字段 | ✅ |
 | PlatformOperator 权限边界 | Operator/CustomerAdmin 调 user:write → 403；Operator 调 user:read 列表 → 403；无 actor → 401 | ✅ |
 | 角色集与 scope 校验 | 混绑/未知/空角色、平台角色带 customerId、Customer 角色缺 customerId → 400；重复 email → 409；Customer 不存在 → 404 / 非 ACTIVE → 409；校验失败零 Cognito 调用 | ✅ |
-| Cognito 同步 | invite/groups/scope/disable/reset 端口调用参数断言（groups 去重、customerId 传递） | ✅ |
+| Cognito 同步 | invite/groups/scope/disable/enable/reset 端口调用参数断言（groups 去重、customerId 传递） | ✅ |
 | Cognito/DB 恢复 | Cognito 已生效而 DB 写失败时恢复旧 Groups；结果不确定时保留 PENDING 对账意图并写失败审计 | ✅ |
-| 审计齐备 | 5 个 action 均落 audit_logs（含 before/after） | ✅ |
+| 审计齐备 | 各管理写操作均落 audit_logs（含 before/after） | ✅ |
 | 列表 | roleType/status/customerId/q 筛选 + 键集游标分页；视图不泄露 cognitoSub；非法筛选 → 400 | ✅ |
-| 停用幂等 | 重复 disable → 200 回放，无重复 Cognito 调用/审计 | ✅ |
+| 启停幂等 | 目标状态已达成的重复请求返回当前视图；没有待对账意图时不重复调用 Cognito 或写成功审计 | ✅ |
 
 ## 4. 未决风险
 

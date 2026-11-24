@@ -9,6 +9,13 @@ import { PAGE_ZH_CN } from './pages.js';
  */
 export const ZH_CN: Readonly<Record<string, string>> = {
   ...PAGE_ZH_CN,
+  'settings.account.enable': '启用',
+  'settings.account.enableTitle': '启用账号',
+  'settings.account.enableDescription': '启用后，账号可按原有权限登录。未完成邀请的账号仍需完成首次登录。',
+  'settings.account.confirmEnable': '确认启用',
+  'settings.account.enabled': '账号已启用',
+  'settings.account.disabled': '账号已停用',
+  'settings.account.retryHint': '请查看刷新后的账号状态，再重试所需操作。',
   'detail.device.summary': '设备标识与状态',
   'detail.device.heartbeat': '最后心跳',
   'detail.device.firmware': '固件版本',

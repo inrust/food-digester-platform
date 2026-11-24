@@ -19,6 +19,7 @@ export interface ConfirmDialogProps {
   readonly requireReason?: boolean;
   readonly reasonLabel?: string;
   readonly confirmText?: string;
+  readonly confirmDisabled?: boolean;
   readonly cancelText?: string;
   readonly onConfirm: (reason: string) => void;
   readonly onCancel: () => void;
@@ -32,6 +33,7 @@ export function ConfirmDialog({
   requireReason = false,
   reasonLabel,
   confirmText,
+  confirmDisabled = false,
   cancelText,
   onConfirm,
   onCancel,
@@ -95,7 +97,7 @@ export function ConfirmDialog({
           <Button
             type="button"
             className={danger ? 'danger-button' : 'primary-button'}
-            disabled={reasonMissing}
+            disabled={confirmDisabled || reasonMissing}
             onClick={() => onConfirm(reason.trim())}
           >
             {resolvedConfirmText}

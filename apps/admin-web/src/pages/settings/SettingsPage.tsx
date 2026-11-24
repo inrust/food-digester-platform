@@ -4,7 +4,7 @@ import { translate } from '../../i18n/i18n.js';
  * FE-16 用户角色和业务设置页（/settings）：平台用户、业务设置及设备用户导航。
  *
  * - 平台用户（BE-RBAC-01）：邀请（Cognito 临时凭证，表单无永久密码字段）、角色整体替换、
- *   Customer scope 变更、停用、受控重置；角色集封闭（DEC-012），高风险权限变更明确确认；
+ *   Customer scope 变更、启停、受控重置；角色集封闭（DEC-012），高风险权限变更明确确认；
  *   界面显示名用“设备操作员”（不使用“运维人员”）；
  * - RBAC 权限矩阵只读展示（DEC-012：V1 固定，仅可分配已有角色）；
  * - 设备用户入口按 device-user:read 跳转至 FE-09 独立页面；
@@ -51,6 +51,8 @@ export interface SettingsPageProps {
   readonly onAssignRoles: (userId: string, roles: readonly Role[]) => Promise<UserView>;
   readonly onSetScope: (userId: string, customerId: string) => Promise<UserView>;
   readonly onDisableUser: (userId: string) => Promise<UserView>;
+  readonly onEnableUser: (userId: string) => Promise<UserView>;
+  readonly onStatusSuccess: (message: string) => void;
   readonly onResetPassword: (userId: string) => Promise<PasswordResetResult>;
   readonly settings: {
     readonly rows: readonly SettingView[] | null;
@@ -58,7 +60,7 @@ export interface SettingsPageProps {
   };
   readonly onUpdateSetting: (key: SettingKey, value: unknown, version: number) => Promise<SettingView>;
   readonly onNavigate: (path: string) => void;
-  readonly onRefresh: () => void;
+  readonly onRefresh: () => void | Promise<void>;
 }
 type SettingsTab = 'platform-users' | 'business-settings';
 const TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
@@ -71,11 +73,7 @@ const TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
 };
 type ConfirmTarget =
   | {
-      readonly kind: 'disable';
-      readonly user: UserView;
-    }
-  | {
-      readonly kind: 'reset';
+      readonly kind: 'disable' | 'enable' | 'reset';
       readonly user: UserView;
     }
   | {
@@ -97,6 +95,8 @@ export function SettingsPage({
   onAssignRoles,
   onSetScope,
   onDisableUser,
+  onEnableUser,
+  onStatusSuccess,
   onResetPassword,
   settings,
   onUpdateSetting,
@@ -130,6 +130,7 @@ export function SettingsPage({
     raw: string;
   } | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
+  const [statusActionFailed, setStatusActionFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [draftFilter, setDraftFilter] = useState<{
     roleType: 'platform' | 'customer' | '';
@@ -148,20 +149,30 @@ export function SettingsPage({
   const writeSettings = canWriteSettings(role);
   const inviteError = validateInvite(inviteDraft);
   const inviteHasCustomerRole = inviteDraft.roles.some((r) => !isPlatformRole(r));
-  const runAction = async (execute: () => Promise<string>) => {
+  const runAction = async (execute: () => Promise<string>, statusChange = false) => {
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     setActionError(null);
+    setStatusActionFailed(false);
     setNotice(null);
     try {
-      setNotice(await execute());
-      setConfirm(null);
-      onRefresh();
+      const message = await execute();
+      if (statusChange) {
+        onStatusSuccess(message);
+        await onRefresh();
+      } else {
+        setNotice(message);
+        void onRefresh();
+      }
     } catch (err) {
       setActionError(err);
-      setConfirm(null);
+      if (statusChange) {
+        setStatusActionFailed(true);
+        await onRefresh();
+      }
     } finally {
+      setConfirm(null);
       inFlight.current = false;
       setBusy(false);
     }
@@ -180,21 +191,31 @@ export function SettingsPage({
       setInviteDraft({ email: '', displayName: '', roles: [], customerId: '' });
       return translate('page.c8e407df3590') + created.email + translate('page.9ee547c292e4');
     });
-  const submitConfirm = () =>
-    runAction(async () => {
-      if (confirm === null) return '';
-      if (confirm.kind === 'disable') {
-        await onDisableUser(confirm.user.userId);
-        return translate('page.9ba763ea3423') + ' ' + confirm.user.email + (' ' + translate('page.85d8f9c121a9'));
-      }
-      if (confirm.kind === 'reset') {
-        await onResetPassword(confirm.user.userId);
-        return translate('page.801f8e1a70bc') + confirm.user.email + translate('page.507c8bd1e8d6');
-      }
-      const updated = await onAssignRoles(confirm.user.userId, confirm.roles);
-      setAssignTarget(null);
-      return translate('page.fbb8820173df') + updated.roles.map(roleDisplayName).join('、');
-    });
+  const submitConfirm = () => {
+    if (confirm === null) return;
+    const { kind, user } = confirm;
+    return runAction(
+      async () => {
+        switch (kind) {
+          case 'disable':
+            await onDisableUser(user.userId);
+            return translate('settings.account.disabled');
+          case 'enable':
+            await onEnableUser(user.userId);
+            return translate('settings.account.enabled');
+          case 'reset':
+            await onResetPassword(user.userId);
+            return translate('page.801f8e1a70bc') + user.email + translate('page.507c8bd1e8d6');
+          case 'assignRoles': {
+            const updated = await onAssignRoles(user.userId, confirm.roles);
+            setAssignTarget(null);
+            return translate('page.fbb8820173df') + updated.roles.map(roleDisplayName).join('、');
+          }
+        }
+      },
+      kind === 'disable' || kind === 'enable',
+    );
+  };
   const submitScope = () =>
     runAction(async () => {
       if (scopeTarget === null) return '';
@@ -265,7 +286,10 @@ export function SettingsPage({
         </p>
       ) : null}
       {actionError !== null && assignTarget === null && settingEdit === null ? (
-        <ErrorNotice error={actionError} onRefresh={onRefresh} />
+        <>
+          <ErrorNotice error={actionError} onRefresh={onRefresh} />
+          {statusActionFailed ? <p>{translate('settings.account.retryHint')}</p> : null}
+        </>
       ) : null}
 
       {tab === 'platform-users' ? (
@@ -449,12 +473,12 @@ export function SettingsPage({
                       </Button>
                       <Button
                         type="button"
-                        className="danger-button"
-                        data-testid={`user-disable-${u.userId}`}
-                        disabled={!manageUsers || busy || u.status === 'DISABLED'}
-                        onClick={() => setConfirm({ kind: 'disable', user: u })}
+                        className={u.status === 'DISABLED' ? undefined : 'danger-button'}
+                        data-testid={`user-${u.status === 'DISABLED' ? 'enable' : 'disable'}-${u.userId}`}
+                        disabled={!manageUsers || busy || users.loading === true}
+                        onClick={() => setConfirm({ kind: u.status === 'DISABLED' ? 'enable' : 'disable', user: u })}
                       >
-                        {translate('page.d989e55188c9')}
+                        {translate(u.status === 'DISABLED' ? 'settings.account.enable' : 'page.d989e55188c9')}
                       </Button>
                     </div>
                   ),
@@ -830,32 +854,41 @@ export function SettingsPage({
         title={
           confirm?.kind === 'disable'
             ? translate('page.f7f6a0cc4498') + confirm.user.email
-            : confirm?.kind === 'reset'
-              ? translate('page.09eec15af8f9') + confirm.user.email
-              : confirm?.kind === 'assignRoles'
-                ? translate('page.80a86c0a5e78') + confirm.user.email
-                : ''
+            : confirm?.kind === 'enable'
+              ? translate('settings.account.enableTitle') + ' ' + confirm.user.email
+              : confirm?.kind === 'reset'
+                ? translate('page.09eec15af8f9') + confirm.user.email
+                : confirm?.kind === 'assignRoles'
+                  ? translate('page.80a86c0a5e78') + confirm.user.email
+                  : ''
         }
         {...(confirm?.kind === 'disable'
           ? { description: translate('page.1aa8f9fe505f'), danger: true }
-          : confirm?.kind === 'reset'
-            ? { description: translate('page.ab5cfb10b2d5') }
-            : confirm?.kind === 'assignRoles'
-              ? {
-                  description:
-                    translate('page.72081201e4db') + ' ' + confirm.roles.map(roleDisplayName).join('、') + '\u3002',
-                  danger: true,
-                }
-              : {})}
+          : confirm?.kind === 'enable'
+            ? { description: translate('settings.account.enableDescription') }
+            : confirm?.kind === 'reset'
+              ? { description: translate('page.ab5cfb10b2d5') }
+              : confirm?.kind === 'assignRoles'
+                ? {
+                    description:
+                      translate('page.72081201e4db') + ' ' + confirm.roles.map(roleDisplayName).join('、') + '\u3002',
+                    danger: true,
+                  }
+                : {})}
         confirmText={
           confirm?.kind === 'disable'
             ? translate('page.f3abd8941903')
-            : confirm?.kind === 'reset'
-              ? translate('page.3b82e1c59111')
-              : translate('page.3ced65a73925')
+            : confirm?.kind === 'enable'
+              ? translate('settings.account.confirmEnable')
+              : confirm?.kind === 'reset'
+                ? translate('page.3b82e1c59111')
+                : translate('page.3ced65a73925')
         }
+        confirmDisabled={busy}
         onConfirm={() => void submitConfirm()}
-        onCancel={() => setConfirm(null)}
+        onCancel={() => {
+          if (!inFlight.current) setConfirm(null);
+        }}
       />
     </div>
   );

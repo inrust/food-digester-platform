@@ -15,6 +15,7 @@
 import { afterAll, beforeAll, describe, test, vi } from 'vitest';
 import { assert } from 'vitest';
 import { withDataPathTrace } from '@fdp/observability';
+import { createCognitoAdminPort } from '@fdp/aws-clients';
 import type { PrismaClient } from '@fdp/database';
 import type { ActorContext } from '@fdp/auth';
 import {
@@ -891,6 +892,269 @@ describe('BE-RBAC-01 Scope 变更、停用与密码重置', () => {
 
     const ghost = await h.triggerPasswordReset(req(superAdmin, { params: { userId: 'user-ghost' } }));
     assert.equal(ghost.status, 404);
+  });
+});
+
+describe('CMP T02 / R07 R08 账号启停', () => {
+  test('生产适配器命令、列表读回、重复启停和重新登录保持一致', async () => {
+    const target = await plantUser({ roles: ['Auditor'] });
+    let identityEnabled = true;
+    const commands: string[] = [];
+    const port = createCognitoAdminPort({
+      userPoolId: 'test-pool',
+      client: {
+        async send(command) {
+          const request = command as { constructor: { name: string }; input: Record<string, unknown> };
+          assert.equal(request.input.UserPoolId, 'test-pool');
+          if (request.constructor.name === 'ListUsersCommand') {
+            assert.equal(request.input.Filter, `sub = "${target.cognitoSub}"`);
+            return { Users: [{ Username: 'managed-account' }] };
+          }
+          assert.equal(request.input.Username, 'managed-account');
+          assert.include(['AdminDisableUserCommand', 'AdminEnableUserCommand'], request.constructor.name);
+          commands.push(request.constructor.name);
+          identityEnabled = request.constructor.name === 'AdminEnableUserCommand';
+          return {};
+        },
+      },
+    });
+    const keys = await generateTestKeySet();
+    const oldest = Math.floor(NOW.getTime() / 1000);
+    const tokenFor = (tokenUse: 'id' | 'access', authenticatedAtSeconds: number) =>
+      signToken(keys, {
+        tokenUse,
+        sub: target.cognitoSub,
+        groups: ['Auditor'],
+        authenticatedAtSeconds,
+      });
+    const read = createAdminLambdaRouter(
+      testConfig(keys.jwks),
+      () => async (request) => ({
+        status: request.actor?.roles.includes('Auditor') ? 200 : 403,
+        body: {},
+      }),
+      {
+        onAuthenticated: async (actor, requestId) => {
+          await activateInvitedUserOnAuthenticatedRequest({ client: prisma }, actor, requestId);
+        },
+      },
+    );
+    const readWith = (jwt: string) =>
+      read({
+        httpMethod: 'GET',
+        headers: { authorization: `Bearer ${jwt}` },
+        requestContext: { requestId: 'status-auth' },
+      });
+    const h = createAdminUserHandlers(userDeps(port));
+    const mutation = req(superAdmin, { params: { userId: target.userId } });
+    const oldTokens = await Promise.all([tokenFor('id', oldest - 1), tokenFor('access', oldest)]);
+    assert.equal((await readWith(oldTokens[0]!)).statusCode, 200);
+    const assertList = async (status: string) => {
+      const result = await h.listUsers(req(superAdmin, { query: { status, q: `planted-${seq}@` } }));
+      const listed = (result.body as ListBody).data.find((item) => item.userId === target.userId);
+      assert.equal(listed?.status, status);
+      assert.deepEqual(listed?.roles, ['Auditor']);
+    };
+
+    const disabled = await h.disableUser(mutation);
+    assertOpenApiResponse('disableUser', 200, disabled.body);
+    assert.equal((disabled.body as DataBody).data.status, 'DISABLED');
+    assert.isFalse(identityEnabled);
+    assert.deepEqual((await h.disableUser(mutation)).body, disabled.body);
+    await assertList('DISABLED');
+    for (const token of oldTokens) assert.equal((await readWith(token)).statusCode, 401);
+
+    const enabled = await h.enableUser(mutation);
+    assertOpenApiResponse('enableUser', 200, enabled.body);
+    assert.equal((enabled.body as DataBody).data.status, 'ACTIVE');
+    assert.isTrue(identityEnabled);
+    assert.deepEqual((await h.enableUser(mutation)).body, enabled.body);
+    await assertList('ACTIVE');
+    for (const token of oldTokens) assert.equal((await readWith(token)).statusCode, 401);
+    assert.equal((await readWith(await tokenFor('access', oldest + 1))).statusCode, 200);
+    assert.deepEqual(commands, ['AdminDisableUserCommand', 'AdminEnableUserCommand']);
+    const audits = await prisma.auditLog.findMany({ where: { objectId: target.userId } });
+    assert.lengthOf(audits, 2);
+    const enableAudit = audits.find((audit) => audit.action === 'user.enable');
+    assert.equal(enableAudit?.result, 'SUCCESS');
+    assert.deepEqual(enableAudit?.beforeValue, { status: 'DISABLED' });
+    assert.deepEqual(enableAudit?.afterValue, { status: 'ACTIVE' });
+  });
+
+  test.each(['INVITED', 'DISABLED'])('未完成邀请和无历史停用账号 (%s) 恢复到 INVITED', async (status) => {
+    const target = await plantUser({ roles: ['Auditor'], status });
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const mutation = req(superAdmin, { params: { userId: target.userId } });
+    if (status === 'INVITED') assert.equal((await h.disableUser(mutation)).status, 200);
+    const enabled = await h.enableUser(mutation);
+    assert.equal(enabled.status, 200);
+    assert.equal((enabled.body as DataBody).data.status, 'INVITED');
+    assert.deepEqual((await h.enableUser(mutation)).body, enabled.body);
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: target.userId } });
+    assert.equal(row.status, 'INVITED');
+    assert.isNotNull(row.lastDisabledAt);
+    const actor: ActorContext = {
+      ...operator,
+      actorId: target.cognitoSub,
+      roles: ['Auditor'],
+      authenticatedAt: new Date(row.lastDisabledAt!.getTime() + 1000).toISOString(),
+    };
+    assert.isTrue(await activateInvitedUserOnAuthenticatedRequest({ client: prisma }, actor, 'after-enable'));
+    assert.equal(((await h.enableUser(mutation)).body as DataBody).data.status, 'ACTIVE');
+    assert.lengthOf(
+      calls.filter((call) => call.method === 'enableUser'),
+      1,
+    );
+  });
+
+  test('未授权、非法实体、缺少身份和不存在的账号不调用 Cognito', async () => {
+    const target = await plantUser({ roles: ['Auditor'], status: 'DISABLED' });
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const params = { userId: target.userId };
+    for (const roles of [['PlatformOperator'], ['Auditor'], ['CustomerAdmin'], ['CustomerViewer']] as const) {
+      const result = await h.enableUser(req({ ...operator, roles }, { params }));
+      assert.equal(result.status, 403);
+      assertOpenApiResponse('enableUser', 403, result.body);
+    }
+    assert.equal((await h.enableUser(req(undefined, { params }))).status, 401);
+    assert.equal((await h.enableUser(req(superAdmin, { params, body: {} }))).status, 400);
+    assert.equal((await h.enableUser(req(superAdmin, { params: { userId: 'absent' } }))).status, 404);
+    await prisma.user.update({ where: { id: target.userId }, data: { cognitoSub: null } });
+    assert.equal((await h.enableUser(req(superAdmin, { params }))).status, 409);
+    assert.equal((await h.disableUser(req(superAdmin, { params }))).status, 200);
+    assert.deepEqual(calls, []);
+  });
+
+  test('重复并发启用只执行和审计一次；排队停用读到已提交的状态', async () => {
+    const target = await plantUser({ roles: ['Auditor'], status: 'DISABLED' });
+    const { port, calls } = fakeCognito();
+    const h = createAdminUserHandlers(userDeps(port));
+    const mutation = req(superAdmin, { params: { userId: target.userId } });
+    const enabled = await Promise.all([h.enableUser(mutation), h.enableUser(mutation)]);
+    assert.deepEqual(
+      enabled.map((response) => response.status),
+      [200, 200],
+    );
+    assert.deepEqual(enabled[0]?.body, enabled[1]?.body);
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ['enableUser'],
+    );
+    assert.equal(await prisma.auditLog.count({ where: { objectId: target.userId, action: 'user.enable' } }), 1);
+
+    let atCognito!: () => void;
+    let resume!: () => void;
+    const started = new Promise<void>((resolve) => {
+      atCognito = resolve;
+    });
+    const paused = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    const concurrent = createAdminUserHandlers(
+      userDeps({
+        ...port,
+        async disableUser(input) {
+          await port.disableUser(input);
+          atCognito();
+          await paused;
+        },
+      }),
+    );
+    const disabling = concurrent.disableUser(mutation);
+    await started;
+    const enabling = concurrent.enableUser(mutation);
+    resume();
+    const pair = await Promise.all([disabling, enabling]);
+    assert.deepEqual(
+      pair.map((result) => result.status),
+      [200, 200],
+    );
+    assert.deepEqual(
+      pair.map((result) => (result.body as DataBody).data.status),
+      ['DISABLED', 'INVITED'],
+    );
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ['enableUser', 'disableUser', 'enableUser'],
+    );
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: target.userId } })).status, 'INVITED');
+  });
+
+  test.each(['not-applied', 'applied', 'database'])('启用失败 (%s) 时补偿并保留停用和失败审计', async (scenario) => {
+    const target = await plantUser({ roles: ['Auditor'], status: 'DISABLED' });
+    const { port } = fakeCognito();
+    let identityEnabled = false;
+    const failingClient = prisma.$extends({
+      query: {
+        user: {
+          async updateMany() {
+            throw new Error('controlled status write failure');
+          },
+        },
+      },
+    });
+    const h = createAdminUserHandlers({
+      client: scenario === 'database' ? (failingClient as unknown as UserAdminDeps['client']) : prisma,
+      cognito: {
+        ...port,
+        async enableUser() {
+          if (scenario !== 'not-applied') identityEnabled = true;
+          if (scenario !== 'database') throw new Error('controlled Cognito failure');
+        },
+        async disableUser() {
+          identityEnabled = false;
+        },
+      },
+    });
+    const result = await h.enableUser(req(superAdmin, { params: { userId: target.userId } }));
+    assert.equal(result.status, 500);
+    assertOpenApiResponse('enableUser', 500, result.body);
+    assert.isFalse(identityEnabled);
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: target.userId } })).status, 'DISABLED');
+    const intent = await prisma.outboxEvent.findFirstOrThrow({ where: { aggregateId: target.userId } });
+    assert.equal(intent.status, 'PUBLISHED');
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { objectId: target.userId, action: 'user.enable' } });
+    assert.equal(audit.result, 'FAILURE');
+  });
+
+  test('部分生效且补偿失败时保留待对账意图；重复停用恢复一致性', async () => {
+    const target = await plantUser({ roles: ['Auditor'], status: 'DISABLED' });
+    const { port } = fakeCognito();
+    let identityEnabled = false;
+    let failCompensation = true;
+    const h = createAdminUserHandlers(
+      userDeps({
+        ...port,
+        async enableUser() {
+          identityEnabled = true;
+          throw new Error('response lost');
+        },
+        async disableUser() {
+          if (failCompensation) throw new Error('Cognito unavailable');
+          identityEnabled = false;
+        },
+      }),
+    );
+    const mutation = req(superAdmin, { params: { userId: target.userId } });
+    assert.equal((await h.enableUser(mutation)).status, 500);
+    assert.isTrue(identityEnabled);
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: target.userId } })).status, 'DISABLED');
+    const pending = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: target.userId, status: 'PENDING', lastError: 'RECONCILIATION_REQUIRED' },
+    });
+    assert.equal(
+      await prisma.auditLog.count({
+        where: { objectId: target.userId, action: 'user.cognito.reconciliation_required', result: 'FAILURE' },
+      }),
+      1,
+    );
+    failCompensation = false;
+    assert.equal((await h.disableUser(mutation)).status, 200);
+    assert.isFalse(identityEnabled);
+    assert.equal((await prisma.outboxEvent.findUniqueOrThrow({ where: { id: pending.id } })).status, 'PUBLISHED');
+    assert.equal(await prisma.auditLog.count({ where: { objectId: target.userId, action: 'user.disable' } }), 0);
   });
 });
 

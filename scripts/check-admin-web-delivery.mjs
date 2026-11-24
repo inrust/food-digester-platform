@@ -122,6 +122,7 @@ const REQUIRED_P0_OPERATIONS = [
   'assignUserRoles',
   'setUserScope',
   'disableUser',
+  'enableUser',
   'triggerUserPasswordReset',
   'listSettings',
   'getSetting',

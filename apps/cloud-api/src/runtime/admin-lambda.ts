@@ -273,6 +273,7 @@ export function createAdminRoute(event: ApiGatewayAdminEvent, routes: AdminOnboa
       assignUserRoles: routes.users.assignRoles,
       setUserScope: routes.users.setScope,
       disableUser: routes.users.disableUser,
+      enableUser: routes.users.enableUser,
       triggerUserPasswordReset: routes.users.triggerPasswordReset,
       listAuditLogs: routes.audit.listAuditLogs,
       getAuditLogDetail: routes.audit.getAuditLogDetail,

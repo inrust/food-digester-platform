@@ -912,6 +912,80 @@ test('FE-18 Chromium 覆盖 unknown/stale、联系人按需零预载与申请状
   await expect(page.getByTestId('consumable-complete-request-fe18')).toBeVisible();
 });
 
+test('CMP T02 R07 R08 启停、失败重试、刷新和成功 Toast 自动消失', async ({ page }) => {
+  await seedSession(page, 'PlatformSuperAdmin');
+  const user = {
+    userId: 'usr-t02',
+    email: 'account@example.test',
+    displayName: 'Account T02',
+    status: 'ACTIVE',
+    mfaEnabled: true,
+    roles: ['Auditor'],
+    customerId: null,
+    createdAt: '2026-09-01T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  };
+  const calls = { disable: 0, enable: 0, list: 0 };
+  await page.route('**/api/v1/admin/settings**', (route) => json(route, { data: [] }));
+  await page.route('**/api/v1/admin/users**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/disable')) {
+      expect(route.request().method()).toBe('POST');
+      expect(route.request().postData()).toBeNull();
+      calls.disable += 1;
+      user.status = 'DISABLED';
+      return json(route, { data: user });
+    }
+    if (path.endsWith('/enable')) {
+      expect(route.request().method()).toBe('POST');
+      expect(route.request().postData()).toBeNull();
+      calls.enable += 1;
+      if (calls.enable === 1) {
+        return json(route, { error: { code: 'INTERNAL_ERROR', message: 'Controlled failure', requestId: 't02' } }, 500);
+      }
+      user.status = 'ACTIVE';
+      return json(route, { data: user });
+    }
+    calls.list += 1;
+    return json(route, { data: [user], meta: { nextCursor: null } });
+  });
+  await page.goto('/settings');
+  const disable = page.getByTestId('user-disable-usr-t02');
+  const enable = page.getByTestId('user-enable-usr-t02');
+  const confirm = page.getByTestId('confirm-dialog');
+  const toast = page.getByTestId('toast-host');
+  await disable.click();
+  await confirm.getByRole('button', { name: '确认停用' }).evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
+  await expect(toast.getByRole('status')).toHaveText(/账号已停用/u);
+  await expect(enable).toBeEnabled();
+  expect(calls.disable).toBe(1);
+  expect(calls.list).toBe(2);
+  await expect(page.getByTestId('action-notice')).toHaveCount(0);
+  await expect(toast.getByRole('status')).toHaveCount(0, { timeout: 6000 });
+
+  await enable.click();
+  await confirm.getByRole('button', { name: '确认启用' }).click();
+  await expect(page.getByTestId('error-generic')).toContainText('t02');
+  await expect(enable).toBeEnabled();
+  await expect(toast.getByRole('status')).toHaveCount(0);
+  expect(calls.list).toBe(3);
+
+  await enable.click();
+  await confirm.getByRole('button', { name: '确认启用' }).click();
+  await expect(toast.getByRole('status')).toHaveText(/账号已启用/u);
+  await expect(disable).toBeEnabled();
+  await expect(page.getByTestId('error-generic')).toHaveCount(0);
+  expect(calls.enable).toBe(2);
+  expect(calls.list).toBe(4);
+  await expect(toast.getByRole('status')).toHaveCount(0, { timeout: 6000 });
+  await page.reload();
+  await expect(disable).toBeEnabled();
+  expect(calls.list).toBe(5);
+});
+
 test('FE-16 Chromium 覆盖邀请、角色、Scope、重置与设置 409 回源', async ({ page }) => {
   await seedSession(page, 'PlatformSuperAdmin');
   const calls = { invite: 0, roles: 0, scope: 0, reset: 0, settings: 0, refresh: 0 };

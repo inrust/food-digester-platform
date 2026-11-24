@@ -1,6 +1,6 @@
 import { translate } from '../i18n/i18n.js';
 import type { Role } from '@fdp/auth/browser';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiClient } from '../api/http-client.js';
 import { collectAll } from './collect-all.js';
 import { fetchDevices } from '../pages/devices/devices-api.js';
@@ -49,6 +49,7 @@ import type { SettingView, UserView } from '../pages/settings/types.js';
 import {
   assignUserRoles,
   disableUser,
+  enableUser,
   inviteUser,
   listUsers,
   setUserScope,
@@ -90,10 +91,12 @@ export function SettingsController({
   api,
   session,
   onNavigate,
+  onStatusSuccess,
 }: {
   readonly api: ApiClient;
   readonly session: SessionSnapshot;
   readonly onNavigate: Navigate;
+  readonly onStatusSuccess: (message: string) => void;
 }) {
   const role = roleOf(session);
   const [filter, setFilter] = useState<UserListFilter>({});
@@ -107,18 +110,21 @@ export function SettingsController({
     rows: readonly SettingView[] | null;
     error?: unknown;
   }>({ rows: null });
+  const latestUsersRequest = useRef(0);
   const loadUsers = useCallback(
     async (cursor?: string) => {
+      const request = ++latestUsersRequest.current;
       if (!canReadUsers(role)) return setUsers({ rows: [] });
       setUsers((current) => ({ ...current, loading: true }));
       try {
         const page = await listUsers(api, filter, cursor);
+        if (latestUsersRequest.current !== request) return;
         setUsers((current) => ({
           rows: cursor === undefined ? page.rows : [...(current.rows ?? []), ...page.rows],
           nextCursor: page.nextCursor,
         }));
       } catch (error) {
-        setUsers({ rows: [], error });
+        if (latestUsersRequest.current === request) setUsers({ rows: [], error });
       }
     },
     [api, filter, role],
@@ -131,9 +137,8 @@ export function SettingsController({
       setSettings({ rows: [], error });
     }
   }, [api, role]);
-  const refresh = useCallback(() => {
-    void loadUsers();
-    void loadSettings();
+  const refresh = useCallback(async () => {
+    await Promise.all([loadUsers(), loadSettings()]);
   }, [loadSettings, loadUsers]);
   useEffect(() => void loadUsers(), [loadUsers]);
   useEffect(() => void loadSettings(), [loadSettings]);
@@ -148,6 +153,8 @@ export function SettingsController({
       onAssignRoles={(userId, roles) => assignUserRoles(api, userId, roles)}
       onSetScope={(userId, customerId) => setUserScope(api, userId, customerId)}
       onDisableUser={(userId) => disableUser(api, userId)}
+      onEnableUser={(userId) => enableUser(api, userId)}
+      onStatusSuccess={onStatusSuccess}
       onResetPassword={(userId) => triggerUserPasswordReset(api, userId)}
       settings={settings}
       onUpdateSetting={(key, value, version) => updateSetting(api, key, value, version)}

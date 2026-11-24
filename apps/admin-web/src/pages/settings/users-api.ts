@@ -4,7 +4,7 @@
  * - inviteUser：Cognito 生成临时凭证——请求体不含 password（装配层类型即无此字段；
  *   未知字段/永久密码由服务端严格解析 400 拒绝）；
  * - assignUserRoles：整体替换角色集（自我提权/提升平台角色越权/最后一个 SuperAdmin 移除 → 403/409）；
- * - disableUser/triggerUserPasswordReset：无请求体；重置响应仅含 userId/status（不含密码材料）。
+ * - disableUser/enableUser/triggerUserPasswordReset：无请求体；重置响应仅含 userId/status（不含密码材料）。
  */
 import type { ApiClient } from '../../api/http-client.js';
 import type { Role } from '@fdp/auth/browser';
@@ -36,6 +36,7 @@ function buildQuery(filter: UserListFilter, cursor?: string): string {
 export async function listUsers(api: ApiClient, filter: UserListFilter, cursor?: string): Promise<Page<UserView>> {
   const response = await api.request<{ data: UserView[]; meta: { nextCursor: string | null } }>(
     `/admin/users${buildQuery(filter, cursor)}`,
+    { cache: 'no-store' },
   );
   return { rows: response.data, nextCursor: response.meta.nextCursor };
 }
@@ -78,6 +79,13 @@ export async function setUserScope(api: ApiClient, userId: string, customerId: s
 
 export async function disableUser(api: ApiClient, userId: string): Promise<UserView> {
   const response = await api.request<{ data: UserView }>(`/admin/users/${encodeURIComponent(userId)}/disable`, {
+    method: 'POST',
+  });
+  return response.data;
+}
+
+export async function enableUser(api: ApiClient, userId: string): Promise<UserView> {
+  const response = await api.request<{ data: UserView }>(`/admin/users/${encodeURIComponent(userId)}/enable`, {
     method: 'POST',
   });
   return response.data;

@@ -238,7 +238,13 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       break;
     case 'settings':
       page = (
-        <SettingsController key={sessionScope} api={services.api} session={session} onNavigate={navigateWithinApp} />
+        <SettingsController
+          key={sessionScope}
+          api={services.api}
+          session={session}
+          onNavigate={navigateWithinApp}
+          onStatusSuccess={(message) => toasts.push('success', message)}
+        />
       );
       break;
     case 'contract-modify':

@@ -9,6 +9,7 @@
  * - PUT  /api/v1/admin/users/{userId}/roles         角色分配（整体替换）
  * - PUT  /api/v1/admin/users/{userId}/scope         Customer scope 变更
  * - POST /api/v1/admin/users/{userId}/disable       停用（幂等回放）
+ * - POST /api/v1/admin/users/{userId}/enable        启用（幂等回放）
  * - POST /api/v1/admin/users/{userId}/password-reset 受控密码重置触发（响应不含凭证材料）
  * 功能边界：不负责 Cognito 租户运维、MFA 客服重置和人工账号恢复。
  * 响应契约对齐 CT-05：data + meta{requestId,timestamp}；错误 {error{code,message,requestId}}。
@@ -22,6 +23,7 @@ import { AdminUserError, userValidationFailed } from './errors.js';
 import {
   assignUserRoles,
   disableUser,
+  enableUser,
   getOwnAccountProfile,
   inviteUser,
   listUsers,
@@ -39,6 +41,7 @@ export interface AdminUserHandlers {
   assignRoles(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   setScope(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   disableUser(req: AdminHttpRequest): Promise<AdminHttpResponse>;
+  enableUser(req: AdminHttpRequest): Promise<AdminHttpResponse>;
   triggerPasswordReset(req: AdminHttpRequest): Promise<AdminHttpResponse>;
 }
 
@@ -109,7 +112,11 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
       ...(q.cursor !== undefined ? { cursor: q.cursor } : {}),
       ...(q.limit !== undefined ? { limit: q.limit } : {}),
     });
-    return { status: 200, body: { data: page.items, meta: meta(req, page.nextCursor) } };
+    return {
+      status: 200,
+      headers: { 'Cache-Control': 'private, no-store' },
+      body: { data: page.items, meta: meta(req, page.nextCursor) },
+    };
   });
 
   const invite = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
@@ -145,6 +152,12 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
     return { status: 200, body: { data: view, meta: meta(req) } };
   });
 
+  const enable = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
+    rejectRequestBody(req.body, userValidationFailed);
+    const view = await enableUser(deps, req.actor as ActorContext, requireUserId(req));
+    return { status: 200, body: { data: view, meta: meta(req) } };
+  });
+
   const reset = withAuthorization<AdminHttpRequest, AdminHttpResponse>({ permission: 'user:write' }, async (req) => {
     rejectRequestBody(req.body, userValidationFailed);
     const result = await triggerUserPasswordReset(deps, req.actor as ActorContext, requireUserId(req));
@@ -168,6 +181,7 @@ export function createAdminUserHandlers(deps: AdminUserHandlerDeps): AdminUserHa
     assignRoles: wrap(roles),
     setScope: wrap(scope),
     disableUser: wrap(disable),
+    enableUser: wrap(enable),
     triggerPasswordReset: wrap(reset),
   };
 }

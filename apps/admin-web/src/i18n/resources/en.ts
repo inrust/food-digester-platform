@@ -6,6 +6,14 @@ import { PAGE_EN } from './pages.js';
  */
 export const EN: Readonly<Record<string, string>> = {
   ...PAGE_EN,
+  'settings.account.enable': 'Enable',
+  'settings.account.enableTitle': 'Enable account',
+  'settings.account.enableDescription':
+    'The account can sign in with its existing permissions. Pending invitations still require first-time sign-in.',
+  'settings.account.confirmEnable': 'Confirm enable',
+  'settings.account.enabled': 'Account enabled',
+  'settings.account.disabled': 'Account disabled',
+  'settings.account.retryHint': 'Check the refreshed account status before retrying the action.',
   'detail.device.summary': 'Device identity and status',
   'detail.device.heartbeat': 'Last heartbeat',
   'detail.device.firmware': 'Firmware version',

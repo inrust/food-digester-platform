@@ -583,6 +583,12 @@ export const DELIVERED_OPERATIONS = [
     runtime: 'admin-api',
   },
   {
+    operationId: 'enableUser',
+    method: 'POST',
+    path: '/api/v1/admin/users/{userId}/enable',
+    runtime: 'admin-api',
+  },
+  {
     operationId: 'triggerUserPasswordReset',
     method: 'POST',
     path: '/api/v1/admin/users/{userId}/password-reset',

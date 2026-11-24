@@ -65,15 +65,16 @@ model Site {
 // ---------- 用户与权限 ----------
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  displayName String   @map("display_name")
+  id             String    @id @default(uuid())
+  email          String    @unique
+  displayName    String    @map("display_name")
   // 密码不落库：认证由 Cognito 承担，仅保存其主体标识
-  cognitoSub  String?  @unique @map("cognito_sub")
-  status      String   @default("INVITED") // INVITED | ACTIVE | DISABLED
-  mfaEnabled  Boolean  @default(false) @map("mfa_enabled")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  cognitoSub     String?   @unique @map("cognito_sub")
+  status         String    @default("INVITED") // INVITED | ACTIVE | DISABLED
+  lastDisabledAt DateTime? @map("last_disabled_at") @db.Timestamptz
+  mfaEnabled     Boolean   @default(false) @map("mfa_enabled")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   roles  UserRole[]
   scopes UserScope[]
