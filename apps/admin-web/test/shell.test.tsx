@@ -18,13 +18,14 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'zhang@example.com', roles: [role], customerId };
 }
 
-function renderShell(options: { path?: string; role?: Role } = {}) {
+function renderShell(options: { path?: string; search?: string; role?: Role } = {}) {
   const navigated: string[] = [];
   let loggedOut = 0;
   const utils = render(
     <TimeZoneProvider>
       <AppShell
         path={options.path ?? '/dashboard'}
+        search={options.search ?? ''}
         session={sessionOf(options.role ?? 'PlatformSuperAdmin')}
         onNavigate={(path) => navigated.push(path)}
         onLogout={() => {
@@ -38,17 +39,14 @@ function renderShell(options: { path?: string; role?: Role } = {}) {
   return { ...utils, navigated, isLoggedOut: () => loggedOut > 0 };
 }
 
-test('菜单按角色过滤：PlatformSuperAdmin 见全部 17 项；CustomerViewer 不见受限项', () => {
+test('菜单按角色过滤：PlatformSuperAdmin 见全部 14 项；CustomerViewer 不见受限项', () => {
   const { unmount } = renderShell({ role: 'PlatformSuperAdmin' });
   for (const label of [
     '概览',
     '查看设备',
     '操作设备',
     '设备群管理',
-    '配置管理',
     '耗材查看',
-    '告警与事件',
-    '媒体管理',
     'ESG概览',
     '设备ESG信息',
     '合约查询及修改',
@@ -64,17 +62,7 @@ test('菜单按角色过滤：PlatformSuperAdmin 见全部 17 项；CustomerView
   unmount();
 
   renderShell({ role: 'CustomerViewer' });
-  for (const label of [
-    '概览',
-    '查看设备',
-    '设备群管理',
-    '耗材查看',
-    '告警与事件',
-    '媒体管理',
-    'ESG概览',
-    '设备ESG信息',
-    '站点管理',
-  ]) {
+  for (const label of ['概览', '查看设备', '设备群管理', '耗材查看', 'ESG概览', '设备ESG信息', '站点管理']) {
     assert.ok(screen.getByRole('link', { name: label }));
   }
   assert.equal(screen.getByRole('link', { name: '设备用户' }).getAttribute('href'), '/device-users');
@@ -128,12 +116,12 @@ test('子页面面包屑：分组 → 父菜单（可点回链）→ 当前页',
   assert.deepEqual(navigated, ['/contracts']);
 });
 
-test('顶部隐藏未接入的通知，告警入口与用户区继续可用', async () => {
+test('顶部隐藏未接入的通知，用户区继续可用', async () => {
   const user = userEvent.setup();
   const { isLoggedOut } = renderShell({ role: 'PlatformOperator' });
   assert.equal(screen.queryByTestId('notification-badge'), null);
   assert.equal(screen.queryByTestId('notification-button'), null);
-  assert.ok(screen.getByTestId('menu-item-/alarms'));
+  assert.equal(screen.queryByTestId('menu-item-/alarms'), null);
   assert.equal(screen.getByTestId('role-tag').textContent, '设备操作员');
   assert.ok(screen.getByText('zhang@example.com'));
   await user.click(screen.getByRole('button', { name: '登出' }));

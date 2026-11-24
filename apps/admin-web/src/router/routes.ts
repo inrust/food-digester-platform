@@ -123,8 +123,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
     get label() {
       return translate('ui.9ecf700c43d4');
     },
-    roles: ['PlatformSuperAdmin', 'PlatformOperator', 'Auditor'],
-    menuGroup: 'device',
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'config:read')),
+    menuGroup: null,
+    parentPath: '/devices/groups',
   },
   {
     path: '/consumables',
@@ -142,8 +143,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
     get label() {
       return translate('ui.99470ca43b25');
     },
-    roles: ALL_ROLES,
-    menuGroup: 'device',
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'alarm:read')),
+    menuGroup: null,
+    parentPath: '/dashboard',
   },
   // FE-14 扩展路由（CT-06 矩阵外）：media:read = 全部五角色；Customer 角色强制租户隔离（跨 Customer → 404）
   {
@@ -152,8 +154,9 @@ export const APP_ROUTES: readonly AppRoute[] = [
     get label() {
       return translate('page.fd695a67e418');
     },
-    roles: ALL_ROLES,
-    menuGroup: 'device',
+    roles: ALL_ROLES.filter((role) => hasPermission(role, 'media:read')),
+    menuGroup: null,
+    parentPath: '/devices/groups',
   },
   {
     path: '/esg/overview',

@@ -12,6 +12,7 @@ import { translate } from '../../i18n/i18n.js';
  * - Customer 角色租户隔离由服务端强制（跨 Customer 详情/处理 → 404 呈现）。
  */
 import { useEffect, useRef, useState } from 'react';
+import type { DeviceView } from '../devices/types.js';
 import type { Role } from '@fdp/auth/browser';
 import { ConfirmDialog } from '../../components/ConfirmDialog.js';
 import { CursorTable } from '../../components/CursorTable.js';
@@ -72,6 +73,8 @@ export interface AlarmsPageProps {
   })[];
   /** 已应用的 URL 状态（父级由 location.search 初始化/响应）。 */
   readonly urlState: AlarmPageUrlState;
+  readonly serializeSearch?: (state: AlarmPageUrlState) => string;
+  readonly device?: DeviceView;
   readonly onApplyUrlState: (state: AlarmPageUrlState) => void;
   readonly alarms: ListState<AlarmView>;
   readonly events: ListState<DeviceEventView>;
@@ -93,6 +96,8 @@ export function AlarmsPage({
   siteOptions = [],
   deviceOptions = [],
   urlState,
+  serializeSearch = urlStateToSearch,
+  device,
   onApplyUrlState,
   alarms,
   events,
@@ -122,12 +127,12 @@ export function AlarmsPage({
   const [busy, setBusy] = useState(false);
   // 筛选参数与 URL 同步（replaceState，不产生历史记录堆积）
   useEffect(() => {
-    const search = urlStateToSearch(urlState);
+    const search = serializeSearch(urlState);
     const current = window.location.search;
     if (search !== current) {
       window.history.replaceState(null, '', `${window.location.pathname}${search}`);
     }
-  }, [urlState]);
+  }, [urlState, serializeSearch]);
   const runAction = async (execute: () => Promise<AlarmHandleResultView>, verb: string) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -186,6 +191,11 @@ export function AlarmsPage({
           {translate('common.refresh')}
         </Button>
       </header>
+      {device ? (
+        <p data-testid="alarm-device-scope">
+          {translate('deviceWorkbench.scope', { name: device.alias ?? device.serialNumber, id: device.id })}
+        </p>
+      ) : null}
       <div className="tab-bar" role="tablist" data-testid="alarm-tabs">
         {ALARM_TABS.map((t) => (
           <Button
@@ -215,7 +225,7 @@ export function AlarmsPage({
           </>
         }
       >
-        {!isCustomerRole ? (
+        {!isCustomerRole && !device ? (
           <div className="filter-field">
             <label htmlFor="alarm-filter-customer">{translate('page.467c1137f479')}</label>
             <select
@@ -240,6 +250,7 @@ export function AlarmsPage({
           </div>
         ) : null}
         <CommonFilterFields
+          fixedDevice={device !== undefined}
           tab={tab}
           draftAlarm={draftAlarm}
           draftEvent={draftEvent}
@@ -589,6 +600,7 @@ export function AlarmsPage({
   );
 }
 function CommonFilterFields({
+  fixedDevice,
   tab,
   draftAlarm,
   draftEvent,
@@ -599,6 +611,7 @@ function CommonFilterFields({
   siteOptions,
   deviceOptions,
 }: {
+  readonly fixedDevice: boolean;
   readonly tab: AlarmTab;
   readonly draftAlarm: AlarmPageUrlState['alarm'];
   readonly draftEvent: AlarmPageUrlState['event'];
@@ -643,38 +656,42 @@ function CommonFilterFields({
   };
   return (
     <>
-      <div className="filter-field">
-        <label htmlFor="filter-site">{translate('page.619bc67325a4')}</label>
-        <select
-          id="filter-site"
-          data-testid="filter-site"
-          value={draft.siteId ?? ''}
-          onChange={(e) => patchSite(e.target.value)}
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {sites.map((site) => (
-            <option key={site.value} value={site.value}>
-              {site.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="filter-field">
-        <label htmlFor="filter-device">{translate('page.01f2c16cda65')}</label>
-        <select
-          id="filter-device"
-          data-testid="filter-device"
-          value={draft.deviceId ?? ''}
-          onChange={(e) => patch('deviceId', e.target.value)}
-        >
-          <option value="">{translate('page.778fc8f99453')}</option>
-          {devices.map((device) => (
-            <option key={device.value} value={device.value}>
-              {device.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {!fixedDevice ? (
+        <>
+          <div className="filter-field">
+            <label htmlFor="filter-site">{translate('page.619bc67325a4')}</label>
+            <select
+              id="filter-site"
+              data-testid="filter-site"
+              value={draft.siteId ?? ''}
+              onChange={(e) => patchSite(e.target.value)}
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {sites.map((site) => (
+                <option key={site.value} value={site.value}>
+                  {site.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="filter-device">{translate('page.01f2c16cda65')}</label>
+            <select
+              id="filter-device"
+              data-testid="filter-device"
+              value={draft.deviceId ?? ''}
+              onChange={(e) => patch('deviceId', e.target.value)}
+            >
+              <option value="">{translate('page.778fc8f99453')}</option>
+              {devices.map((device) => (
+                <option key={device.value} value={device.value}>
+                  {device.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      ) : null}
       {tab !== 'event' ? (
         <div className="filter-field">
           <label htmlFor="filter-severity">{translate('page.9272e8abe5ad')}</label>

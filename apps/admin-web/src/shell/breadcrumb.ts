@@ -5,6 +5,12 @@
  * 规则：菜单页 = [分组(纯文本), 页面(当前)]；概览/公共页 = [页面]；
  * 子页面 = [父分组(纯文本), 父菜单页(可点回链), 页面(当前)]。
  */
+import {
+  deviceGroupsReturnPath,
+  deviceWorkbenchId,
+  groupFiltersFromContext,
+  withGroupFilters,
+} from '../router/device-navigation.js';
 import { findRoute } from '../router/routes.js';
 
 export interface Crumb {
@@ -14,9 +20,25 @@ export interface Crumb {
   readonly path: string | null;
 }
 
-export function breadcrumbsFor(path: string): Crumb[] {
+export function breadcrumbsFor(path: string, search = ''): Crumb[] {
   const route = findRoute(path);
   if (route === null) return [{ i18nKey: 'common.pageNotFound', path: null }];
+
+  const scopeId = deviceWorkbenchId(path, search);
+  if (scopeId) {
+    return [
+      { i18nKey: 'menu.group.device', path: null },
+      { i18nKey: 'menu.device-group', path: deviceGroupsReturnPath(search) },
+      {
+        i18nKey: 'menu.device-manage',
+        path: withGroupFilters(
+          `/devices/manage?deviceId=${encodeURIComponent(scopeId)}`,
+          groupFiltersFromContext(search),
+        ),
+      },
+      { i18nKey: `menu.${route.pageState}`, path: null },
+    ];
+  }
 
   const crumbs: Crumb[] = [];
   if (route.parentPath !== undefined) {
@@ -25,7 +47,10 @@ export function breadcrumbsFor(path: string): Crumb[] {
       if (parent.menuGroup !== null && parent.menuGroup !== 'overview') {
         crumbs.push({ i18nKey: `menu.group.${parent.menuGroup}`, path: null });
       }
-      crumbs.push({ i18nKey: `menu.${parent.pageState}`, path: parent.path });
+      crumbs.push({
+        i18nKey: `menu.${parent.pageState}`,
+        path: parent.path === '/devices/groups' ? deviceGroupsReturnPath(search) : parent.path,
+      });
     }
   } else if (route.menuGroup !== null && route.menuGroup !== 'overview') {
     crumbs.push({ i18nKey: `menu.group.${route.menuGroup}`, path: null });

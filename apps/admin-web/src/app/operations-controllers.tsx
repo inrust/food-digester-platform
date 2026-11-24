@@ -1,3 +1,4 @@
+import { deviceScopeMismatch } from './DeviceWorkbench.js';
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
@@ -717,7 +718,15 @@ export function OtaCampaignsController({
     />
   );
 }
-export function MediaController({ api, session }: { readonly api: ApiClient; readonly session: SessionSnapshot }) {
+export function MediaController({
+  api,
+  session,
+  device,
+}: {
+  readonly api: ApiClient;
+  readonly session: SessionSnapshot;
+  readonly device: DeviceView;
+}) {
   const [query, setQuery] = useState<{ filter: MediaListFilter; direction: MediaCaptureTimeOrder }>({
     filter: {},
     direction: 'desc',
@@ -732,8 +741,18 @@ export function MediaController({ api, session }: { readonly api: ApiClient; rea
         cursor === undefined ? { rows: null, loading: true } : { rows: old.rows, nextCursor: cursor, loading: true },
       );
       try {
-        const page = await listMedia(api, { ...current.filter, captureTimeOrder: current.direction }, cursor);
+        const page = await listMedia(
+          api,
+          {
+            ...current.filter,
+            customerId: null,
+            deviceId: device.id,
+            captureTimeOrder: current.direction,
+          },
+          cursor,
+        );
         if (activeRequest.current !== request) return;
+        if (page.rows.some((row) => row.deviceId !== device.id)) throw deviceScopeMismatch();
         setMedia((old) => ({
           rows: cursor === undefined ? page.rows : [...(old.rows ?? []), ...page.rows],
           nextCursor: page.nextCursor,
@@ -748,7 +767,7 @@ export function MediaController({ api, session }: { readonly api: ApiClient; rea
         if (activeRequest.current === request) activeRequest.current = null;
       }
     },
-    [api],
+    [api, device.id],
   );
   useEffect(() => {
     void load(query);
@@ -764,6 +783,7 @@ export function MediaController({ api, session }: { readonly api: ApiClient; rea
   return (
     <MediaPage
       role={roleOf(session)}
+      device={device}
       media={media}
       filter={query.filter}
       captureTimeOrder={query.direction}
@@ -773,7 +793,14 @@ export function MediaController({ api, session }: { readonly api: ApiClient; rea
         if (activeRequest.current === null && cursor === media.nextCursor) void load(query, cursor);
       }}
       onRefresh={() => void load(query)}
-      onRequestDownloadUrl={(id) => createMediaDownloadUrl(api, id)}
+      onRequestDownloadUrl={async (id) => {
+        if (
+          !media.rows?.some((row) => row.mediaId === id && row.deviceId === device.id && row.status === 'AVAILABLE')
+        ) {
+          throw deviceScopeMismatch();
+        }
+        return createMediaDownloadUrl(api, id);
+      }}
     />
   );
 }

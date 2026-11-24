@@ -111,11 +111,12 @@ for (const language of ['zh-CN', 'en']) {
     await resetTamper;
     await expect(page.getByTestId('filter-customer')).toHaveValue('');
 
-    await page.goto('/media');
-    await page.getByTestId('media-filter-device').fill(longId);
-    await page.getByTestId('media-filter-customer').fill('cust-a');
+    await page.goto('/media?deviceId=dev-p0');
+    await expect(page.getByTestId('media-filter-device')).toHaveCount(0);
+    await expect(page.getByTestId('media-filter-customer')).toHaveCount(0);
+    await page.getByTestId('media-filter-type').selectOption('IMAGE');
     await verifyControls(page, page.getByTestId('media-filter').locator('.filter-bar--stacked'));
-    const media = filteredRequest(page, 'media', { deviceId: longId, customerId: 'cust-a' });
+    const media = filteredRequest(page, 'media', { deviceId: 'dev-p0', mediaType: 'IMAGE' });
     await page.getByTestId('media-filter-search').click();
     await media;
 

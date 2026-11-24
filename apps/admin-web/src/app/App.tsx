@@ -29,6 +29,8 @@ import {
   OtaPackagesController,
 } from './operations-controllers.js';
 import { LoginPage } from './LoginPage.js';
+import { deviceGroupsReturnPath, deviceWorkbenchId } from '../router/device-navigation.js';
+import { ValidatedDeviceWorkbench } from './DeviceWorkbench.js';
 import { safeReturnPath, useBrowserRouter } from './browser-router.js';
 import {
   ConsumablesController,
@@ -156,13 +158,35 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   }
   if (session === null) return null;
   const sessionScope = `${session.username}:${session.customerId}:${session.roles.join(',')}`;
+  const scopeId = deviceWorkbenchId(location.pathname, location.search);
+  const chooseDevice = () => navigate(deviceGroupsReturnPath(location.search));
+  const inDeviceContext = (render: Parameters<typeof ValidatedDeviceWorkbench>[0]['children']) => (
+    <ValidatedDeviceWorkbench
+      key={JSON.stringify([sessionScope, location.pathname, scopeId])}
+      api={services.api}
+      requestedId={scopeId ?? ''}
+      customerId={session.customerId}
+      onChoose={chooseDevice}
+    >
+      {render}
+    </ValidatedDeviceWorkbench>
+  );
   let page;
   switch (verdict.route.pageState) {
     case 'dashboard':
       page = <DashboardController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'device-group':
-      page = <DeviceGroupsController api={services.api} session={session} toasts={toasts} onNavigate={navigate} />;
+      page = (
+        <DeviceGroupsController
+          key={sessionScope}
+          api={services.api}
+          session={session}
+          toasts={toasts}
+          search={location.search}
+          onNavigate={navigate}
+        />
+      );
       break;
     case 'customers':
       page = <CustomersController api={services.api} session={session} toasts={toasts} />;
@@ -198,13 +222,31 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       );
       break;
     case 'configurations':
-      page = <ConfigurationsController key={sessionScope} api={services.api} session={session} />;
+      page =
+        scopeId === null ? (
+          <ConfigurationsController key={sessionScope} api={services.api} session={session} />
+        ) : (
+          inDeviceContext((device) => <ConfigurationsController api={services.api} session={session} device={device} />)
+        );
       break;
     case 'device-users':
       page = <DeviceUsersController key={sessionScope} api={services.api} session={session} />;
       break;
     case 'alarms':
-      page = <AlarmsController api={services.api} session={session} search={location.search} onNavigate={navigate} />;
+      page =
+        scopeId === null ? (
+          <AlarmsController api={services.api} session={session} search={location.search} onNavigate={navigate} />
+        ) : (
+          inDeviceContext((device) => (
+            <AlarmsController
+              api={services.api}
+              session={session}
+              search={location.search}
+              onNavigate={navigate}
+              device={device}
+            />
+          ))
+        );
       break;
     case 'esg-overview':
       page = <EsgOverviewController api={services.api} session={session} />;
@@ -224,7 +266,18 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <OtaPackagesController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'media':
-      page = <MediaController key={sessionScope} api={services.api} session={session} />;
+      page =
+        scopeId === null ? (
+          <section className="detail-stack" data-testid="media-page">
+            <h1>{translate('menu.media')}</h1>
+            <p>{translate('deviceWorkbench.mediaChoose')}</p>
+            <Button type="button" data-testid="media-choose-device" onClick={chooseDevice}>
+              {translate('deviceWorkbench.chooseDevice')}
+            </Button>
+          </section>
+        ) : (
+          inDeviceContext((device) => <MediaController api={services.api} session={session} device={device} />)
+        );
       break;
     case 'audit-logs':
       page = <AuditLogsController key={sessionScope} api={services.api} session={session} />;
@@ -272,6 +325,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
     <TimeZoneProvider>
       <AppShell
         path={location.pathname}
+        search={location.search}
         session={session}
         accountProfile={account?.key === accountKey ? account.profile : null}
         onNavigate={navigateWithinApp}

@@ -7,16 +7,18 @@ import { Button } from '../components/ui.js';
  * 菜单项用 <a href aria-current> 保证键盘与读屏可用；点击经 onNavigate 交给壳层路由。
  */
 import { useState } from 'react';
+import { breadcrumbsFor } from './breadcrumb.js';
 import type { MenuNode } from '../menu/menu.js';
 import { menuKeyForGroup, menuKeyForPageState, useI18n } from '../i18n/i18n.js';
 
 export interface SidebarProps {
   readonly nodes: readonly MenuNode[];
   readonly currentPath: string;
+  readonly search?: string;
   readonly onNavigate: (path: string) => void;
 }
 
-export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
+export function Sidebar({ nodes, currentPath, search, onNavigate }: SidebarProps) {
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
@@ -29,11 +31,11 @@ export function Sidebar({ nodes, currentPath, onNavigate }: SidebarProps) {
     });
   };
 
+  const parents = breadcrumbsFor(currentPath, search).flatMap((crumb) =>
+    crumb.path === null ? [] : [crumb.path.split('?')[0]],
+  );
   const renderItem = (item: { path: string; pageState: string; label: string }) => {
-    const active =
-      item.path === currentPath ||
-      (item.path === '/contracts' && currentPath.startsWith('/contracts/')) ||
-      (item.path === '/devices/groups' && currentPath === '/devices/manage');
+    const active = item.path === currentPath || parents.includes(item.path);
     return (
       <li key={item.path}>
         <a

@@ -16,13 +16,22 @@ import { Sidebar } from './Sidebar.js';
 import { Topbar } from './Topbar.js';
 export interface AppShellProps {
   readonly path: string;
+  readonly search?: string;
   readonly session: SessionSnapshot;
   readonly accountProfile?: OwnAccountProfile | null;
   readonly onNavigate: (path: string) => void;
   readonly onLogout: () => void;
   readonly children: ReactNode;
 }
-export function AppShell({ path, session, accountProfile = null, onNavigate, onLogout, children }: AppShellProps) {
+export function AppShell({
+  path,
+  search = '',
+  session,
+  accountProfile = null,
+  onNavigate,
+  onLogout,
+  children,
+}: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerButtonRef = useRef<HTMLButtonElement | null>(null);
   const closeDrawer = (returnFocus: boolean) => {
@@ -59,11 +68,12 @@ export function AppShell({ path, session, accountProfile = null, onNavigate, onL
             <small>{translate('design.console')}</small>
           </div>
         </div>
-        <Sidebar nodes={nodes} currentPath={path} onNavigate={navigateAndClose} />
+        <Sidebar nodes={nodes} currentPath={path} search={search} onNavigate={navigateAndClose} />
       </aside>
       <div className="main-area">
         <Topbar
           path={path}
+          search={search}
           session={session}
           accountProfile={accountProfile}
           onNavigate={onNavigate}

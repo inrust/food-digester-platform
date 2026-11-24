@@ -17,8 +17,8 @@ import type { CustomerStatus, CustomerView } from '../pages/customers/types.js';
 import { DashboardPage } from '../pages/dashboard/DashboardPage.js';
 import { createDashboardCommandSubmitter, fetchDashboardOverview } from '../pages/dashboard/dashboard-api.js';
 import type { DashboardPageState } from '../pages/dashboard/DashboardPage.js';
-import { DeviceGroupsPage, EMPTY_DEVICE_FILTERS } from '../pages/devices/DeviceGroupsPage.js';
-import type { DeviceListFilters } from '../pages/devices/DeviceGroupsPage.js';
+import { deviceGroupsPath, readDeviceGroupFilters, withGroupFilters } from '../router/device-navigation.js';
+import { DeviceGroupsPage } from '../pages/devices/DeviceGroupsPage.js';
 import { fetchDevices } from '../pages/devices/devices-api.js';
 import type { DeviceView } from '../pages/devices/types.js';
 import type { DetailState } from '../pages/onboarding/OnboardingReviewPanel.js';
@@ -133,6 +133,7 @@ export function DashboardController({
     <DashboardPage
       state={state}
       customerId={customerScope ? session.customerId : null}
+      {...(can(session, 'alarm:read') ? { alarmsPath: '/alarms' } : {})}
       deviceListPath={deviceList !== null && canAccessRoute(deviceList, session.roles) ? deviceList.path : null}
       onRefresh={load}
       onSubmitCommand={submit}
@@ -274,14 +275,16 @@ export function DeviceGroupsController({
   api,
   session,
   toasts,
+  search = '',
   onNavigate,
 }: {
   api: ApiClient;
   session: SessionSnapshot;
   toasts: ToastQueue;
-  onNavigate: (path: string) => void;
+  search?: string;
+  onNavigate: (path: string, options?: { replace?: boolean }) => void;
 }) {
-  const [filters, setFilters] = useState<DeviceListFilters>(EMPTY_DEVICE_FILTERS);
+  const filters = useMemo(() => readDeviceGroupFilters(search), [search]);
   const deviceLoader = useCallback(
     (cursor: string | null) => fetchDevices(api, { ...filters, customerId: session.customerId }, { cursor, limit: 50 }),
     [api, filters, session.customerId],
@@ -364,14 +367,20 @@ export function DeviceGroupsController({
       }}
       filters={filters}
       onApplyFilters={(next) => {
-        setFilters(next);
         devices.reset();
+        const path = deviceGroupsPath(next);
+        if (path !== deviceGroupsPath(filters)) onNavigate(path, { replace: true });
       }}
       onLoadMore={devices.next}
       onLoadPrevious={devices.prev}
       onRefresh={devices.refresh}
       filterOptions={options}
-      onNavigate={onNavigate}
+      onNavigate={(path) => onNavigate(withGroupFilters(path, search))}
+      {...(can(session, 'config:read')
+        ? {
+            onOpenConfigurations: () => onNavigate(withGroupFilters('/configurations', search)),
+          }
+        : {})}
       onboarding={{
         activeStatus: status,
         onFilterStatus: (next) => {

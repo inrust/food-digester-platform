@@ -24,17 +24,14 @@ function sessionOf(role: Role): SessionSnapshot {
   return { username: 'user@example.com', roles: [role], customerId };
 }
 
-// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses；FE-09 /configurations、/device-users；FE-14 /media；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
+// 五种角色看到正确路由（验收基准）：CT-06 矩阵 9 条 + 扩展路由（FE-05 /customers、/sites；FE-08 /licenses；FE-09 /device-users；FE-15 /audit-logs 仅 SuperAdmin/Auditor）
 const EXPECTED_MENUS: Record<Role, string[]> = {
   PlatformSuperAdmin: [
     '/dashboard',
     '/devices/view',
     '/devices/operate',
     '/devices/groups',
-    '/configurations',
     '/consumables',
-    '/alarms',
-    '/media',
     '/esg/overview',
     '/esg/devices',
     '/contracts',
@@ -50,10 +47,7 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/devices/view',
     '/devices/operate',
     '/devices/groups',
-    '/configurations',
     '/consumables',
-    '/alarms',
-    '/media',
     '/esg/overview',
     '/esg/devices',
     '/contracts',
@@ -65,9 +59,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/dashboard',
     '/devices/view',
     '/devices/groups',
-    '/configurations',
-    '/alarms',
-    '/media',
     '/esg/overview',
     '/esg/devices',
     '/contracts',
@@ -83,8 +74,6 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/devices/operate',
     '/devices/groups',
     '/consumables',
-    '/alarms',
-    '/media',
     '/esg/overview',
     '/esg/devices',
     '/settings',
@@ -96,14 +85,35 @@ const EXPECTED_MENUS: Record<Role, string[]> = {
     '/devices/view',
     '/devices/groups',
     '/consumables',
-    '/alarms',
-    '/media',
     '/esg/overview',
     '/esg/devices',
     '/sites',
     '/device-users',
   ],
 };
+
+test('设备侧栏采用原型四项，旧工作台路径保留共享读取权限', () => {
+  const device = menuForRoles(['PlatformSuperAdmin']).find(
+    (node) => node.kind === 'group' && node.groupId === 'device',
+  );
+  assert.deepEqual(device?.kind === 'group' ? device.items.map((item) => item.path) : [], [
+    '/devices/view',
+    '/devices/operate',
+    '/devices/groups',
+    '/consumables',
+  ]);
+  for (const [path, permission] of [
+    ['/configurations', 'config:read'],
+    ['/media', 'media:read'],
+    ['/alarms', 'alarm:read'],
+  ] as const) {
+    assert.equal(resolveRoute(path, null).kind, 'redirect-login');
+    for (const role of ROLES) {
+      assert.equal(resolveRoute(path, sessionOf(role)).kind, hasPermission(role, permission) ? 'allow' : 'forbidden');
+      assert.isFalse(menuPaths([role]).includes(path));
+    }
+  }
+});
 
 test('设备用户路由与菜单遵循共享读取权限；写权限保持独立', () => {
   for (const role of ROLES) {

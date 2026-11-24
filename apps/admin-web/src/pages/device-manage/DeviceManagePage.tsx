@@ -1,3 +1,4 @@
+import { deviceWorkbenchPath } from '../../router/device-navigation.js';
 import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate } from '../../i18n/i18n.js';
 /**
@@ -170,6 +171,27 @@ export function DeviceManagePage({
         </h3>
       </div>
 
+      <div className="action-row">
+        {hasPermission(role, 'media:read') ? (
+          <Button
+            type="button"
+            data-testid="manage-media"
+            onClick={() => onNavigate(deviceWorkbenchPath('/media', device.id))}
+          >
+            {translate('deviceWorkbench.openMedia')}
+          </Button>
+        ) : null}
+        {hasPermission(role, 'alarm:read') ? (
+          <Button
+            type="button"
+            data-testid="manage-alarms"
+            onClick={() => onNavigate(deviceWorkbenchPath('/alarms', device.id))}
+          >
+            {translate('deviceWorkbench.openAlarms')}
+          </Button>
+        ) : null}
+      </div>
+
       {notice !== null ? (
         <p className="action-notice" role="status" data-testid="action-notice">
           {notice}
@@ -319,11 +341,19 @@ export function DeviceManagePage({
           >
             <h4>{translate('qa08.configurationEntry')}</h4>
             <div className="action-row">
-              <Button type="button" data-testid="goto-current-config" onClick={() => onNavigate('/configurations')}>
+              <Button
+                type="button"
+                data-testid="goto-current-config"
+                onClick={() => onNavigate(deviceWorkbenchPath('/configurations', device.id))}
+              >
                 {translate('qa08.viewConfiguration')}
               </Button>
               {hasPermission(role, 'config:publish') ? (
-                <Button type="button" data-testid="goto-publish-config" onClick={() => onNavigate('/configurations')}>
+                <Button
+                  type="button"
+                  data-testid="goto-publish-config"
+                  onClick={() => onNavigate(deviceWorkbenchPath('/configurations', device.id))}
+                >
                   {translate('qa08.updateConfiguration')}
                 </Button>
               ) : null}

@@ -16,6 +16,7 @@ import type { Ref } from 'react';
 
 export interface TopbarProps {
   readonly path: string;
+  readonly search?: string;
   readonly session: SessionSnapshot;
   readonly accountProfile?: OwnAccountProfile | null;
   readonly onNavigate: (path: string) => void;
@@ -28,6 +29,7 @@ export interface TopbarProps {
 
 export function Topbar({
   path,
+  search,
   session,
   accountProfile,
   onNavigate,
@@ -37,7 +39,7 @@ export function Topbar({
 }: TopbarProps) {
   const [accountOpen, setAccountOpen] = useState(false);
   const accountName = accountProfile?.displayName ?? session.verifiedEmail ?? session.username;
-  const crumbs = breadcrumbsFor(path);
+  const crumbs = breadcrumbsFor(path, search);
   const primaryRole = session.roles[0];
   const roleName = primaryRole === undefined ? null : roleDisplayName(primaryRole);
   const { timeZone, setTimeZone } = useUserTimeZone();

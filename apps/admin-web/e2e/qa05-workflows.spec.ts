@@ -63,7 +63,16 @@ for (const role of ROLES)
     await expect(page.getByTestId('notification-badge')).toHaveCount(0);
     for (const [path, allowed] of routes.filter(
       ([p]) =>
-        !['/devices/manage', '/contracts/new', '/contracts/detail', '/ota/packages', '/ota/campaigns'].includes(p),
+        ![
+          '/devices/manage',
+          '/contracts/new',
+          '/contracts/detail',
+          '/ota/packages',
+          '/ota/campaigns',
+          '/configurations',
+          '/alarms',
+          '/media',
+        ].includes(p),
     ))
       await expect(page.getByTestId(`menu-item-${path}`)).toHaveCount(allowed.includes(role) ? 1 : 0);
     const matrix = [];
@@ -76,7 +85,7 @@ for (const role of ROLES)
       } else await expect(page.getByRole('heading', { name: '403', exact: true })).toBeVisible();
       matrix.push({ path, allowed: allowed.includes(role) });
     }
-    await page.goto('/media');
+    await page.goto('/media?deviceId=dev-p0');
     const captureTime = page.getByTestId('media-list-section').locator('time').first();
     await zones.selectOption('Asia/Shanghai');
     await expect(captureTime).toContainText('08:00:00');
@@ -351,7 +360,7 @@ test('QA05 Media expiry renew 403 and audit read-only zero writes', async ({ pag
       },
     });
   });
-  await page.goto('/media');
+  await page.goto('/media?deviceId=dev-p0');
   await page.getByTestId('media-open-media-fe14').click();
   await expect(page.getByTestId('media-url-expired')).toBeVisible();
   await expect(page.getByTestId('media-preview-image')).toHaveCount(0);

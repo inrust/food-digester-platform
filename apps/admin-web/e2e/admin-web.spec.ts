@@ -774,7 +774,7 @@ test('FE-11 至 FE-15 七个生产路由由真实控制器驱动，并覆盖媒�
   await page.getByTestId('campaign-create-submit').click();
   await expect(page.getByTestId('action-notice')).toContainText('首批 1 台进入灰度');
 
-  await page.goto('/media');
+  await page.goto('/media?deviceId=dev-p0');
   await page.getByTestId('media-open-media-fe14').click();
   await expect(page.getByTestId('media-preview-image')).toHaveAttribute('src', 'https://media.example.test/fe14.png');
 
@@ -809,7 +809,8 @@ test('FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关�
   await denied.route('**/api/v1/admin/media**', (route) =>
     json(route, { error: { code: 'FORBIDDEN', message: 'denied', requestId: 'req-fe14-403' } }, 403),
   );
-  await denied.goto('/media');
+  await denied.route('**/api/v1/admin/devices/dev-p0', (route) => json(route, { data: p0Device }));
+  await denied.goto('/media?deviceId=dev-p0');
   await expect(denied.getByTestId('error-forbidden')).toContainText('无权访问');
   await denied.close();
 

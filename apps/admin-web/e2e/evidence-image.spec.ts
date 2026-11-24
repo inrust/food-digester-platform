@@ -38,7 +38,8 @@ for (const [width, language] of [
     await page.route('https://archive.example.test/alarm.jpg?*', (route) =>
       route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg }),
     );
-    await page.goto('/alarms');
+    await page.goto(width === 375 ? '/alarms?tab=alarm&deviceId=dev-p0' : '/alarms');
+    if (width === 375) await expect(page.getByTestId('alarm-device-scope')).toContainText('dev-p0');
     await page.getByTestId('alarm-detail-alarm-p0').click();
     const entry = page.getByTestId('evidence-open-alarm-p0');
     await expect(entry).toBeVisible();

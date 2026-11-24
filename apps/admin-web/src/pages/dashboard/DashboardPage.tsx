@@ -35,6 +35,7 @@ export interface DashboardPageProps {
   readonly state: DashboardPageState;
   readonly customerId: string | null;
   readonly deviceListPath: string | null;
+  readonly alarmsPath?: string;
   readonly onRefresh: () => void;
   readonly onSubmitCommand: (deviceId: string, command: string) => Promise<CommandSubmitResult>;
   readonly onNavigate: (path: string) => void;
@@ -127,6 +128,7 @@ export function DashboardPage({
   state,
   customerId,
   deviceListPath,
+  alarmsPath,
   onRefresh,
   onSubmitCommand,
   onNavigate,
@@ -217,7 +219,14 @@ export function DashboardPage({
       )}
 
       <section className="latest-alarms" data-testid="latest-alarms">
-        <h4>{translate('page.d0dfdd94f6d9')}</h4>
+        <div className="page-header">
+          <h4>{translate('page.d0dfdd94f6d9')}</h4>
+          {alarmsPath !== undefined ? (
+            <Button type="button" data-testid="dashboard-alarms" onClick={() => onNavigate(alarmsPath)}>
+              {translate('menu.alarms')}
+            </Button>
+          ) : null}
+        </div>
         {overview.sections.latestAlarms.status === 'ERROR' ? (
           <SectionFailure requestId={overview.sections.latestAlarms.requestId} />
         ) : overview.latestAlarms.length === 0 ? (

@@ -242,7 +242,7 @@ async function checkGroup(key: string, page: Page, q: Qa08, go: () => Promise<vo
       for (const button of ['goto-current-config', 'goto-publish-config']) {
         await go();
         await page.getByTestId(button).click();
-        await expect(page).toHaveURL(/\/configurations$/);
+        await expect(page).toHaveURL(/\/configurations\?deviceId=/);
         await page.getByTestId(`config-detail-open-${f.configId}`).click();
         await expect(page.getByTestId('config-detail')).toContainText(f.config.name);
         await page.getByTestId('config-expand-1').click();

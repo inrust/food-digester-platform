@@ -28,7 +28,7 @@
       "feTasks": ["FE-03"],
       "beTasks": ["BE-DASH-01", "BE-CMD-01", "BE-CMD-03"],
       "disposition": "Adapt",
-      "basis": "任务清单 §13.2：真实 10 设备数据；快捷动作走正式命令/OTA 流程",
+      "basis": "任务清单 §13.2：真实 10 设备数据；快捷动作走正式命令/OTA 流程；CMP B/T06 R06：从概览进入告警与事件工作台",
       "elements": [
         { "id": "dashboard.field.validContracts", "kind": "field", "name": "有效合约数", "disposition": "Adopt", "source": { "taskId": "BE-DASH-01", "api": "getDashboardSummary", "field": "validContracts" } },
         { "id": "dashboard.field.deviceStats", "kind": "field", "name": "设备总数及授权分布", "disposition": "Adopt", "source": { "taskId": "BE-DASH-01", "api": "getDashboardSummary", "field": "deviceStats" } },
@@ -96,7 +96,7 @@
       "feTasks": ["FE-04", "FE-06", "FE-07"],
       "beTasks": ["BE-ONB-02", "BE-DEV-01"],
       "disposition": "Adapt",
-      "basis": "任务清单 §13.2：Onboarding 审批、四轴状态与筛选分离",
+      "basis": "任务清单 §13.2：Onboarding 审批、四轴状态与筛选分离；CMP B/T06 R04：配置工作台由设备群进入，返回恢复设备筛选",
       "elements": [
         { "id": "device-group.button.search", "kind": "button", "name": "搜索", "disposition": "Adopt", "source": { "taskId": "BE-DEV-01", "api": "listDevices" } },
         { "id": "device-group.button.reset", "kind": "button", "name": "重置", "disposition": "Adopt", "source": { "taskId": "FE-06" }, "clientSide": true },
@@ -126,7 +126,7 @@
       "feTasks": ["FE-07", "FE-08", "FE-09", "FE-13"],
       "beTasks": ["BE-DEV-02", "BE-DEV-06", "BE-CERT-03", "BE-CFG-01", "BE-OTA-01"],
       "disposition": "Adapt",
-      "basis": "任务清单 §13.2：派生字段只读；证书为请求轮换；升级走 Campaign",
+      "basis": "任务清单 §13.2：派生字段只读；证书为请求轮换；升级走 Campaign；CMP B/T06 R04–R06：从设备详情进入本设备的配置、媒体和告警",
       "elements": [
         { "id": "device-manage.button.updateConfig", "kind": "button", "name": "更新配置文件", "disposition": "Adapt", "basis": "BE-CFG-01：不可变配置版本发布，Contract/Region/Site/Alias 只读派生", "source": { "taskId": "BE-CFG-01", "api": "publishConfigurationVersion" } },
         { "id": "device-manage.button.viewConfig", "kind": "button", "name": "查看当前配置文件", "disposition": "Adopt", "source": { "taskId": "BE-CFG-01", "api": "getConfiguration" } },

@@ -19,6 +19,7 @@ import { TimeText } from '../../components/TimeText.js';
 import { UnitValueText } from '../../components/LocaleValue.js';
 import { useUserTimeZone } from '../../components/TimeText.js';
 import { isUtcRangeOrdered } from '../../components/date-time.js';
+import type { DeviceView } from '../devices/types.js';
 import type { MediaListFilter } from './media-api.js';
 import {
   MEDIA_STATUS_LABELS,
@@ -31,6 +32,7 @@ import type { MediaCaptureTimeOrder, MediaListState, MediaStatus, MediaType, Med
 import type { MediaDownloadUrlView } from './types.js';
 export interface MediaPageProps {
   readonly role: Role;
+  readonly device?: DeviceView;
   readonly media: MediaListState;
   readonly filter: MediaListFilter;
   readonly captureTimeOrder: MediaCaptureTimeOrder;
@@ -68,6 +70,7 @@ const EMPTY_DRAFT: DraftFilter = {
 };
 export function MediaPage({
   role,
+  device,
   media,
   filter,
   captureTimeOrder,
@@ -135,6 +138,11 @@ export function MediaPage({
           {translate('page.dcc4d58c807c')}
         </Button>
       </div>
+      {device !== undefined ? (
+        <p data-testid="media-device-scope">
+          {translate('deviceWorkbench.scope', { name: device.alias ?? device.serialNumber, id: device.id })}
+        </p>
+      ) : null}
       <p className="field-hint">{translate('page.2611c36de1a8')}</p>
 
       <section data-testid="media-filter" aria-label={translate('page.dcce9a144a40')}>
@@ -187,16 +195,18 @@ export function MediaPage({
               ))}
             </select>
           </div>
-          <div className="filter-field">
-            <label htmlFor="media-filter-device">{translate('page.9a04e46a8d92')}</label>
-            <Input
-              id="media-filter-device"
-              data-testid="media-filter-device"
-              value={draft.deviceId}
-              onChange={(event) => setDraft({ ...draft, deviceId: event.target.value })}
-            />
-          </div>
-          {isPlatformRole ? (
+          {device === undefined ? (
+            <div className="filter-field">
+              <label htmlFor="media-filter-device">{translate('page.9a04e46a8d92')}</label>
+              <Input
+                id="media-filter-device"
+                data-testid="media-filter-device"
+                value={draft.deviceId}
+                onChange={(event) => setDraft({ ...draft, deviceId: event.target.value })}
+              />
+            </div>
+          ) : null}
+          {device === undefined && isPlatformRole ? (
             <div className="filter-field">
               <label htmlFor="media-filter-customer">{translate('page.a20148b7e39a')}</label>
               <Input

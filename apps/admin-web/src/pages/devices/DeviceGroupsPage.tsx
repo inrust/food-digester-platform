@@ -8,7 +8,7 @@ import { translate } from '../../i18n/i18n.js';
  * 四轴状态徽标（DEC-010，替代被 Reject 的“是否启用/启用状态”）/操作（管理 → /devices/manage）。
  * 筛选：关键字 + Region/Subregion/Site（ScopeFilter）+ 四轴状态 + 授权状态；搜索/重置。
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { axisValueLabel, FourAxisBadges } from '../../components/FourAxisBadge.js';
 import { CursorTable } from '../../components/CursorTable.js';
 import { NumberText } from '../../components/LocaleValue.js';
@@ -72,6 +72,7 @@ export interface DeviceGroupsPageProps {
     })[];
   };
   readonly onNavigate: (path: string) => void;
+  readonly onOpenConfigurations?: () => void;
   /** FE-04 审批面板（嵌入本页“新增设备请求”区域）。 */
   readonly onboarding: OnboardingReviewPanelProps;
 }
@@ -111,10 +112,12 @@ export function DeviceGroupsPage({
   onRefresh,
   filterOptions,
   onNavigate,
+  onOpenConfigurations,
   onboarding,
 }: DeviceGroupsPageProps) {
   // 草稿筛选：应用后才生效（device-group.button.search 语义）
   const [draft, setDraft] = useState<DeviceListFilters>(filters);
+  useEffect(() => setDraft(filters), [filters]);
   const scopeValue: ScopeFilterValue = {
     region: draft.region,
     subregion: draft.subregion,
@@ -125,6 +128,11 @@ export function DeviceGroupsPage({
     <div className="device-groups-page" data-testid="device-groups-page">
       <header className="page-header">
         <h1>{translate('design.page.device-group')}</h1>
+        {onOpenConfigurations !== undefined ? (
+          <Button type="button" data-testid="device-groups-configurations" onClick={onOpenConfigurations}>
+            {translate('deviceWorkbench.configurations')}
+          </Button>
+        ) : null}
       </header>
       <FilterBar
         testId="device-filter-bar"

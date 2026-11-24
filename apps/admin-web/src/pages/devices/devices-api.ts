@@ -41,8 +41,11 @@ export async function fetchDevices(
   return { items: response.data, nextCursor: response.meta.nextCursor };
 }
 
-export async function fetchDevice(api: ApiClient, deviceId: string): Promise<DeviceView> {
-  const response = await api.request<{ data: DeviceView }>(`/admin/devices/${encodeURIComponent(deviceId)}`);
+export async function fetchDevice(api: ApiClient, deviceId: string, signal?: AbortSignal): Promise<DeviceView> {
+  const response = await api.request<{ data: DeviceView }>(
+    `/admin/devices/${encodeURIComponent(deviceId)}`,
+    signal === undefined ? undefined : { signal },
+  );
   return response.data;
 }
 

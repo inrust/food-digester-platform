@@ -1,6 +1,7 @@
 import { FilterBar } from '../../components/FilterBar.js';
 import { Button, Input, TextArea } from '../../components/ui.js';
 import { translate, useI18n } from '../../i18n/i18n.js';
+import type { DeviceView } from '../devices/types.js';
 /**
  * FE-09 Configuration 管理页（/configurations）：DEC-018@1.0.0 V1 四字段配置。
  *
@@ -85,6 +86,7 @@ export interface ConfigurationFilter {
 export const EMPTY_CONFIGURATION_FILTER: ConfigurationFilter = { targetModel: null, targetDeviceId: null };
 export interface ConfigurationsPageProps {
   readonly role: Role;
+  readonly device?: DeviceView;
   readonly list: {
     readonly rows: readonly ConfigurationSummaryView[] | null;
     readonly loading?: boolean;
@@ -123,6 +125,7 @@ export interface ConfigurationsPageProps {
 }
 export function ConfigurationsPage({
   role,
+  device,
   list,
   appliedFilter,
   onApplyFilter,
@@ -185,50 +188,56 @@ export function ConfigurationsPage({
           </Button>
         </div>
       ) : null}
-      <FilterBar
-        testId="config-filter-bar"
-        actions={
-          <>
-            <Button
-              type="button"
-              className="primary-button"
-              data-testid="config-search"
-              onClick={() => onApplyFilter(draftFilter)}
-            >
-              {translate('page.f04090805c6e')}
-            </Button>
-            <Button
-              type="button"
-              data-testid="config-reset"
-              onClick={() => {
-                setDraftFilter(EMPTY_CONFIGURATION_FILTER);
-                onApplyFilter(EMPTY_CONFIGURATION_FILTER);
-              }}
-            >
-              {translate('page.3d81345303ab')}
-            </Button>
-          </>
-        }
-      >
-        <div className="filter-field">
-          <label htmlFor="config-filter-model">{translate('page.418dfc356a6d')}</label>
-          <Input
-            id="config-filter-model"
-            data-testid="config-filter-model"
-            value={draftFilter.targetModel ?? ''}
-            onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
-          />
-        </div>
-        <div className="filter-field">
-          <label htmlFor="config-filter-device">{translate('page.1b73f8fcde1b')}</label>
-          <Input
-            id="config-filter-device"
-            data-testid="config-filter-device"
-            value={draftFilter.targetDeviceId ?? ''}
-            onChange={(event) => setDraftFilter({ ...draftFilter, targetDeviceId: event.target.value })}
-          />
-        </div>
-      </FilterBar>
+      {device !== undefined ? (
+        <p data-testid="configuration-device-scope">
+          {translate('deviceWorkbench.scope', { name: device.alias ?? device.serialNumber, id: device.id })}
+        </p>
+      ) : (
+        <FilterBar
+          testId="config-filter-bar"
+          actions={
+            <>
+              <Button
+                type="button"
+                className="primary-button"
+                data-testid="config-search"
+                onClick={() => onApplyFilter(draftFilter)}
+              >
+                {translate('page.f04090805c6e')}
+              </Button>
+              <Button
+                type="button"
+                data-testid="config-reset"
+                onClick={() => {
+                  setDraftFilter(EMPTY_CONFIGURATION_FILTER);
+                  onApplyFilter(EMPTY_CONFIGURATION_FILTER);
+                }}
+              >
+                {translate('page.3d81345303ab')}
+              </Button>
+            </>
+          }
+        >
+          <div className="filter-field">
+            <label htmlFor="config-filter-model">{translate('page.418dfc356a6d')}</label>
+            <Input
+              id="config-filter-model"
+              data-testid="config-filter-model"
+              value={draftFilter.targetModel ?? ''}
+              onChange={(event) => setDraftFilter({ ...draftFilter, targetModel: event.target.value })}
+            />
+          </div>
+          <div className="filter-field">
+            <label htmlFor="config-filter-device">{translate('page.1b73f8fcde1b')}</label>
+            <Input
+              id="config-filter-device"
+              data-testid="config-filter-device"
+              value={draftFilter.targetDeviceId ?? ''}
+              onChange={(event) => setDraftFilter({ ...draftFilter, targetDeviceId: event.target.value })}
+            />
+          </div>
+        </FilterBar>
+      )}
 
       {notice !== null && detail.kind === 'none' ? (
         <p className="action-notice" role="status" data-testid="action-notice">
@@ -455,6 +464,7 @@ export function ConfigurationsPage({
       >
         <CreateConfigurationForm
           busy={busy}
+          {...(device !== undefined ? { deviceId: device.id } : {})}
           onSubmit={(input) => void runAction(() => onCreate(input), translate('page.34c0d9de5819'))}
         />
       </Modal>
@@ -703,9 +713,11 @@ function VersionPayloadForm({
 }
 function CreateConfigurationForm({
   busy,
+  deviceId,
   onSubmit,
 }: {
   readonly busy: boolean;
+  readonly deviceId?: string;
   readonly onSubmit: (input: { name: string; targetModel?: string; targetDeviceId?: string; reason?: string }) => void;
 }) {
   const [name, setName] = useState('');
@@ -713,7 +725,7 @@ function CreateConfigurationForm({
   const [targetValue, setTargetValue] = useState('');
   const [reason, setReason] = useState('');
   const nameTrimmed = name.trim();
-  const targetTrimmed = targetValue.trim();
+  const targetTrimmed = deviceId ?? targetValue.trim();
   const reasonTrimmed = reason.trim();
   return (
     <div className="config-create-form" data-testid="config-create-form">
@@ -726,29 +738,35 @@ function CreateConfigurationForm({
           onChange={(event) => setName(event.target.value)}
         />
       </div>
-      <div className="dialog-field">
-        <label htmlFor="config-target-kind">{translate('page.c87bdfd4ba4b')}</label>
-        <select
-          id="config-target-kind"
-          data-testid="config-target-kind"
-          value={targetKind}
-          onChange={(event) => setTargetKind(event.target.value as 'model' | 'device')}
-        >
-          <option value="model">{translate('page.eb2404a248b7')}</option>
-          <option value="device">{translate('page.b80602624134')}</option>
-        </select>
-      </div>
-      <div className="dialog-field">
-        <label htmlFor="config-target-value">
-          {targetKind === 'model' ? translate('page.418dfc356a6d') : translate('page.39c47009f7aa')}
-        </label>
-        <Input
-          id="config-target-value"
-          data-testid="config-target-value"
-          value={targetValue}
-          onChange={(event) => setTargetValue(event.target.value)}
-        />
-      </div>
+      {deviceId !== undefined ? (
+        <p data-testid="config-fixed-target">{deviceId}</p>
+      ) : (
+        <>
+          <div className="dialog-field">
+            <label htmlFor="config-target-kind">{translate('page.c87bdfd4ba4b')}</label>
+            <select
+              id="config-target-kind"
+              data-testid="config-target-kind"
+              value={targetKind}
+              onChange={(event) => setTargetKind(event.target.value as 'model' | 'device')}
+            >
+              <option value="model">{translate('page.eb2404a248b7')}</option>
+              <option value="device">{translate('page.b80602624134')}</option>
+            </select>
+          </div>
+          <div className="dialog-field">
+            <label htmlFor="config-target-value">
+              {targetKind === 'model' ? translate('page.418dfc356a6d') : translate('page.39c47009f7aa')}
+            </label>
+            <Input
+              id="config-target-value"
+              data-testid="config-target-value"
+              value={targetValue}
+              onChange={(event) => setTargetValue(event.target.value)}
+            />
+          </div>
+        </>
+      )}
       <div className="dialog-field">
         <label htmlFor="config-reason">{translate('page.db5e8a988ba0')}</label>
         <TextArea
@@ -767,7 +785,9 @@ function CreateConfigurationForm({
           onClick={() =>
             onSubmit({
               name: nameTrimmed,
-              ...(targetKind === 'model' ? { targetModel: targetTrimmed } : { targetDeviceId: targetTrimmed }),
+              ...(deviceId === undefined && targetKind === 'model'
+                ? { targetModel: targetTrimmed }
+                : { targetDeviceId: targetTrimmed }),
               ...(reasonTrimmed !== '' ? { reason: reasonTrimmed } : {}),
             })
           }

@@ -1,3 +1,5 @@
+import { deviceScopeMismatch } from './DeviceWorkbench.js';
+import { deviceGroupsReturnPath, groupFiltersFromContext, withGroupFilters } from '../router/device-navigation.js';
 import { translate } from '../i18n/i18n.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Role } from '@fdp/auth/browser';
@@ -267,10 +269,13 @@ export function DeviceManageController({
     setAssignments(null);
     setAssignmentsError(undefined);
     const results = await Promise.allSettled([fetchDevice(api, deviceId), fetchDeviceAssignments(api, deviceId)]);
-    if (results[0].status === 'fulfilled') {
+    if (results[0].status === 'fulfilled' && results[0].value.id === deviceId) {
       setDevice(results[0].value);
       setRetirement(results[0].value.retirement ?? null);
-    } else setLoadError(results[0].reason);
+    } else {
+      setDevice(null);
+      setLoadError(results[0].status === 'rejected' ? results[0].reason : deviceScopeMismatch());
+    }
     if (results[1].status === 'fulfilled') setAssignments(results[1].value);
     else {
       setAssignments([]);
@@ -317,7 +322,7 @@ export function DeviceManageController({
       rotation={rotation}
       customers={customers}
       sites={sites}
-      onBack={() => onNavigate('/devices/groups')}
+      onBack={() => onNavigate(deviceGroupsReturnPath(search))}
       onRefresh={() => void load()}
       onAssign={(input) => assignDevice(api, requireId(), input)}
       onSuspend={(reason) => suspendDevice(api, requireId(), reason)}
@@ -341,7 +346,13 @@ export function DeviceManageController({
         setRotation(result);
         return result;
       }}
-      onNavigate={onNavigate}
+      onNavigate={(path) =>
+        onNavigate(
+          /^(\/configurations|\/media|\/alarms)\?/.test(path)
+            ? withGroupFilters(path, groupFiltersFromContext(search))
+            : path,
+        )
+      }
     />
   );
 }
@@ -469,11 +480,14 @@ export function LicensesController({
 export function ConfigurationsController({
   api,
   session,
+  device,
 }: {
   readonly api: ApiClient;
   readonly session: SessionSnapshot;
+  readonly device?: DeviceView;
 }) {
   const [filter, setFilter] = useState<ConfigurationFilter>(EMPTY_CONFIGURATION_FILTER);
+  const targetDeviceId = device?.id;
   const [list, setList] = useState<{
     rows: readonly ConfigurationSummaryView[] | null;
     error?: unknown;
@@ -494,15 +508,22 @@ export function ConfigurationsController({
       setList((current) => ({ rows: preserveRows ? current.rows : null }));
       try {
         const rows = await fetchConfigurations(api, {
-          ...(filter.targetModel ? { targetModel: filter.targetModel } : {}),
-          ...(filter.targetDeviceId ? { targetDeviceId: filter.targetDeviceId } : {}),
+          ...(targetDeviceId !== undefined
+            ? { targetDeviceId }
+            : {
+                ...(filter.targetModel ? { targetModel: filter.targetModel } : {}),
+                ...(filter.targetDeviceId ? { targetDeviceId: filter.targetDeviceId } : {}),
+              }),
         });
+        if (targetDeviceId !== undefined && rows.some((row) => row.targetDeviceId !== targetDeviceId)) {
+          throw deviceScopeMismatch();
+        }
         if (request === latestList.current) setList({ rows });
       } catch (error) {
         if (request === latestList.current) setList((current) => ({ rows: current.rows ?? [], error }));
       }
     },
-    [api, filter],
+    [api, filter, targetDeviceId],
   );
   const loadDetail = useCallback(
     async (id: string, preserveDetail = false) => {
@@ -516,12 +537,15 @@ export function ConfigurationsController({
       );
       try {
         const next = await fetchConfiguration(api, id);
+        if (next.configurationId !== id || (targetDeviceId !== undefined && next.targetDeviceId !== targetDeviceId)) {
+          throw deviceScopeMismatch();
+        }
         if (selected.current === request) setDetail({ kind: 'ready', detail: next, sync: {} });
       } catch (error) {
         if (selected.current === request) setDetail({ kind: 'error', error });
       }
     },
-    [api],
+    [api, targetDeviceId],
   );
   useEffect(() => {
     void loadList();
@@ -533,6 +557,7 @@ export function ConfigurationsController({
   return (
     <ConfigurationsPage
       role={roleOf(session)}
+      {...(device !== undefined ? { device } : {})}
       list={list}
       appliedFilter={filter}
       onApplyFilter={setFilter}
@@ -559,7 +584,14 @@ export function ConfigurationsController({
           (error: unknown) => finish({ kind: 'error', version, error }),
         );
       }}
-      onCreate={(input) => createConfiguration(api, input)}
+      onCreate={({ targetModel, ...input }) =>
+        createConfiguration(
+          api,
+          targetDeviceId === undefined
+            ? { ...input, ...(targetModel !== undefined ? { targetModel } : {}) }
+            : { ...input, targetDeviceId },
+        )
+      }
       onCreateVersion={(id, input) => createConfigurationVersion(api, id, input)}
       onPublish={(id, version, input) => publishConfigurationVersion(api, id, version, input)}
     />
@@ -696,34 +728,49 @@ type AlarmsControllerProps = {
   readonly session: SessionSnapshot;
   readonly search: string;
   readonly onNavigate: Navigate;
+  readonly device?: DeviceView;
 };
 export function AlarmsController(props: AlarmsControllerProps) {
   const { session } = props;
   return <AlarmsInstance key={`${session.username}:${session.customerId}:${session.roles.join(',')}`} {...props} />;
 }
-function AlarmsInstance({
-  api,
-  session,
-  search,
-  onNavigate,
-}: {
-  readonly api: ApiClient;
-  readonly session: SessionSnapshot;
-  readonly search: string;
-  readonly onNavigate: Navigate;
-}) {
-  const parsed = useMemo(() => urlStateFromSearch(search), [search]);
-  const urlState = useMemo<AlarmPageUrlState>(
-    () =>
-      session.customerId === null
-        ? parsed
-        : {
-            ...parsed,
-            alarm: { ...parsed.alarm, customerId: session.customerId },
-            event: { ...parsed.event, customerId: session.customerId },
-            tamper: { ...parsed.tamper, customerId: session.customerId },
-          },
-    [parsed, session.customerId],
+function AlarmsInstance({ api, session, search, onNavigate, device }: AlarmsControllerProps) {
+  const parsed = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const filterDeviceId = params.get('filterDeviceId');
+    if (filterDeviceId !== null) params.set('deviceId', filterDeviceId);
+    return urlStateFromSearch(params.toString());
+  }, [search]);
+  const deviceId = device?.id;
+  const customerId = session.customerId;
+  const groupSearch = groupFiltersFromContext(search);
+  const urlState = useMemo<AlarmPageUrlState>(() => {
+    if (deviceId === undefined && customerId === null) return parsed;
+    const scope = deviceId === undefined ? { customerId } : { customerId, siteId: null, deviceId };
+    return {
+      ...parsed,
+      alarm: { ...parsed.alarm, ...scope },
+      event: { ...parsed.event, ...scope },
+      tamper: { ...parsed.tamper, ...scope },
+    };
+  }, [parsed, customerId, deviceId]);
+  const stateSearch = useCallback(
+    (state: AlarmPageUrlState) => {
+      const params = new URLSearchParams(urlStateToSearch(state));
+      if (deviceId === undefined) {
+        const filterDeviceId = params.get('deviceId');
+        if (filterDeviceId !== null) {
+          params.delete('deviceId');
+          params.set('filterDeviceId', filterDeviceId);
+        }
+        return `?${params}`;
+      }
+
+      for (const key of ['deviceId', 'customerId', 'siteId']) params.delete(key);
+      params.set('scopeDeviceId', deviceId);
+      return withGroupFilters(`/alarms?${params}`, groupSearch).slice('/alarms'.length);
+    },
+    [deviceId, groupSearch],
   );
   const [alarms, setAlarms] = useState<ListState<AlarmView>>({ rows: null });
   const [events, setEvents] = useState<ListState<DeviceEventView>>({ rows: null });
@@ -758,14 +805,17 @@ function AlarmsInstance({
         if (tab === 'alarm') {
           const page = await fetchAlarms(api, urlState.alarm, cursor);
           if (generation !== listGeneration.current[tab]) return;
+          if (deviceId !== undefined && page.rows.some((row) => row.deviceId !== deviceId)) throw deviceScopeMismatch();
           setAlarms({ rows: page.rows, loading: false, nextCursor: page.nextCursor });
         } else if (tab === 'event') {
           const page = await fetchDeviceEvents(api, urlState.event, cursor);
           if (generation !== listGeneration.current[tab]) return;
+          if (deviceId !== undefined && page.rows.some((row) => row.deviceId !== deviceId)) throw deviceScopeMismatch();
           setEvents({ rows: page.rows, loading: false, nextCursor: page.nextCursor });
         } else {
           const page = await fetchTamperEvents(api, urlState.tamper, cursor);
           if (generation !== listGeneration.current[tab]) return;
+          if (deviceId !== undefined && page.rows.some((row) => row.deviceId !== deviceId)) throw deviceScopeMismatch();
           setTampers({ rows: page.rows, loading: false, nextCursor: page.nextCursor });
         }
       } catch (error) {
@@ -775,7 +825,7 @@ function AlarmsInstance({
         else setTampers((old) => ({ ...old, loading: false, error }));
       }
     },
-    [api, urlState],
+    [api, deviceId, urlState],
   );
   const loadDetail = useCallback(
     async (id: string) => {
@@ -784,12 +834,14 @@ function AlarmsInstance({
       setDetail({ kind: 'loading' });
       try {
         const alarm = await fetchAlarm(api, id);
+        if (alarm.alarmId !== id || (deviceId !== undefined && alarm.deviceId !== deviceId))
+          throw deviceScopeMismatch();
         if (selected.current === id && generation === detailGeneration.current) setDetail({ kind: 'ready', alarm });
       } catch (error) {
         if (selected.current === id && generation === detailGeneration.current) setDetail({ kind: 'error', error });
       }
     },
-    [api],
+    [api, deviceId],
   );
   useEffect(() => {
     selected.current = null;
@@ -803,6 +855,7 @@ function AlarmsInstance({
     };
   }, [load, urlState.tab]);
   useEffect(() => {
+    if (deviceId !== undefined) return;
     let active = true;
     void Promise.allSettled([
       session.customerId === null
@@ -840,10 +893,10 @@ function AlarmsInstance({
     return () => {
       active = false;
     };
-  }, [api, session.customerId]);
+  }, [api, deviceId, session.customerId]);
   const apply = (next: AlarmPageUrlState) => {
-    const nextSearch = urlStateToSearch(next);
-    if (nextSearch === urlStateToSearch(urlState)) {
+    const nextSearch = stateSearch(next);
+    if (nextSearch === stateSearch(urlState)) {
       void load(next.tab);
     } else {
       onNavigate(`/alarms${nextSearch}`);
@@ -863,7 +916,9 @@ function AlarmsInstance({
       customerOptions={customerOptions}
       siteOptions={alarmSiteOptions}
       deviceOptions={alarmDeviceOptions}
+      {...(device ? { device } : {})}
       urlState={urlState}
+      serializeSearch={stateSearch}
       onApplyUrlState={apply}
       alarms={alarms}
       events={events}
