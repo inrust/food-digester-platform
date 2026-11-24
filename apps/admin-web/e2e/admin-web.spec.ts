@@ -737,7 +737,7 @@ test('FE-11 至 FE-15 API 403 与路由角色边界在真实浏览器失败关�
   await customer.close();
 });
 
-test('FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭', async ({ qa05 }) => {
+test('A/T03 草稿可离开并从详情重试关联，上海日期不随显示时区切换', async ({ qa05 }) => {
   const operator = await qa05.newPage();
   await seedSession(operator, 'PlatformOperator');
   await operator.goto('/contracts/new');
@@ -746,6 +746,8 @@ test('FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭',
 
   const admin = await qa05.newPage();
   await seedSession(admin, 'PlatformSuperAdmin');
+  await admin.route('**/api/v1/admin/dashboard/overview', (route) => json(route, { data: dashboard, meta: {} }));
+  await admin.route('**/api/v1/admin/licenses**', (route) => json(route, { data: [], meta: { nextCursor: null } }));
   await admin.route('**/api/v1/admin/customers**', (route) =>
     json(route, {
       data: [
@@ -761,50 +763,91 @@ test('FE-17 新建权限与零设备第二阶段在真实浏览器失败关闭',
       meta: { nextCursor: null },
     }),
   );
+  let creates = 0;
+  let queries = 0;
+  let binds = 0;
+  const contract = {
+    contractId: 'con-zero',
+    contractNumber: 'HT-E2E-ZERO',
+    name: '零设备合约',
+    customerId: 'cust-a',
+    contact: null,
+    startAt: '2028-02-28T16:00:00.000Z',
+    endAt: '2028-02-29T16:00:00.000Z',
+    status: 'DRAFT',
+    derivedStatus: 'DRAFT',
+    version: 1,
+    createdBy: 'e2e-PlatformSuperAdmin',
+    createdAt: '2026-09-10T00:00:00Z',
+    updatedAt: '2026-09-10T00:00:00Z',
+  };
   await admin.route('**/api/v1/admin/contracts**', (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
-    if (path.endsWith('/con-zero/available-devices')) return json(route, { data: [] });
-    if (path.endsWith('/contracts') && request.method() === 'POST') {
-      return json(
-        route,
-        {
-          data: {
-            contractId: 'con-zero',
-            contractNumber: 'HT-E2E-ZERO',
-            name: '零设备合约',
-            customerId: 'cust-a',
-            contact: null,
-            startAt: '2026-10-01T00:00:00Z',
-            endAt: '2027-10-01T00:00:00Z',
-            status: 'DRAFT',
-            derivedStatus: 'DRAFT',
-            version: 1,
-            createdBy: 'e2e-PlatformSuperAdmin',
-            createdAt: '2026-09-10T00:00:00Z',
-            updatedAt: '2026-09-10T00:00:00Z',
-          },
-        },
-        201,
-      );
+    if (path.endsWith('/con-zero/available-devices')) {
+      queries += 1;
+      if (queries === 1 || queries === 3) {
+        return json(
+          route,
+          { error: { code: 'INTERNAL_ERROR', message: 'Query failed', requestId: 'req-options' } },
+          500,
+        );
+      }
+      if (queries === 2) return json(route, { data: [] });
+      return json(route, {
+        data: [{ deviceId: 'draft-device', serialNumber: 'SN-DRAFT', model: 'FD-100', alias: null, site: null }],
+      });
     }
-    return json(route, { data: [], meta: { nextCursor: null } });
+    if (path.endsWith('/con-zero/devices/bind')) {
+      expect(request.postDataJSON()).toEqual({ deviceIds: ['draft-device'], reason: '安装' });
+      binds += 1;
+      return json(route, { data: { bound: ['draft-device'] } }, 201);
+    }
+    if (path.endsWith('/contracts') && request.method() === 'POST') {
+      creates += 1;
+      expect(request.postDataJSON()).toMatchObject({ startDate: '2028-02-29', endDate: '2028-02-29' });
+      return json(route, { data: contract }, 201);
+    }
+    if (path.endsWith('/contracts')) return json(route, { data: creates > 0 ? [contract] : [] });
+    if (path.endsWith('/con-zero')) return json(route, { data: contract });
+    return json(route, { data: [] });
   });
 
   await admin.goto('/contracts/new');
+  await expect(admin.locator('#contract-customer-help')).toContainText('客户管理');
   await admin.getByTestId('contract-number-input').fill('HT-E2E-ZERO');
   await admin.getByTestId('contract-name-input').fill('零设备合约');
   await admin.getByTestId('contract-customer-select').selectOption('cust-a');
-  await admin.getByTestId('contract-start-input').fill('2026-10-01T00:00');
-  await admin.getByTestId('contract-end-input').fill('2027-10-01T00:00');
+  await admin.getByTestId('contract-start-input').fill('2028-02-29');
+  await admin.getByTestId('contract-end-input').fill('2028-02-29');
   await admin.getByTestId('contract-create-submit').click();
-
+  await expect(admin.getByTestId('action-notice')).toContainText('已保存为草稿');
+  await admin.getByTestId('contract-new-devices-retry').click();
   await expect(admin.getByTestId('contract-new-devices-empty')).toBeVisible();
-  await expect(admin.getByTestId('contract-new-device-required')).toContainText('至少关联一台');
-  await expect(admin.getByTestId('contract-new-done')).toBeDisabled();
-  await expect(admin.getByTestId('contract-create-cancel')).toBeDisabled();
+  await expect(admin.getByTestId('contract-new-done')).toBeEnabled();
+
   await admin.locator('a[href="/dashboard"]').click();
-  await expect(admin).toHaveURL(/\/contracts\/new$/);
+  await expect(admin).toHaveURL(/\/dashboard$/);
+  await admin.goto('/contracts');
+  await expect(admin.getByTestId('contract-list')).toContainText('2028-02-29 ~ 2028-02-29');
+  await admin.getByTestId('contract-open-con-zero').click();
+  const period = admin.getByRole('region', { name: '服务期限' });
+  await expect(period.locator('time')).toHaveText(['2028-02-29', '2028-02-29']);
+  await admin.getByTestId('time-zone-select').selectOption('UTC');
+  await expect(period.locator('time')).toHaveText(['2028-02-29', '2028-02-29']);
+  await admin.getByTestId('contract-bind-open').click();
+  await admin.getByTestId('contract-bind-retry').click();
+  await admin.getByTestId('contract-bind-check-draft-device').check();
+  await expect(admin.getByLabel('关联原因（必填）')).toBeVisible();
+  await admin.getByTestId('contract-bind-form').getByRole('button', { name: '取消' }).click();
+  await admin.getByTestId('language-select').selectOption('en');
+  await admin.getByTestId('contract-bind-open').click();
+  await admin.getByTestId('contract-bind-check-draft-device').check();
+  await admin.getByLabel('Association reason (required)').fill('安装');
+  await admin.getByTestId('contract-bind-submit').click();
+  await expect.poll(() => binds).toBe(1);
+  await expect(admin.getByTestId('contract-bind-form')).toHaveCount(0);
+  expect(creates).toBe(1);
   await admin.close();
 });
 
@@ -1248,6 +1291,7 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
     if (path.endsWith('/devices')) return json(route, { data: [{ association, device }] });
     if (path.endsWith('/associations')) return json(route, { data: [association] });
     if (path.endsWith('/renew')) {
+      expect(request.postDataJSON()).toEqual({ newEndDate: '2028-01-01', reason: '续约' });
       calls.renew += 1;
       return json(route, { data: { ...contract, endAt: '2028-01-01T00:00:00Z', version: 4 } });
     }
@@ -1298,14 +1342,14 @@ test('FE-17 Chromium 覆盖绑定、解绑、续约与终止并保留 License �
   await expect(page.getByTestId('action-notice')).toContainText('不撤销 License');
 
   await page.getByTestId('contract-renew-open').click();
-  await page.getByTestId('contract-renew-end').fill('2025-01-01T00:00:00Z');
+  await page.getByTestId('contract-renew-end').fill('2025-01-01');
   await expect(page.getByTestId('contract-renew-submit')).toBeDisabled();
   await page.getByTestId('contract-renew-form').getByRole('button', { name: '取消' }).click();
   await expect(page.getByTestId('contract-renew-open')).toBeFocused();
   expect(calls.renew).toBe(0);
   await page.getByTestId('contract-renew-open').click();
   await expect(page.getByTestId('contract-renew-end')).toHaveValue('');
-  await page.getByTestId('contract-renew-end').fill('2028-01-01T00:00:00Z');
+  await page.getByTestId('contract-renew-end').fill('2028-01-01');
   await page.getByTestId('contract-renew-reason').fill('续约');
   await page.getByTestId('contract-renew-submit').click();
   await expect.poll(() => calls.renew).toBe(1);

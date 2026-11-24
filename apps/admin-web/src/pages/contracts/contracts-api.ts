@@ -44,8 +44,8 @@ export interface ContractCreateInput {
   readonly name: string;
   readonly customerId: string;
   readonly contact?: string;
-  readonly startAt: string;
-  readonly endAt: string;
+  readonly startDate: string;
+  readonly endDate: string;
   readonly reason?: string;
 }
 
@@ -57,12 +57,12 @@ export async function createContract(api: ApiClient, input: ContractCreateInput)
   return response.data;
 }
 
-/** 编辑输入（reason 强制；startAt/endAt 仅 DRAFT 可改）。 */
+/** 编辑输入（reason 强制；startDate/endDate 仅 DRAFT 可改）。 */
 export interface ContractUpdateInput {
   readonly name?: string;
   readonly contact?: string | null;
-  readonly startAt?: string;
-  readonly endAt?: string;
+  readonly startDate?: string;
+  readonly endDate?: string;
   readonly reason: string;
 }
 
@@ -96,13 +96,13 @@ export async function activateContract(
 export async function renewContract(
   api: ApiClient,
   contractId: string,
-  newEndAt: string,
+  newEndDate: string,
   reason: string,
   version: number,
 ): Promise<ContractView> {
   const response = await api.request<{ data: ContractView }>(
     `/admin/contracts/${encodeURIComponent(contractId)}/renew`,
-    { method: 'POST', body: { newEndAt, reason }, ifMatch: version },
+    { method: 'POST', body: { newEndDate, reason }, ifMatch: version },
   );
   return response.data;
 }

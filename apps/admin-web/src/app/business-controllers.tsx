@@ -222,15 +222,7 @@ export function ContractsController({
     />
   );
 }
-export function ContractNewController({
-  api,
-  onNavigate,
-  onNavigationBlockedChange,
-}: {
-  readonly api: ApiClient;
-  readonly onNavigate: Navigate;
-  readonly onNavigationBlockedChange: (blocked: boolean) => void;
-}) {
+export function ContractNewController({ api, onNavigate }: { readonly api: ApiClient; readonly onNavigate: Navigate }) {
   const [customers, setCustomers] = useState<
     readonly {
       customerId: string;
@@ -251,7 +243,6 @@ export function ContractNewController({
       onBind={(contractId, deviceIds, reason) => bindContractDevices(api, contractId, deviceIds, reason)}
       onCancel={() => onNavigate('/contracts')}
       onDone={() => onNavigate('/contracts')}
-      onNavigationBlockedChange={onNavigationBlockedChange}
     />
   );
 }
@@ -348,7 +339,7 @@ export function ContractDetailController({
       onListAvailable={() => listAvailableDevices(api, requireId())}
       onEdit={(input, version) => updateContract(api, requireId(), input, version)}
       onActivate={(reason, version) => activateContract(api, requireId(), reason, version)}
-      onRenew={(newEndAt, reason, version) => renewContract(api, requireId(), newEndAt, reason, version)}
+      onRenew={(newEndDate, reason, version) => renewContract(api, requireId(), newEndDate, reason, version)}
       onTerminate={(reason, version) => terminateContract(api, requireId(), reason, version)}
       onBind={(deviceIds, reason) => bindContractDevices(api, requireId(), deviceIds, reason)}
       onUnbind={(deviceIds, reason) => unbindContractDevices(api, requireId(), deviceIds, reason)}

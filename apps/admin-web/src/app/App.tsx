@@ -1,7 +1,7 @@
 import { Button } from '../components/ui.js';
 import { DesignProvider } from '../components/DesignProvider.js';
 import { translate } from '../i18n/i18n.js';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToastHost, useToastQueue } from '../components/Toast.js';
 import { resetUserTimeZonePreference, TimeZoneProvider } from '../components/TimeText.js';
 import { I18nProvider, useI18n } from '../i18n/i18n.js';
@@ -97,14 +97,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
   const { location, navigate } = useBrowserRouter();
   const [sessionRevision, setSessionRevision] = useState(0);
   const [account, setAccount] = useState<{ key: string; profile: OwnAccountProfile } | null>(null);
-  const [contractNavigationBlocked, setContractNavigationBlocked] = useState(false);
-  const navigateWithinApp = useCallback(
-    (path: string, options?: { replace?: boolean }) => {
-      if (contractNavigationBlocked) return;
-      navigate(path, options);
-    },
-    [contractNavigationBlocked, navigate],
-  );
+  const navigateWithinApp = navigate;
   const toasts = useToastQueue();
   const session = services.session.current();
   useEffect(
@@ -251,13 +244,7 @@ function AdminWebAppInner({ services }: { readonly services: AdminWebServices })
       page = <ContractsController api={services.api} session={session} onNavigate={navigate} />;
       break;
     case 'contract-new':
-      page = (
-        <ContractNewController
-          api={services.api}
-          onNavigate={navigateWithinApp}
-          onNavigationBlockedChange={setContractNavigationBlocked}
-        />
-      );
+      page = <ContractNewController api={services.api} onNavigate={navigateWithinApp} />;
       break;
     case 'contract-detail':
       page = (

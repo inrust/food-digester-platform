@@ -186,6 +186,32 @@ describe('AUTH-01 管理 API Lambda 组合根', () => {
     assert.equal(approve.mock.calls[0]?.[0].params?.requestId, 'request-1');
   });
 
+  test('T03 合约写路由沿用现有方法、路径、日期字段和 If-Match', async () => {
+    const routes = routeSet();
+    const root = '/api/v1/admin/contracts';
+    for (const [key, httpMethod, path, body] of [
+      ['create', 'POST', root, { startDate: '2028-02-29', endDate: '2028-02-29' }],
+      ['update', 'PATCH', `${root}/test-contract`, { endDate: '2028-03-31', reason: '调整' }],
+      ['renew', 'POST', `${root}/test-contract/renew`, { newEndDate: '2028-04-30', reason: '续约' }],
+    ] as const) {
+      await createAdminRoute(
+        { httpMethod, path },
+        routes,
+      )({
+        requestId: `req-t03-${key}`,
+        headers: { 'If-Match': '3' },
+        body,
+      });
+      expect(routes.contracts?.[key]).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body,
+          headers: { 'If-Match': '3' },
+          ...(key !== 'create' ? { params: { contractId: 'test-contract' } } : {}),
+        }),
+      );
+    }
+  });
+
   test('未知路径失败关闭为 404', async () => {
     const route = createAdminRoute({ httpMethod: 'GET', path: '/api/v1/admin/unknown' }, routeSet());
     await expect(route({ headers: {}, requestId: 'trace-2' })).resolves.toMatchObject({ status: 404 });

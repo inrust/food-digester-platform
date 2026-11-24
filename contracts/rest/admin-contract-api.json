@@ -22,7 +22,8 @@
       "post": {
         "tags": ["admin"],
         "operationId": "createContract",
-        "summary": "创建 Contract（DRAFT；contractNumber 全局唯一；startAt<endAt）",
+        "summary": "创建 Contract（DRAFT；contractNumber 全局唯一）",
+        "description": "每个边界选择业务日期或原有 UTC 时间戳。日期以 Asia/Shanghai 计算，起始日 00:00 开始，结束日包含当天（次日 00:00 为排他边界）。起止同日有效。",
         "security": [{ "CognitoJwt": [] }],
         "requestBody": {
           "required": true,
@@ -93,7 +94,8 @@
       "patch": {
         "tags": ["admin"],
         "operationId": "updateContract",
-        "summary": "编辑 Contract（If-Match + 强制原因；startAt/endAt 仅 DRAFT 可改）",
+        "summary": "编辑 Contract（If-Match + 强制原因；有效期仅 DRAFT 可改）",
+        "description": "草稿的每个有效期边界可独立提供业务日期或原有 UTC 时间戳。省略的边界保留已存储的精确时间。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -159,7 +161,7 @@
         "tags": ["admin"],
         "operationId": "renewContract",
         "summary": "续约 Contract（延长 endAt，状态按新窗口重推导；If-Match + 强制原因）",
-        "description": "EFFECTIVE/EXPIRING_SOON/EXPIRED 可续约；newEndAt 必须晚于当前 endAt；DRAFT 走编辑，TERMINATED 不可续约。",
+        "description": "EFFECTIVE/EXPIRING_SOON/EXPIRED 可续约；newEndDate（含当天）或 newEndAt 换算后的 UTC 边界必须晚于当前 endAt；DRAFT 走编辑，TERMINATED 不可续约。",
         "security": [{ "CognitoJwt": [] }],
         "parameters": [
           { "name": "contractId", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -290,15 +292,33 @@
       }
     },
     "schemas": {
+      "ContractBusinessDate": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^(?!0000)[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+        "description": "Asia/Shanghai 日历日期，格式 YYYY-MM-DD。"
+      },
       "ContractCreateRequest": {
         "type": "object",
-        "required": ["contractNumber", "name", "customerId", "startAt", "endAt"],
+        "required": ["contractNumber", "name", "customerId"],
+        "allOf": [
+          { "oneOf": [{ "required": ["startDate"] }, { "required": ["startAt"] }] },
+          { "oneOf": [{ "required": ["endDate"] }, { "required": ["endAt"] }] }
+        ],
         "additionalProperties": false,
         "properties": {
           "contractNumber": { "type": "string", "minLength": 1, "maxLength": 100, "description": "全局唯一" },
           "name": { "type": "string", "minLength": 1, "maxLength": 200 },
           "customerId": { "type": "string", "minLength": 1 },
           "contact": { "type": "string", "maxLength": 200, "description": "Customer 联系方式（最小权限返回）" },
+          "startDate": {
+            "$ref": "#/components/schemas/ContractBusinessDate",
+            "description": "上海当地 00:00 起算。"
+          },
+          "endDate": {
+            "$ref": "#/components/schemas/ContractBusinessDate",
+            "description": "结束日期含当天，上海次日 00:00 为排他边界。"
+          },
           "startAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp" },
           "endAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp", "description": "必须晚于 startAt" },
           "reason": { "type": "string", "maxLength": 500 }
@@ -308,9 +328,20 @@
         "type": "object",
         "required": ["reason"],
         "additionalProperties": false,
+        "not": {
+          "anyOf": [{ "required": ["startAt", "startDate"] }, { "required": ["endAt", "endDate"] }]
+        },
         "properties": {
           "name": { "type": "string", "minLength": 1, "maxLength": 200 },
           "contact": { "type": ["string", "null"], "maxLength": 200 },
+          "startDate": {
+            "$ref": "#/components/schemas/ContractBusinessDate",
+            "description": "上海当地 00:00 起算。"
+          },
+          "endDate": {
+            "$ref": "#/components/schemas/ContractBusinessDate",
+            "description": "结束日期含当天，上海次日 00:00 为排他边界。"
+          },
           "startAt": { "$ref": "openapi-base.json#/components/schemas/UtcTimestamp", "description": "仅 DRAFT 可改" },
           "endAt": {
             "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
@@ -329,9 +360,14 @@
       },
       "ContractRenewRequest": {
         "type": "object",
-        "required": ["newEndAt", "reason"],
+        "required": ["reason"],
+        "oneOf": [{ "required": ["newEndDate"] }, { "required": ["newEndAt"] }],
         "additionalProperties": false,
         "properties": {
+          "newEndDate": {
+            "$ref": "#/components/schemas/ContractBusinessDate",
+            "description": "含当天。上海次日 00:00 必须晚于当前 endAt。"
+          },
           "newEndAt": {
             "$ref": "openapi-base.json#/components/schemas/UtcTimestamp",
             "description": "必须晚于当前 endAt"

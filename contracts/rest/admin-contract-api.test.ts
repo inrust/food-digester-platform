@@ -92,16 +92,40 @@ test('Schema 封闭：五态枚举/唯一编号/强制原因/派生状态/最小
   assert.ok(contract.properties.contact.description.includes('最小权限'), 'contact 最小权限说明');
   const createReq = doc.components.schemas.ContractCreateRequest;
   assert.equal(createReq.additionalProperties, false);
-  assert.deepEqual(createReq.required.sort(), ['contractNumber', 'name', 'customerId', 'startAt', 'endAt'].sort());
+  assert.deepEqual(createReq.required.sort(), ['contractNumber', 'name', 'customerId'].sort());
   assert.ok(createReq.properties.contractNumber.description.includes('唯一'));
   const updateReq = doc.components.schemas.ContractUpdateRequest;
   assert.deepEqual(updateReq.required, ['reason'], '编辑强制原因');
   const renewReq = doc.components.schemas.ContractRenewRequest;
-  assert.deepEqual(renewReq.required.sort(), ['newEndAt', 'reason'].sort());
+  assert.deepEqual(renewReq.required.sort(), ['reason']);
   const reasonReq = doc.components.schemas.ContractReasonRequest;
   assert.deepEqual(reasonReq.required, ['reason'], '激活/终止强制原因');
   const evalData = doc.components.schemas.ContractEvaluateSuccess.properties.data;
   assert.ok(JSON.stringify(evalData).includes('"changed"'), 'evaluate 响应含变化标记');
+});
+
+test('R11 写入支持日期及旧时间戳，同一边界只允许一种表示', () => {
+  const { ContractBusinessDate, ContractCreateRequest, ContractUpdateRequest, ContractRenewRequest, Contract } =
+    doc.components.schemas;
+  assert.equal(ContractBusinessDate.format, 'date');
+  assert.deepEqual(ContractCreateRequest.allOf, [
+    { oneOf: [{ required: ['startDate'] }, { required: ['startAt'] }] },
+    { oneOf: [{ required: ['endDate'] }, { required: ['endAt'] }] },
+  ]);
+  assert.deepEqual(ContractUpdateRequest.not.anyOf, [
+    { required: ['startAt', 'startDate'] },
+    { required: ['endAt', 'endDate'] },
+  ]);
+  assert.deepEqual(ContractRenewRequest.oneOf, [{ required: ['newEndDate'] }, { required: ['newEndAt'] }]);
+  for (const request of [ContractCreateRequest, ContractUpdateRequest]) {
+    for (const key of ['startDate', 'endDate']) {
+      assert.equal(request.properties[key].$ref, '#/components/schemas/ContractBusinessDate');
+    }
+  }
+  assert.equal(ContractRenewRequest.properties.newEndDate.$ref, '#/components/schemas/ContractBusinessDate');
+  for (const key of ['startAt', 'endAt']) {
+    assert.equal(Contract.properties[key].$ref, 'openapi-base.json#/components/schemas/UtcTimestamp');
+  }
 });
 
 test('所有 $ref 可解析（内部引用 + 同目录相对引用 openapi-base.json）', () => {

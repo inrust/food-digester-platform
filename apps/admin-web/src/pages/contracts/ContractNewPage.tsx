@@ -4,13 +4,13 @@ import { translate } from '../../i18n/i18n.js';
  * FE-17 新建合约页（/contracts/new）：结构化表单 + 两步设备关联。
  *
  * - 字段：合约编号（全局唯一，重复 → 409 呈现）、名称、Customer（客户目录结构化选择，
- *   不能自由文本制造新客户/地域）、有效期（UTC，startAt<endAt）、联系方式（可选）；
+ *   不能自由文本制造新客户/地域）、有效期（上海业务日期）、联系方式（可选）；
  * - 创建为 DRAFT 且不自动激活 License（DEC-007）；
  * - 设备关联为第二步：创建成功后从 eligible 列表（listAvailableDevices：同 Customer、
  *   非 Retired、无 ACTIVE 关联）选择并批量关联（全成或全败；重叠租期 → 409）；
  *   eligible 之外的设备不可选（无自由文本入口）。
  */
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ErrorNotice } from '../../components/ErrorNotice.js';
 import { validateContractForm } from './contract-state.js';
 import type { ContractFormDraft } from './contract-state.js';
@@ -27,16 +27,14 @@ export interface ContractNewPageProps {
   readonly onCancel: () => void;
   /** 完成（创建并可选关联后）返回列表。 */
   readonly onDone: () => void;
-  /** 草稿创建后至至少关联一台设备前，通知组合根阻止站内离开。 */
-  readonly onNavigationBlockedChange?: (blocked: boolean) => void;
 }
 const EMPTY_DRAFT: ContractFormDraft = {
   contractNumber: '',
   name: '',
   customerId: '',
   contact: '',
-  startAt: '',
-  endAt: '',
+  startDate: '',
+  endDate: '',
 };
 export function ContractNewPage({
   customerOptions,
@@ -45,30 +43,30 @@ export function ContractNewPage({
   onBind,
   onCancel,
   onDone,
-  onNavigationBlockedChange,
 }: ContractNewPageProps) {
   const [draft, setDraft] = useState<ContractFormDraft>(EMPTY_DRAFT);
   const [created, setCreated] = useState<ContractView | null>(null);
-  const [available, setAvailable] = useState<readonly AvailableDeviceView[] | null>(null);
+  const [available, setAvailable] = useState<
+    | { kind: 'loading' }
+    | { kind: 'ready'; devices: readonly AvailableDeviceView[] }
+    | { kind: 'failed'; error: unknown }
+  >({ kind: 'loading' });
   const [selected, setSelected] = useState<readonly string[]>([]);
-  const [boundDeviceCount, setBoundDeviceCount] = useState(0);
   const [bindReason, setBindReason] = useState('');
   const [actionError, setActionError] = useState<unknown>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
   const fieldErrors = validateContractForm(draft);
-  const mustBindDevice = created !== null && boundDeviceCount === 0;
-  useEffect(() => {
-    if (!mustBindDevice) return;
-    const preventAbandon = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener('beforeunload', preventAbandon);
-    return () => window.removeEventListener('beforeunload', preventAbandon);
-  }, [mustBindDevice]);
-  useEffect(() => {
-    onNavigationBlockedChange?.(mustBindDevice);
-    return () => onNavigationBlockedChange?.(false);
-  }, [mustBindDevice, onNavigationBlockedChange]);
+  const loadAvailable = async (contractId: string) => {
+    setAvailable({ kind: 'loading' });
+    setSelected([]);
+    try {
+      setAvailable({ kind: 'ready', devices: await onListAvailable(contractId) });
+    } catch (error) {
+      setAvailable({ kind: 'failed', error });
+    }
+  };
   const runAction = async (execute: () => Promise<string>) => {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -90,22 +88,21 @@ export function ContractNewPage({
         contractNumber: draft.contractNumber.trim(),
         name: draft.name.trim(),
         customerId: draft.customerId,
-        startAt: draft.startAt,
-        endAt: draft.endAt,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
         ...(draft.contact.trim() !== '' ? { contact: draft.contact.trim() } : {}),
       };
       const contract = await onCreate(input);
       setCreated(contract);
-      setAvailable(await onListAvailable(contract.contractId));
-      return translate('page.72045015ab9e') + ' ' + contract.contractNumber + (' ' + translate('page.3eb57b0d80cc'));
+      void loadAvailable(contract.contractId);
+      return translate('contract.draftSaved', { number: contract.contractNumber });
     });
   const submitBind = () =>
     runAction(async () => {
       if (created === null || selected.length === 0) return '';
       const bound = await onBind(created.contractId, selected, bindReason.trim());
-      setBoundDeviceCount((count) => count + bound.length);
-      setSelected([]);
-      setAvailable(await onListAvailable(created.contractId));
+      setBindReason('');
+      void loadAvailable(created.contractId);
       return translate('page.1efeec44018f') + ' ' + bound.length + (' ' + translate('page.c109982ccfd5'));
     });
   const fieldError = (key: string) =>
@@ -118,15 +115,11 @@ export function ContractNewPage({
     <div className="contract-new-page" data-testid="contract-new-page">
       <div className="page-header">
         <h3>{translate('page.44c75e312909')}</h3>
-        <Button
-          type="button"
-          data-testid="contract-create-cancel"
-          disabled={mustBindDevice}
-          {...(mustBindDevice ? { title: translate('ui.contractDeviceRequired') } : {})}
-          onClick={onCancel}
-        >
-          {translate('page.11d024154013')}
-        </Button>
+        {created === null ? (
+          <Button type="button" data-testid="contract-create-cancel" onClick={onCancel}>
+            {translate('page.11d024154013')}
+          </Button>
+        ) : null}
       </div>
 
       {notice !== null ? (
@@ -167,6 +160,7 @@ export function ContractNewPage({
             id="contract-customer-select"
             data-testid="contract-customer-select"
             disabled={created !== null}
+            aria-describedby="contract-customer-help"
             value={draft.customerId}
             onChange={(event) => setDraft({ ...draft, customerId: event.target.value })}
           >
@@ -177,27 +171,31 @@ export function ContractNewPage({
               </option>
             ))}
           </select>
+          <p className="field-hint" id="contract-customer-help">
+            {translate('contract.existingCustomer')}
+          </p>
           {fieldError('customerId')}
         </div>
         <div className="dialog-field">
           <label htmlFor="contract-start-input">{translate('page.0ed8daddc54b')}</label>
           <Input
             id="contract-start-input"
-            type="datetime-local"
+            type="date"
             data-testid="contract-start-input"
             disabled={created !== null}
-            value={draft.startAt}
-            onChange={(event) => setDraft({ ...draft, startAt: event.target.value })}
+            value={draft.startDate}
+            onChange={(event) => setDraft({ ...draft, startDate: event.target.value })}
           />
           <label htmlFor="contract-end-input">{translate('page.a1bf0b770919')}</label>
           <Input
             id="contract-end-input"
-            type="datetime-local"
+            type="date"
             data-testid="contract-end-input"
             disabled={created !== null}
-            value={draft.endAt}
-            onChange={(event) => setDraft({ ...draft, endAt: event.target.value })}
+            value={draft.endDate}
+            onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
           />
+          <p className="field-hint">{translate('contract.dateBasis')}</p>
           {fieldError('period')}
         </div>
         <div className="dialog-field">
@@ -230,15 +228,26 @@ export function ContractNewPage({
       {created !== null ? (
         <section data-testid="contract-new-devices" aria-label={translate('page.a638180058f8')}>
           <h4>{translate('page.e70a3aa701a1')}</h4>
-          {available === null ? (
+          {available.kind === 'loading' ? (
             <div role="status">{translate('page.d360706fdd30')}</div>
-          ) : available.length === 0 ? (
+          ) : available.kind === 'failed' ? (
+            <div>
+              <ErrorNotice error={available.error} />
+              <Button
+                type="button"
+                data-testid="contract-new-devices-retry"
+                onClick={() => void loadAvailable(created.contractId)}
+              >
+                {translate('detail.retry')}
+              </Button>
+            </div>
+          ) : available.devices.length === 0 ? (
             <p className="empty-state" data-testid="contract-new-devices-empty">
               {translate('page.941fc73da805')}
             </p>
           ) : (
             <div role="group" aria-label={translate('page.16c798774b40')} data-testid="contract-new-device-list">
-              {available.map((device) => (
+              {available.devices.map((device) => (
                 <label key={device.deviceId}>
                   <Input
                     type="checkbox"
@@ -266,6 +275,7 @@ export function ContractNewPage({
             <Input
               id="contract-bind-reason"
               data-testid="contract-bind-reason"
+              required
               maxLength={500}
               value={bindReason}
               onChange={(event) => setBindReason(event.target.value)}
@@ -281,21 +291,10 @@ export function ContractNewPage({
             >
               {translate('page.381ba5101f1c')}
             </Button>
-            <Button
-              type="button"
-              data-testid="contract-new-done"
-              disabled={busy || mustBindDevice}
-              {...(mustBindDevice ? { title: translate('ui.contractDeviceRequired') } : {})}
-              onClick={onDone}
-            >
-              {translate('page.33246f6a5e5b')}
+            <Button type="button" data-testid="contract-new-done" onClick={onDone}>
+              {translate('page.11d024154013')}
             </Button>
           </div>
-          {mustBindDevice ? (
-            <p className="field-hint" role="alert" data-testid="contract-new-device-required">
-              {translate('ui.contractDeviceRequired')}
-            </p>
-          ) : null}
         </section>
       ) : null}
     </div>

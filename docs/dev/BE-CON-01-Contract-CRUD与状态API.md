@@ -15,6 +15,12 @@
 | 最小权限 | contact 仅 PlatformSuperAdmin/PlatformOperator 可见，Auditor 视图遮蔽为 null；Customer 角色无 contract:read，整接口 403 |
 | 功能边界（DEC-007） | 不管理价格/开票/收付款/电子签署；不自动创建、激活或续期 License |
 
+### 工作包 A · T03（R11）
+
+- 创建可提供 `startDate` 和 `endDate`。草稿编辑按字段提交改过的业务日期。续约可提供 `newEndDate`。日期使用 `YYYY-MM-DD`，固定 `Asia/Shanghai`，开始日从 00:00 起算，结束日包含当天，次日 00:00 为排他边界。
+- 旧客户端继续使用 `startAt`、`endAt`、`newEndAt`。同一边界只接受一种表示。详情、列表和审计继续返回 UTC 时间戳。编辑省略的边界保留原值。设备关联仍使用实际 UTC 窗口，续约保留现有设备关联的既定结束时间。
+- 版本切换时先部署兼容的管理 API，再部署日期表单。前端可独立回退。若需回退 API，先回退日期表单，避免新日期字段被旧 API 的请求校验拒绝。
+
 ## 2. 端点
 
 | 端点 | 权限 | 说明 |

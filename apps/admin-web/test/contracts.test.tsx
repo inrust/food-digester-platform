@@ -219,9 +219,9 @@ test('新建：字段校验（编号必填/结束日早于开始日/Customer 必
       name: 'x',
       customerId: 'cust-1',
       contact: '',
-      startAt: '2027-01-01T00:00:00Z',
-      endAt: '2026-01-01T00:00:00Z',
-    })?.['period']?.includes('晚于'),
+      startDate: '2027-01-01',
+      endDate: '2026-01-01',
+    })?.['period']?.includes('早于'),
   );
 });
 
@@ -231,8 +231,8 @@ test('新建：创建 DRAFT（不自动激活 License）→ eligible 设备两�
   await user.type(screen.getByTestId('contract-number-input'), 'HT-2026-100');
   await user.type(screen.getByTestId('contract-name-input'), '新合约');
   await user.selectOptions(screen.getByTestId('contract-customer-select'), 'cust-1');
-  fireEvent.change(screen.getByTestId('contract-start-input'), { target: { value: '2026-10-01T00:00' } });
-  fireEvent.change(screen.getByTestId('contract-end-input'), { target: { value: '2027-10-01T00:00' } });
+  fireEvent.change(screen.getByTestId('contract-start-input'), { target: { value: '2028-02-29' } });
+  fireEvent.change(screen.getByTestId('contract-end-input'), { target: { value: '2028-02-29' } });
   await user.click(screen.getByTestId('contract-create-submit'));
 
   assert.equal(calls.created.length, 1);
@@ -240,10 +240,11 @@ test('新建：创建 DRAFT（不自动激活 License）→ eligible 设备两�
   assert.equal(calls.created[0]?.customerId, 'cust-1');
   const notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('草稿'));
-  assert.ok(notice.textContent?.includes('不自动激活 License'));
-  assert.ok((screen.getByTestId('contract-new-done') as HTMLButtonElement).disabled, '零设备不得完成');
-  assert.ok((screen.getByTestId('contract-create-cancel') as HTMLButtonElement).disabled, '草稿阶段不得绕过关联离开');
-  assert.ok(screen.getByTestId('contract-new-device-required').textContent?.includes('至少关联一台'));
+  assert.ok(notice.textContent?.includes('从合约详情继续'));
+  assert.equal(calls.created[0]?.startDate, '2028-02-29');
+  assert.equal(calls.created[0]?.endDate, '2028-02-29');
+  assert.equal((screen.getByTestId('contract-new-done') as HTMLButtonElement).disabled, false);
+  assert.equal(screen.queryByTestId('contract-create-submit'), null);
 
   // 第二步：eligible 列表选择并关联
   assert.deepEqual(calls.listed, ['con-new']);
@@ -266,8 +267,8 @@ test('新建：编号重复 409 → 明确错误呈现', async () => {
   await user.type(screen.getByTestId('contract-number-input'), 'HT-2026-001');
   await user.type(screen.getByTestId('contract-name-input'), '重复编号');
   await user.selectOptions(screen.getByTestId('contract-customer-select'), 'cust-1');
-  fireEvent.change(screen.getByTestId('contract-start-input'), { target: { value: '2026-10-01T00:00' } });
-  fireEvent.change(screen.getByTestId('contract-end-input'), { target: { value: '2027-10-01T00:00' } });
+  fireEvent.change(screen.getByTestId('contract-start-input'), { target: { value: '2028-02-29' } });
+  fireEvent.change(screen.getByTestId('contract-end-input'), { target: { value: '2028-02-29' } });
   await user.click(screen.getByTestId('contract-create-submit'));
   const error = await screen.findByTestId('error-generic');
   assert.ok(error.textContent?.includes('contractNumber 已存在'));
@@ -280,7 +281,7 @@ function renderDetail(overrides: Partial<ContractDetailPageProps> = {}) {
   const calls = {
     edited: [] as { input: ContractUpdateInput; version: number }[],
     activated: [] as { reason: string; version: number }[],
-    renewed: [] as { newEndAt: string; reason: string; version: number }[],
+    renewed: [] as { newEndDate: string; reason: string; version: number }[],
     terminated: [] as { reason: string; version: number }[],
     bound: [] as { deviceIds: readonly string[]; reason: string }[],
     unbound: [] as { deviceIds: readonly string[]; reason: string }[],
@@ -316,9 +317,9 @@ function renderDetail(overrides: Partial<ContractDetailPageProps> = {}) {
       calls.activated.push({ reason, version });
       return { ...contract, status: 'EFFECTIVE', derivedStatus: 'EFFECTIVE' };
     },
-    onRenew: async (newEndAt, reason, version) => {
-      calls.renewed.push({ newEndAt, reason, version });
-      return { ...contract, endAt: newEndAt, version: version + 1 };
+    onRenew: async (newEndDate, reason, version) => {
+      calls.renewed.push({ newEndDate, reason, version });
+      return { ...contract, version: version + 1 };
     },
     onTerminate: async (reason, version) => {
       calls.terminated.push({ reason, version });
@@ -371,6 +372,7 @@ test('详情：动作矩阵门控（DRAFT 无续约；TERMINATED 全禁；Operat
   assert.equal((screen.getByTestId('contract-edit-open') as HTMLButtonElement).disabled, false);
   assert.equal((screen.getByTestId('contract-activate-open') as HTMLButtonElement).disabled, false);
   assert.equal((screen.getByTestId('contract-renew-open') as HTMLButtonElement).disabled, true);
+  assert.equal((screen.getByTestId('contract-bind-open') as HTMLButtonElement).disabled, false);
   unmount();
 
   const { unmount: unmount2 } = renderDetail({
@@ -409,25 +411,47 @@ test('详情：编辑携带 version（If-Match）+ 强制原因；EFFECTIVE 不�
   assert.equal(calls.edited[0]?.version, 3);
   assert.equal(calls.edited[0]?.input.name, '改名合约');
   assert.equal(calls.edited[0]?.input.reason, '客户要求更名');
-  assert.equal('startAt' in calls.edited[0]!.input, false);
+  assert.equal('startDate' in calls.edited[0]!.input, false);
 });
 
-test('详情：续约校验（newEndAt 须晚于当前）+ 提交；激活/终止强制原因确认', async () => {
+test('R11 草稿编辑只提交改过的业务日期，保留未编辑的精确边界', async () => {
+  const user = userEvent.setup();
+  const { calls } = renderDetail({
+    contract: makeContract({
+      status: 'DRAFT',
+      derivedStatus: 'DRAFT',
+      startAt: '2028-02-27T17:52:03.927Z',
+      endAt: '2028-02-29T02:14:58.314Z',
+    }),
+  });
+  await user.click(screen.getByTestId('contract-edit-open'));
+  const start = screen.getByTestId('contract-edit-start') as HTMLInputElement;
+  const end = screen.getByTestId('contract-edit-end') as HTMLInputElement;
+  assert.equal(start.value, '2028-02-28');
+  assert.equal(end.value, '2028-02-29');
+  fireEvent.change(end, { target: { value: '2028-03-01' } });
+  await user.type(screen.getByTestId('contract-edit-reason'), '调整到期日');
+  await user.click(screen.getByTestId('contract-edit-submit'));
+  assert.deepEqual(calls.edited[0], {
+    input: { name: '绿洲年度服务合约', contact: 'ops@oasis.example.com', reason: '调整到期日', endDate: '2028-03-01' },
+    version: 3,
+  });
+});
+
+test('详情：续约校验（newEndDate 须晚于当前）+ 提交；激活/终止强制原因确认', async () => {
   const user = userEvent.setup();
   const { calls } = renderDetail();
   // 续约：不晚于当前 → 字段错误
   await user.click(screen.getByTestId('contract-renew-open'));
   const form = screen.getByTestId('contract-renew-form');
-  await user.type(within(form).getByTestId('contract-renew-end'), '2026-06-01T00:00:00Z');
+  fireEvent.change(within(form).getByTestId('contract-renew-end'), { target: { value: '2026-06-01' } });
   assert.ok(within(form).getByTestId('contract-renew-error').textContent?.includes('晚于'));
   assert.equal((within(form).getByTestId('contract-renew-submit') as HTMLButtonElement).disabled, true);
-  assert.ok(validateRenew('2026-06-01T00:00:00Z', '2027-01-01T00:00:00Z')?.includes('晚于'));
-  await user.clear(within(form).getByTestId('contract-renew-end'));
-  await user.click(within(form).getByTestId('contract-renew-end'));
-  await user.paste('2028-01-01T00:00:00Z');
+  assert.ok(validateRenew('2026-06-01', '2027-01-01T00:00:00Z')?.includes('晚于'));
+  fireEvent.change(within(form).getByTestId('contract-renew-end'), { target: { value: '2028-01-01' } });
   await user.type(within(form).getByTestId('contract-renew-reason'), '客户续约两年');
   await user.click(within(form).getByTestId('contract-renew-submit'));
-  assert.deepEqual(calls.renewed, [{ newEndAt: '2028-01-01T00:00:00Z', reason: '客户续约两年', version: 3 }]);
+  assert.deepEqual(calls.renewed, [{ newEndDate: '2028-01-01', reason: '客户续约两年', version: 3 }]);
   const notice = await screen.findByTestId('action-notice');
   assert.ok(notice.textContent?.includes('不自动续期 License'));
 
@@ -528,10 +552,10 @@ test('API 装配：If-Match 乐观锁与请求体快照', async () => {
   assert.equal(calls[1]?.options.ifMatch, 3);
   assert.deepEqual(calls[1]?.options.body, { name: 'x', reason: 'r' });
 
-  await renewContract(api, 'con-1', '2028-01-01T00:00:00Z', '续约', 4);
+  await renewContract(api, 'con-1', '2028-01-01', '续约', 4);
   assert.equal(calls[2]?.path, '/admin/contracts/con-1/renew');
   assert.equal(calls[2]?.options.ifMatch, 4);
-  assert.deepEqual(calls[2]?.options.body, { newEndAt: '2028-01-01T00:00:00Z', reason: '续约' });
+  assert.deepEqual(calls[2]?.options.body, { newEndDate: '2028-01-01', reason: '续约' });
 
   await bindContractDevices(api, 'con-1', ['d1', 'd2'], '扩容');
   assert.equal(calls[3]?.path, '/admin/contracts/con-1/devices/bind');
