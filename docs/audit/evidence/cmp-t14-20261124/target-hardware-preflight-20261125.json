@@ -1,0 +1,145 @@
+{
+  "task": "CMP G/T14 follow-up actual device acceptance",
+  "environment": "shared-test / fdp-test-app / ap-southeast-1",
+  "recordedAtUtc": "2026-11-25T01:27:39.945Z",
+  "localAcceptanceSource": "2a095ff318b29e0a5264bb90e00474dea4c65ec5",
+  "targetReleaseReadback": {
+    "status": "PASS",
+    "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "sourceDeltaFromLocalAcceptance": "T14 acceptance documents only",
+    "frontend": {
+      "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+      "amplifyJobId": "175",
+      "status": "SUCCEED",
+      "completedAt": "2026-11-24T20:27:48.019000+08:00"
+    },
+    "api": {
+      "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+      "githubDeployRun": 45393264270,
+      "workflowConclusion": "success",
+      "adminLambda": {
+        "state": "Active",
+        "codeSha256Base64": "5zdTvgRADLXtfYjVbSpLlulAV+e4BElUmHAsVoyvOV8=",
+        "modifiedAt": "2026-11-24T13:02:13.000+0000"
+      },
+      "deviceLambda": {
+        "state": "Active",
+        "codeSha256Base64": "F1f3ZWelpG3AFSYuFCMw+OaEsulYVDG0cvE8oavqitQ=",
+        "modifiedAt": "2026-11-24T13:02:13.000+0000"
+      }
+    }
+  },
+  "database": {
+    "status": "BLOCKED",
+    "probe": "existing fixed CodeBuild read-only probe",
+    "probeBuildIdSha256": "b464c1de86b9e04af6e409c908de11d41ec51b132af74bc9d2ca6ac19d7ab689",
+    "probeBuildStatus": "SUCCEEDED",
+    "snapshot": {
+      "observedAt": "2026-11-25T01:26:10.882Z",
+      "probeManifestCommit": "00ec272f1c5ae73a8b4a990cd744f4b992fd67f3",
+      "readOnly": true,
+      "businessDataWrites": false,
+      "appliedMigrationCount": 45,
+      "unfinishedMigrationCount": 0,
+      "migrations": {
+        "20261124090000_user_last_disabled_at": "MISSING",
+        "20261124130000_consumable_request_stage_notes": "MISSING",
+        "20261124163000_configuration_deliveries": "MISSING",
+        "20261124170000_consumable_device_submissions": "MISSING"
+      },
+      "configurationDeliveriesTable": false,
+      "consumableSubmissionsTable": false,
+      "deviceRecordCount": "12",
+      "activeCertificateDeviceCount": 8
+    },
+    "reason": "The running schema is missing all four migrations required by the candidate."
+  },
+  "devicePreflight": {
+    "registry": {
+      "size": 11,
+      "truncated": false,
+      "definedTypes": [],
+      "attributeNames": [],
+      "testThingGroups": 0,
+      "indexing": {
+        "mode": "OFF",
+        "connectivity": "OFF"
+      }
+    },
+    "heartbeatLog": {
+      "windowHours": 24,
+      "matched": 0,
+      "results": {},
+      "deviceCount": 0,
+      "newest": null,
+      "truncated": false
+    },
+    "cloudwatch": {
+      "ingestion": {
+        "windowHours": 24,
+        "invocations": 0,
+        "hoursWithData": 0
+      },
+      "deviceApi": {
+        "windowHours": 24,
+        "invocations": 0,
+        "hoursWithData": 0
+      }
+    },
+    "runtimeGates": {
+      "configurationTargets": 0,
+      "consumableIntakeTargets": 0,
+      "adminLegacyCreationCutoffConfigured": false,
+      "deviceEnvironmentReadback": {
+        "environmentReadError": null,
+        "readableKeyCount": 11,
+        "configurationKeyPresent": false,
+        "intakeKeyPresent": false
+      },
+      "adminEnvironmentReadback": {
+        "environmentReadError": null,
+        "readableKeyCount": 22,
+        "legacyCutoffKeyPresent": false
+      }
+    },
+    "verifiedPhysicalDevice": "NOT_RUN",
+    "verifiedUpperComputerBuild": "NOT_RUN",
+    "verifiedDeviceFirmwareBuild": "NOT_RUN"
+  },
+  "acceptance": {
+    "R03": "NOT_RUN",
+    "R05": "NOT_RUN",
+    "R15": "NOT_RUN",
+    "R16": "NOT_RUN",
+    "R19": "NOT_RUN",
+    "R20": "NOT_RUN",
+    "CMP-34-real-ingestion": "NOT_RUN",
+    "projectWalkthrough": "NOT_RUN",
+    "hardwareRelease": "BLOCKED",
+    "blockers": [
+      {
+        "owner": "Test release and database owners",
+        "condition": "Apply and verify the four candidate migrations in the authorized test release window."
+      },
+      {
+        "owner": "Device and upper computer owners",
+        "condition": "Identify one online physical test unit, confirm the signed protocol and installed client builds, and link them to that device."
+      },
+      {
+        "owner": "Test release and integration QA",
+        "condition": "After the schema and actual unit are verified, configure admission for the exact authorized device and verify its own Sync/application receipt and consumable request/readback."
+      }
+    ]
+  },
+  "currentRunActions": {
+    "gitHub": "local gh read-only",
+    "awsProfile": "esgiot-infra",
+    "fixedDatabaseProbeRuns": 1,
+    "migration": "NOT_RUN",
+    "candidateConfigurationChange": "NOT_RUN",
+    "physicalCommands": "NOT_RUN",
+    "businessWrites": "NOT_RUN",
+    "push": "NOT_RUN",
+    "deploy": "NOT_RUN"
+  }
+}
