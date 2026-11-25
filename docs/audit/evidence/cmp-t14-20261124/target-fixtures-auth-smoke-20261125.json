@@ -1,0 +1,434 @@
+{
+  "task": "CMP G/T14 shared-test fixture and real login smoke",
+  "status": "PASS",
+  "scope": "TARGET_FIXTURE_AND_AUTHENTICATED_SMOKE",
+  "startedAtUtc": "2026-11-25T09:43:44.123Z",
+  "finishedAtUtc": "2026-11-25T09:46:10.015Z",
+  "environment": {
+    "stack": "fdp-test-app",
+    "account": "065986019555",
+    "region": "ap-southeast-1",
+    "userPool": "ap-southeast-1_hZMX8LpFo"
+  },
+  "version": {
+    "web": {
+      "id": "176",
+      "sha": "545fcc752ad28e763b44c71929b36aff7e57db3e",
+      "status": "SUCCEED"
+    },
+    "api": {
+      "state": "Active",
+      "codeSha256": "5zdTvgRADLXtfYjVbSpLlulAV+e4BElUmHAsVoyvOV8=",
+      "update": "Successful"
+    },
+    "workflow": {
+      "conclusion": "success",
+      "databaseId": 45528220175,
+      "headSha": "545fcc752ad28e763b44c71929b36aff7e57db3e"
+    },
+    "migration": {
+      "id": "fdp-test-migration-runner:eedd7362-5218-457c-ba26-d3d398873027",
+      "status": "SUCCEEDED",
+      "complete": true
+    },
+    "applicationMatchesMigrationSource": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "beforeAndAfterMatch": true
+  },
+  "fixtures": {
+    "prefix": "cmp-t14-20261125-7437f2e7c7",
+    "users": [
+      {
+        "role": "PlatformSuperAdmin",
+        "email": "cmp-t14-20261125-7437f2e7c7-platformsuperadmin@example.invalid",
+        "subject": "e97a958c-3031-703d-0595-0e013a47678f",
+        "customerId": null,
+        "status": "REAL_SRP_PASS"
+      },
+      {
+        "role": "PlatformOperator",
+        "email": "cmp-t14-20261125-7437f2e7c7-platformoperator@example.invalid",
+        "subject": "59cab52c-40a1-7071-ba35-4cdd73aa719a",
+        "customerId": null,
+        "status": "REAL_SRP_PASS"
+      },
+      {
+        "role": "Auditor",
+        "email": "cmp-t14-20261125-7437f2e7c7-auditor@example.invalid",
+        "subject": "c9cad5ac-a0c1-707b-347f-bfdf939fdd1a",
+        "customerId": null,
+        "status": "REAL_SRP_PASS"
+      },
+      {
+        "role": "CustomerAdmin",
+        "email": "cmp-t14-20261125-7437f2e7c7-customeradmin@example.invalid",
+        "subject": "a98af5cc-e0d1-70c5-9163-8ad9cfa457c7",
+        "customerId": "5b43787f-f177-474c-b972-9d8688de6978",
+        "status": "REAL_SRP_PASS"
+      },
+      {
+        "role": "CustomerViewer",
+        "email": "cmp-t14-20261125-7437f2e7c7-customerviewer@example.invalid",
+        "subject": "699ab57c-3081-7098-c4c0-7774e40de512",
+        "customerId": "ed190d22-18a7-4cfb-8959-0c416b289012",
+        "status": "REAL_SRP_PASS"
+      }
+    ],
+    "customers": [
+      {
+        "id": "5b43787f-f177-474c-b972-9d8688de6978",
+        "name": "cmp-t14-20261125-7437f2e7c7-customer-a",
+        "suffix": "A",
+        "version": 1
+      },
+      {
+        "id": "ed190d22-18a7-4cfb-8959-0c416b289012",
+        "name": "cmp-t14-20261125-7437f2e7c7-customer-b",
+        "suffix": "B",
+        "version": 1
+      }
+    ],
+    "sites": [
+      {
+        "id": "b5d6a3bd-5ea5-4093-afcd-b3ed7eae2bc7",
+        "name": "cmp-t14-20261125-7437f2e7c7-site-a",
+        "customerId": "5b43787f-f177-474c-b972-9d8688de6978",
+        "suffix": "A",
+        "version": 1
+      },
+      {
+        "id": "8cd3d94a-c8c4-428e-8480-79f642c147cf",
+        "name": "cmp-t14-20261125-7437f2e7c7-site-b",
+        "customerId": "ed190d22-18a7-4cfb-8959-0c416b289012",
+        "suffix": "B",
+        "version": 1
+      }
+    ],
+    "notificationDelivery": "SUPPRESS"
+  },
+  "writeBoundary": {
+    "allowed": [
+      "Create and confirm only the five planned Cognito users, one named group assignment per user and named tenant claims",
+      "Create the two named customers and the two named sites through authorized admin API",
+      "Permission-denial probes with an invalid empty customer creation body"
+    ],
+    "physicalDeviceWrites": 0,
+    "preExistingRecordWrites": 0
+  },
+  "cleanup": {
+    "status": "PENDING_RETAINED_FOR_ACCEPTANCE",
+    "cognitoUsers": [
+      {
+        "email": "cmp-t14-20261125-7437f2e7c7-platformsuperadmin@example.invalid",
+        "subject": "e97a958c-3031-703d-0595-0e013a47678f"
+      },
+      {
+        "email": "cmp-t14-20261125-7437f2e7c7-platformoperator@example.invalid",
+        "subject": "59cab52c-40a1-7071-ba35-4cdd73aa719a"
+      },
+      {
+        "email": "cmp-t14-20261125-7437f2e7c7-auditor@example.invalid",
+        "subject": "c9cad5ac-a0c1-707b-347f-bfdf939fdd1a"
+      },
+      {
+        "email": "cmp-t14-20261125-7437f2e7c7-customeradmin@example.invalid",
+        "subject": "a98af5cc-e0d1-70c5-9163-8ad9cfa457c7"
+      },
+      {
+        "email": "cmp-t14-20261125-7437f2e7c7-customerviewer@example.invalid",
+        "subject": "699ab57c-3081-7098-c4c0-7774e40de512"
+      }
+    ],
+    "siteIds": [
+      "b5d6a3bd-5ea5-4093-afcd-b3ed7eae2bc7",
+      "8cd3d94a-c8c4-428e-8480-79f642c147cf"
+    ],
+    "customerIds": [
+      "5b43787f-f177-474c-b972-9d8688de6978",
+      "ed190d22-18a7-4cfb-8959-0c416b289012"
+    ],
+    "order": [
+      "Check owned identifiers and names against this ledger",
+      "Sign out and remove listed fixture Cognito accounts",
+      "Soft-delete listed sites using current If-Match versions, then listed tenants when eligible"
+    ],
+    "keepAuditEvents": true
+  },
+  "verification": {
+    "checks": [
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "create-customer-A",
+        "method": "POST",
+        "status": 201,
+        "expected": 201,
+        "requestId": "9ee27816-90c8-4639-aaf2-b2fbfe399990",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "create-site-A",
+        "method": "POST",
+        "status": 201,
+        "expected": 201,
+        "requestId": "380f4199-0df8-4264-8406-7dcd67d0ddeb",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "create-customer-B",
+        "method": "POST",
+        "status": 201,
+        "expected": 201,
+        "requestId": "9a600acd-ac6b-4086-89ec-80d09e20f116",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "create-site-B",
+        "method": "POST",
+        "status": 201,
+        "expected": 201,
+        "requestId": "2f586e6e-1dac-49d5-9bf5-e44f59bb7a73",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "own-profile",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "f25b4c34-4b89-41ca-8549-b18a556e06c4",
+        "result": "PASS",
+        "profileMode": "Cognito-only fallback"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "dashboard-overview",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "1f7d60b5-7256-44a2-9b4a-bc670c9b8df0",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformOperator",
+        "name": "own-profile",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "820a656f-92fd-4a5c-af94-0c17dc72b1e4",
+        "result": "PASS",
+        "profileMode": "Cognito-only fallback"
+      },
+      {
+        "role": "PlatformOperator",
+        "name": "dashboard-overview",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "d874969b-ff81-4a04-9d53-3bc82b263167",
+        "result": "PASS"
+      },
+      {
+        "role": "Auditor",
+        "name": "own-profile",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "a29e523d-2262-4bfa-a599-8b3a89d3c0b1",
+        "result": "PASS",
+        "profileMode": "Cognito-only fallback"
+      },
+      {
+        "role": "Auditor",
+        "name": "dashboard-overview",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "a4dae413-f38c-4695-a64a-3dd5306d7b54",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerAdmin",
+        "name": "own-profile",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "2eb896ba-3a4b-4040-8e34-f11add9f75cb",
+        "result": "PASS",
+        "profileMode": "Cognito-only fallback"
+      },
+      {
+        "role": "CustomerAdmin",
+        "name": "dashboard-overview",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "18a9c296-e4b6-48db-876d-069e67018a11",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerViewer",
+        "name": "own-profile",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "6caf365a-ce07-4db1-9948-c3c1d1cad5c7",
+        "result": "PASS",
+        "profileMode": "Cognito-only fallback"
+      },
+      {
+        "role": "CustomerViewer",
+        "name": "dashboard-overview",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "440664b3-1855-433d-8e5c-1a5c2cda1236",
+        "result": "PASS"
+      },
+      {
+        "role": "Auditor",
+        "name": "read-only-users",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "6705aefb-6f74-4998-b74e-aaae2556a7dd",
+        "result": "PASS"
+      },
+      {
+        "role": "Auditor",
+        "name": "deny-create-customer",
+        "method": "POST",
+        "status": 403,
+        "expected": 403,
+        "requestId": "a3b0d0d8-d45e-4a40-9f29-3446e2809b8c",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerViewer",
+        "name": "deny-create-customer",
+        "method": "POST",
+        "status": 403,
+        "expected": 403,
+        "requestId": "61abf2ea-78c9-463d-b75d-996f0650100f",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerAdmin",
+        "name": "own-site",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "c8f1465d-94a1-4b69-abff-d6e411449db1",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerAdmin",
+        "name": "deny-cross-customer-site",
+        "method": "GET",
+        "status": 403,
+        "expected": [
+          403,
+          404
+        ],
+        "requestId": "913bc598-36db-4b8c-acb4-ac859a19b1f4",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerViewer",
+        "name": "own-site",
+        "method": "GET",
+        "status": 200,
+        "expected": 200,
+        "requestId": "b5703bfc-2462-47fa-bf79-0e366ac300fc",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerViewer",
+        "name": "deny-cross-customer-site",
+        "method": "GET",
+        "status": 403,
+        "expected": [
+          403,
+          404
+        ],
+        "requestId": "68c69d62-9188-4be9-af95-2012f3b20ba1",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "name": "deployed-browser-srp-dashboard-account-entry",
+        "status": 200,
+        "requestId": "35fe151c-50a5-41b5-a888-bca67a49b5b7",
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformOperator",
+        "name": "deployed-browser-srp-dashboard-account-entry",
+        "status": 200,
+        "requestId": "dad31396-4086-4537-ad4c-01ab1bcaf19c",
+        "result": "PASS"
+      },
+      {
+        "role": "Auditor",
+        "name": "deployed-browser-srp-dashboard-account-entry",
+        "status": 200,
+        "requestId": "277a6fbc-fa6f-4881-b6e8-a073ae579f82",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerAdmin",
+        "name": "deployed-browser-srp-dashboard-account-entry",
+        "status": 200,
+        "requestId": "0c0c0f5a-a662-48a7-8526-96829d1a1995",
+        "result": "PASS"
+      },
+      {
+        "role": "CustomerViewer",
+        "name": "deployed-browser-srp-dashboard-account-entry",
+        "status": 200,
+        "requestId": "49ddb6c9-aafb-4048-b689-cc33434401ed",
+        "result": "PASS"
+      }
+    ],
+    "browserDetails": [
+      {
+        "role": "Auditor",
+        "check": "account-dialog-rendering",
+        "status": "PASS",
+        "verifiedEmailVisible": true,
+        "cognitoSubjectVisible": false
+      },
+      {
+        "role": "Auditor",
+        "check": "direct-platform-user-management",
+        "status": "PASS",
+        "result": "read-only, invite disabled"
+      },
+      {
+        "role": "CustomerViewer",
+        "check": "account-dialog-rendering",
+        "status": "PASS",
+        "verifiedEmailVisible": true,
+        "cognitoSubjectVisible": false
+      },
+      {
+        "role": "CustomerViewer",
+        "check": "direct-platform-user-management",
+        "status": "PASS",
+        "result": "forbidden"
+      }
+    ],
+    "profileMode": "Cognito-only fixtures exercise verified email fallback. Persisted business-name profile was not part of this smoke.",
+    "operationalDeviceScenarios": "NOT_RUN"
+  },
+  "credentials": {
+    "exported": false,
+    "localPrivateFileMode": "0600",
+    "recordIncludesCredentials": false
+  },
+  "deployment": {
+    "pushed": false,
+    "deployed": false
+  }
+}
