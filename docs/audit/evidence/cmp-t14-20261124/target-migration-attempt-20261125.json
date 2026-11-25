@@ -1,0 +1,80 @@
+{
+  "task": "CMP G/T14 shared-test database migration",
+  "observedAtUtc": "2026-11-25T01:45:16.838Z",
+  "status": "BLOCKED",
+  "approval": {
+    "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "stack": "fdp-test-app",
+    "databaseInstance": "fdp-test-db",
+    "databaseName": "fdp",
+    "runner": "fdp-test-migration-runner",
+    "migrations": [
+      "20261124090000_user_last_disabled_at",
+      "20261124130000_consumable_request_stage_notes",
+      "20261124163000_configuration_deliveries",
+      "20261124170000_consumable_device_submissions"
+    ],
+    "idempotentDictionarySeed": true
+  },
+  "preflight": {
+    "status": "PASS",
+    "earlierSchemaProbe": "target-hardware-preflight-20261125.json",
+    "previousMigrationSource": "d1afec5ec12ad78a3aeb0bccb864b6f25e3439f8",
+    "previousMigrationCount": 45,
+    "candidateMigrationCount": 49,
+    "candidateAdditionalMigrationCount": 4
+  },
+  "package": {
+    "sha256": "f04c2048bc7ebab48964dbbfc2f1f98cdbd4fcf229fb6d6b22ce471bb616c5b1",
+    "contentLength": 89294313,
+    "sourceMarker": "3df549426ef54875d32db1198562d8e42680a9a6"
+  },
+  "s3": {
+    "status": "PASS",
+    "bucket": "fdp-test-migration-source-065986019555-ap-southeast-1",
+    "objectKey": "migration/source.zip",
+    "bucketVersioning": "Enabled",
+    "objectVersion": "yWiwC1Yy2yW3Jdh33hd4hV1c4KQ4.dXr",
+    "checksumSha256Base64": "8EwgSLx+urSJZNu/wvH5jNvU/PIp+21rIs5HG7YWxbE=",
+    "serverSideEncryption": "AES256",
+    "uploadProfile": "esgiot-dev",
+    "objectReadbackProfile": "esgiot-infra",
+    "uploadProfileHeadObject": {
+      "status": "DENIED",
+      "httpStatus": 403
+    },
+    "readbackMatchesAfterStartFailure": true
+  },
+  "codeBuild": {
+    "status": "START_DENIED",
+    "attemptedAtUtc": "2026-11-25T01:44:08.925Z",
+    "attempts": 1,
+    "profile": "esgiot-dev",
+    "action": "codebuild:StartBuild",
+    "error": "AccessDeniedException",
+    "reason": "No identity-based policy allows StartBuild on the test migration project for the current FDP-AppDeploy role.",
+    "suppliedSourceVersion": "yWiwC1Yy2yW3Jdh33hd4hV1c4KQ4.dXr",
+    "suppliedExpectedSourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "buildCreated": false,
+    "buildId": null,
+    "latestBuildReadBackAfterAttempt": {
+      "id": "fdp-test-migration-runner:073638c6-f1ef-4cb8-8f07-e41ed998a938",
+      "status": "SUCCEEDED",
+      "complete": true,
+      "ended": "2026-11-19T17:31:00.205000+08:00"
+    }
+  },
+  "writeExecution": {
+    "migration": "NOT_RUN",
+    "idempotentDictionarySeed": "NOT_RUN",
+    "businessAcceptance": "NOT_RUN",
+    "retries": 0,
+    "iamChanges": false,
+    "push": false,
+    "applicationDeployment": false
+  },
+  "nextAction": {
+    "owner": "Test database or release operator with StartBuild on fdp-test-migration-runner",
+    "condition": "Authorize a new launch attempt and use the same verified object version and expected source commit."
+  }
+}
