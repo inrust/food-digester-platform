@@ -1,0 +1,113 @@
+{
+  "task": "CMP G/T14 AWS acceptance readiness for R01–R20",
+  "environment": "shared-test / fdp-test-app / ap-southeast-1",
+  "observedAtUtc": "2026-11-25T01:36:20.830Z",
+  "targetRelease": {
+    "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "applicationSourcesMatchVerifiedLocalCandidate": true,
+    "localCandidate": "2a095ff318b29e0a5264bb90e00474dea4c65ec5",
+    "frontendBuild": {
+      "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+      "amplifyJobId": "175",
+      "status": "SUCCEED",
+      "completedAt": "2026-11-24T20:27:48.019000+08:00"
+    },
+    "apiWorkflow": {
+      "id": 45393264270,
+      "status": "success"
+    },
+    "lambdas": {
+      "admin": {
+        "state": "Active",
+        "update": "Successful",
+        "codeSha256": "5zdTvgRADLXtfYjVbSpLlulAV+e4BElUmHAsVoyvOV8=",
+        "modified": "2026-11-24T13:02:13.000+0000"
+      },
+      "device": {
+        "state": "Active",
+        "update": "Successful",
+        "codeSha256": "F1f3ZWelpG3AFSYuFCMw+OaEsulYVDG0cvE8oavqitQ=",
+        "modified": "2026-11-24T13:02:13.000+0000"
+      }
+    }
+  },
+  "smoke": {
+    "status": "PASS",
+    "frontendLoginHtml": {
+      "httpStatus": 200,
+      "sha256": "0de8aceeea54a774aa75b7afab52f650dbbbd8364f228c53d5111f99e5f38636"
+    },
+    "unauthenticatedAccountProfileHttpStatus": 401,
+    "accountProfileCors": {
+      "httpStatus": 204,
+      "allowedOrigin": "https://admin.bio-nexa.com"
+    },
+    "cognitoGroupNames": [
+      "Auditor",
+      "CustomerAdmin",
+      "CustomerViewer",
+      "PlatformOperator",
+      "PlatformSuperAdmin"
+    ]
+  },
+  "database": {
+    "status": "BLOCKED",
+    "latestMigrationRunnerCompletion": {
+      "status": "SUCCEEDED",
+      "completedAt": "2026-11-19T17:31:00.205000+08:00"
+    },
+    "earlierSameDayReadOnlyEvidence": "target-hardware-preflight-20261125.json",
+    "observedAtUtc": "2026-11-25T01:26:10.882Z",
+    "appliedAtProbe": 45,
+    "missingAtProbe": [
+      "20261124090000_user_last_disabled_at",
+      "20261124130000_consumable_request_stage_notes",
+      "20261124163000_configuration_deliveries",
+      "20261124170000_consumable_device_submissions"
+    ],
+    "impact": "Authenticated requests through the management API invoke the account lookup, whose candidate schema reads users.last_disabled_at.",
+    "preparedLocalArchive": {
+      "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+      "sha256": "f04c2048bc7ebab48964dbbfc2f1f98cdbd4fcf229fb6d6b22ce471bb616c5b1"
+    },
+    "execution": "NOT_RUN",
+    "dependency": "Explicit authorization for the shared-test migration, including the consumable note backfill."
+  },
+  "targetAcceptance": {
+    "status": "BLOCKED",
+    "businessScenarios": {
+      "R01": "NOT_RUN",
+      "R02": "NOT_RUN",
+      "R03": "NOT_RUN",
+      "R04": "NOT_RUN",
+      "R05": "NOT_RUN",
+      "R06": "NOT_RUN",
+      "R07": "NOT_RUN",
+      "R08": "NOT_RUN",
+      "R09": "NOT_RUN",
+      "R10": "NOT_RUN",
+      "R11": "NOT_RUN",
+      "R12": "NOT_RUN",
+      "R13": "NOT_RUN",
+      "R14": "NOT_RUN",
+      "R15": "NOT_RUN",
+      "R16": "NOT_RUN",
+      "R17": "NOT_RUN",
+      "R18": "NOT_RUN",
+      "R19": "NOT_RUN",
+      "R20": "NOT_RUN"
+    },
+    "physicalDevice": "NOT_RUN",
+    "projectWalkthrough": "NOT_RUN",
+    "hardwareDependency": "Controlled device, protocol approval, verified device and upper computer builds, and per-device admission for the relevant paths."
+  },
+  "actions": {
+    "gitHub": "local gh read-only",
+    "awsProfile": "esgiot-infra",
+    "uploadedMigrationArchive": false,
+    "startedMigration": false,
+    "businessWrites": false,
+    "push": false,
+    "deployment": false
+  }
+}
