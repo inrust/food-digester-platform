@@ -1,0 +1,129 @@
+{
+  "task": "CMP G/T14 shared-test migration after permission reprovisioning",
+  "observedAtUtc": "2026-11-25T09:33:24.651Z",
+  "status": "PASS",
+  "scope": {
+    "awsAccount": "065986019555",
+    "region": "ap-southeast-1",
+    "stack": "fdp-test-app",
+    "databaseInstance": "fdp-test-db",
+    "databaseName": "fdp",
+    "migrations": [
+      "20261124090000_user_last_disabled_at",
+      "20261124130000_consumable_request_stage_notes",
+      "20261124163000_configuration_deliveries",
+      "20261124170000_consumable_device_submissions"
+    ],
+    "idempotentDictionarySeed": true
+  },
+  "source": {
+    "commit": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "archiveSha256": "f04c2048bc7ebab48964dbbfc2f1f98cdbd4fcf229fb6d6b22ce471bb616c5b1",
+    "contentLength": 89294313,
+    "bucket": "fdp-test-migration-source-065986019555-ap-southeast-1",
+    "key": "migration/source.zip",
+    "versionId": "yWiwC1Yy2yW3Jdh33hd4hV1c4KQ4.dXr",
+    "checksumSha256Base64": "8EwgSLx+urSJZNu/wvH5jNvU/PIp+21rIs5HG7YWxbE=",
+    "readbackStatus": "PASS"
+  },
+  "authorization": {
+    "profile": "esgiot-dev",
+    "assumedRole": "AWSReservedSSO_FDP-AppDeploy_e17d932f463c1d47",
+    "permissionsRefreshed": true,
+    "userConfirmedFreshSsoLogin": true,
+    "identityReadback": "PASS"
+  },
+  "codeBuild": {
+    "project": "fdp-test-migration-runner",
+    "projectArn": "arn:aws:codebuild:ap-southeast-1:065986019555:project/fdp-test-migration-runner",
+    "buildId": "fdp-test-migration-runner:eedd7362-5218-457c-ba26-d3d398873027",
+    "attempts": 1,
+    "attemptedAtUtc": "2026-11-25T09:30:53.851Z",
+    "startedAt": "2026-11-25T17:30:55.062000+08:00",
+    "endedAt": "2026-11-25T17:32:14.613000+08:00",
+    "status": "SUCCEEDED",
+    "sourceVersion": "yWiwC1Yy2yW3Jdh33hd4hV1c4KQ4.dXr",
+    "priorBuildId": "fdp-test-migration-runner:073638c6-f1ef-4cb8-8f07-e41ed998a938",
+    "phases": [
+      {
+        "phase": "SUBMITTED",
+        "status": "SUCCEEDED",
+        "seconds": 0
+      },
+      {
+        "phase": "QUEUED",
+        "status": "SUCCEEDED",
+        "seconds": 1
+      },
+      {
+        "phase": "PROVISIONING",
+        "status": "SUCCEEDED",
+        "seconds": 22
+      },
+      {
+        "phase": "DOWNLOAD_SOURCE",
+        "status": "SUCCEEDED",
+        "seconds": 6
+      },
+      {
+        "phase": "INSTALL",
+        "status": "SUCCEEDED",
+        "seconds": 31
+      },
+      {
+        "phase": "PRE_BUILD",
+        "status": "SUCCEEDED",
+        "seconds": 0
+      },
+      {
+        "phase": "BUILD",
+        "status": "SUCCEEDED",
+        "seconds": 16
+      },
+      {
+        "phase": "POST_BUILD",
+        "status": "SUCCEEDED",
+        "seconds": 0
+      },
+      {
+        "phase": "UPLOAD_ARTIFACTS",
+        "status": "SUCCEEDED",
+        "seconds": 0
+      },
+      {
+        "phase": "FINALIZING",
+        "status": "SUCCEEDED",
+        "seconds": 0
+      }
+    ]
+  },
+  "runnerReceipt": {
+    "kind": "fdp-database-migration/v1",
+    "sourceCommit": "3df549426ef54875d32db1198562d8e42680a9a6",
+    "buildId": "fdp-test-migration-runner:eedd7362-5218-457c-ba26-d3d398873027",
+    "migrations": "PASS",
+    "dictionarySeed": "PASS",
+    "verification": {
+      "schema": "PASS",
+      "tableCount": 63,
+      "migrationCount": 49,
+      "unfinishedMigrationCount": 0,
+      "roleCount": 5,
+      "esgSeedCount": 1
+    }
+  },
+  "databaseReadback": {
+    "status": "PASS",
+    "previousMigrationCount": 45,
+    "migrationCount": 49,
+    "unfinishedMigrationCount": 0
+  },
+  "actions": {
+    "reusedExistingS3ObjectVersion": true,
+    "uploadedNewSource": false,
+    "applicationDeployment": false,
+    "push": false,
+    "iamChanges": false,
+    "targetBusinessAcceptance": "NOT_RUN"
+  }
+}
