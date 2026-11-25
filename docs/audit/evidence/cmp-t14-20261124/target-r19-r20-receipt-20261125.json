@@ -1,0 +1,387 @@
+{
+  "task": "CMP G/T14 R19 and R20 shared-test acceptance (D/T11, E/T12)",
+  "status": "BLOCKED",
+  "reportDate": "2026-11-25",
+  "timeZone": "Asia/Shanghai",
+  "scope": "SHARED_TEST",
+  "environment": {
+    "account": "065986019555",
+    "stack": "fdp-test-app",
+    "region": "ap-southeast-1",
+    "stackStatus": "UPDATE_COMPLETE"
+  },
+  "deployedVersion": {
+    "web": {
+      "id": "177",
+      "sha": "bb6b4b5dc3d6ae6bc3ba78e1d02e2f2fd726bca5",
+      "status": "SUCCEED"
+    },
+    "workflow": {
+      "conclusion": "success",
+      "databaseId": 45589036429,
+      "headSha": "bb6b4b5dc3d6ae6bc3ba78e1d02e2f2fd726bca5",
+      "status": "completed"
+    },
+    "adminApi": {
+      "state": "Active",
+      "codeSha256": "5zdTvgRADLXtfYjVbSpLlulAV+e4BElUmHAsVoyvOV8=",
+      "modified": "2026-11-24T13:02:13.000+0000",
+      "update": "Successful",
+      "environmentReadError": null
+    },
+    "deviceApi": {
+      "state": "Active",
+      "codeSha256": "F1f3ZWelpG3AFSYuFCMw+OaEsulYVDG0cvE8oavqitQ=",
+      "modified": "2026-11-24T13:02:13.000+0000",
+      "update": "Successful",
+      "environmentReadError": null
+    },
+    "outboxPublisher": {
+      "state": "Active",
+      "codeSha256": "k6kXQJLKc8r+YAop4LJJUm2zSO4UPF4s8M7j+W7T6+I=",
+      "modified": "2026-11-24T13:02:13.000+0000",
+      "update": "Successful",
+      "environmentReadError": null
+    },
+    "readbackAfterTargetUtc": "2026-11-25T12:04:28Z",
+    "matchesBeforeAndAfter": true,
+    "comparedPaths": [
+      "apps",
+      "packages",
+      "contracts",
+      "infra",
+      "package.json",
+      "pnpm-lock.yaml"
+    ],
+    "deploySourceDelta": [],
+    "migrationSourceDelta": [],
+    "deviceApiGatewayResources": [
+      {
+        "path": "/api/v1/device/{proxy+}",
+        "methods": [
+          "ANY"
+        ]
+      }
+    ],
+    "migrations": {
+      "liveBuildReadback": {
+        "id": "fdp-test-migration-runner:eedd7362-5218-457c-ba26-d3d398873027",
+        "project": "fdp-test-migration-runner",
+        "status": "SUCCEEDED",
+        "sourceVersion": "yWiwC1Yy2yW3Jdh33hd4hV1c4KQ4.dXr",
+        "completed": true
+      },
+      "existingReceipt": "target-migration-success-20261125.json",
+      "observedByOriginalRunner": {
+        "status": "PASS",
+        "previousMigrationCount": 45,
+        "migrationCount": 49,
+        "unfinishedMigrationCount": 0
+      }
+    }
+  },
+  "devicePreflight": {
+    "assessment": "BLOCKED",
+    "registry": {
+      "registryCount": 11,
+      "typedCount": 0,
+      "attributeKeys": []
+    },
+    "groups": {
+      "groupCount": 0,
+      "matchingAcceptanceGroupCount": 0
+    },
+    "invocationMetrics": {
+      "deviceApi": {
+        "start": "2026-11-24T12:01:33Z",
+        "end": "2026-11-25T12:01:33Z",
+        "invocations": 2978,
+        "hoursWithData": 6
+      },
+      "ingestion": {
+        "start": "2026-11-24T12:01:33Z",
+        "end": "2026-11-25T12:01:33Z",
+        "invocations": 919,
+        "hoursWithData": 6
+      }
+    },
+    "invocationMetricsScope": "Function totals across shared test; no association with the owned fixture tenants or an approved device.",
+    "verifiedControlledDevice": "NOT_RUN",
+    "verifiedInstalledFirmware": "NOT_RUN",
+    "verifiedInstalledUpperComputer": "NOT_RUN",
+    "countersignedCandidateProtocol": "NOT_RUN",
+    "runtimeAdmission": {
+      "configDelivery": {
+        "present": false,
+        "targets": 0
+      },
+      "consumableIntake": {
+        "present": false,
+        "targets": 0
+      },
+      "readError": null,
+      "admin": {
+        "legacyAdminCutoffConfigured": false,
+        "readError": null
+      }
+    },
+    "blocker": "No approved fixture device or installed build evidence; both candidate admission lists are empty."
+  },
+  "target": {
+    "status": "PASS",
+    "scope": "Read-only device, consumable and configuration evidence with real fixture accounts",
+    "startedAtUtc": "2026-11-25T12:02:53.445Z",
+    "finishedAtUtc": "2026-11-25T12:03:27.517Z",
+    "deviceTenantFixtures": "target-fixtures-auth-smoke-20261125.json",
+    "configurationFixture": {
+      "id": "090bcaad-a8de-4d11-a0ef-3662bed58e7b",
+      "model": "cmp-r18-f896fc512f32-no-device-model",
+      "modelDeviceCountBeforePublish": 0,
+      "versions": [
+        {
+          "version": 1,
+          "status": "PUBLISHED"
+        },
+        {
+          "version": 2,
+          "status": "DRAFT"
+        }
+      ]
+    },
+    "roles": [
+      "PlatformSuperAdmin",
+      "Auditor"
+    ],
+    "checks": [
+      {
+        "label": "R19/R20 fixture tenant A device inventory",
+        "path": "devices?customerId=5b43787f-f177-474c-b972-9d8688de6978",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "e4ca2fdf-d386-4aad-ae76-179445e663e0",
+        "observed": {
+          "count": 0,
+          "nextCursor": null
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R20 fixture tenant A consumable requests",
+        "path": "consumable-requests?customerId=5b43787f-f177-474c-b972-9d8688de6978",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "d5f37257-1c55-43da-a449-a75ec6d1c67f",
+        "observed": {
+          "count": 0,
+          "nextCursor": null,
+          "legacyCreationOffered": true
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R19/R20 fixture tenant B device inventory",
+        "path": "devices?customerId=ed190d22-18a7-4cfb-8959-0c416b289012",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "1fdf9232-b067-4e30-84ee-cfc2ac09da57",
+        "observed": {
+          "count": 0,
+          "nextCursor": null
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R20 fixture tenant B consumable requests",
+        "path": "consumable-requests?customerId=ed190d22-18a7-4cfb-8959-0c416b289012",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "7d6ec474-d26a-4b93-9899-95db7c39302e",
+        "observed": {
+          "count": 0,
+          "nextCursor": null,
+          "legacyCreationOffered": true
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R19 retained zero-device configuration target",
+        "path": "configurations/090bcaad-a8de-4d11-a0ef-3662bed58e7b",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "63ff02f6-1694-40bc-8cce-c6ea20373cc0",
+        "observed": {
+          "configurationId": "090bcaad-a8de-4d11-a0ef-3662bed58e7b",
+          "model": "cmp-r18-f896fc512f32-no-device-model"
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R19 no effective device for retained configuration",
+        "path": "configurations/090bcaad-a8de-4d11-a0ef-3662bed58e7b/effective-devices",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "f1b4c392-1fa5-4b24-9433-bc5b0f31f00f",
+        "observed": {
+          "count": 0,
+          "nextCursor": null
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R19 published v1 notification and delivery status are empty",
+        "path": "configurations/090bcaad-a8de-4d11-a0ef-3662bed58e7b/versions/1/status",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "6fff8c81-3802-4dfd-b288-4c2910a1ca90",
+        "observed": {
+          "version": 1,
+          "status": "PUBLISHED",
+          "notifications": 0,
+          "receivedReceipts": 0,
+          "appliedReceipts": 0
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R19 v2 remains a draft",
+        "path": "configurations/090bcaad-a8de-4d11-a0ef-3662bed58e7b/versions/2",
+        "role": "PlatformSuperAdmin",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "a0be117a-6469-48ee-a3b6-024b3387c3f2",
+        "observed": {
+          "version": 2,
+          "status": "DRAFT"
+        },
+        "result": "PASS"
+      },
+      {
+        "label": "R19 retained v1 publish audit detail",
+        "path": "audit-logs/776640c7-e45c-4ef4-9469-da858f0b5b8c",
+        "role": "Auditor",
+        "method": "GET",
+        "httpStatus": 200,
+        "requestId": "c9355acd-d7e8-4de0-af79-db9bd3b47070",
+        "observed": {
+          "auditId": "776640c7-e45c-4ef4-9469-da858f0b5b8c",
+          "action": "configuration.publish",
+          "versionId": "3e4e33eb-f3d7-40f5-8087-be38fc919d0b",
+          "result": "SUCCESS"
+        },
+        "result": "PASS"
+      },
+      {
+        "role": "PlatformSuperAdmin",
+        "label": "R20 legacy admin create dialog remains available",
+        "route": "/consumables",
+        "writes": 0,
+        "result": "PASS"
+      }
+    ],
+    "writes": [],
+    "newWriteAudits": 0,
+    "purposeOfExistingAuditRead": "Correlate the previous zero-device v1 publish audit with the version under test."
+  },
+  "requirements": {
+    "R19": {
+      "result": "NOT_RUN",
+      "dependency": "BLOCKED",
+      "owner": "Device firmware and upper-computer teams, shared-test release owner, integration QA",
+      "required": "Approved test device and certificate, actual installed firmware and upper-computer build, signed version 1 schema, eligible device target and an authorized disconnect/reconnect window.",
+      "cases": [
+        {
+          "caseId": "notification",
+          "result": "NOT_RUN",
+          "evidence": "Publish a version for the approved test device and correlate the Outbox CONFIG_CHANGED event with device receipt."
+        },
+        {
+          "caseId": "offlinePull",
+          "result": "NOT_RUN",
+          "evidence": "Publish while disconnected, reconnect with the approved client and validate the fetched versioned JSON against candidate schema 1."
+        },
+        {
+          "caseId": "applicationReceipt",
+          "result": "NOT_RUN",
+          "evidence": "Verify actual device use and authenticated matching RECEIVED and APPLIED reports, then re-read their version status and the original publish audit."
+        }
+      ]
+    },
+    "R20": {
+      "result": "NOT_RUN",
+      "dependency": "BLOCKED",
+      "owner": "Device firmware team, shared-test release owner, integration QA",
+      "required": "Approved Active device assigned to an owned test tenant and active site, functional mTLS, signed submission and retry protocol and a matching installed-client admission entry.",
+      "cases": [
+        {
+          "caseId": "deviceCreate",
+          "result": "NOT_RUN",
+          "evidence": "Use the assigned Active test device and approved mTLS client to create a DEVICE request and read back its ID, device/customer scope and request note."
+        },
+        {
+          "caseId": "retryAndOfflineReplay",
+          "result": "NOT_RUN",
+          "evidence": "Replay the same device request key and original payload; verify the request ID stays stable, use a conflicting payload to verify 409 and ensure no duplicate work order."
+        },
+        {
+          "caseId": "adminProcessAndComplete",
+          "result": "NOT_RUN",
+          "evidence": "Use the current If-Match for both transitions, re-read PROCESSING then COMPLETED with distinct retained stage notes, and read the device submission and admin transition audit records."
+        },
+        {
+          "caseId": "legacyCutoverAndRollback",
+          "result": "NOT_RUN",
+          "evidence": "Verify compatibility after device acceptance and confirm the old admin cutoff window in a separately authorized exercise."
+        }
+      ]
+    }
+  },
+  "localRegression": {
+    "status": "PASS_LOCAL",
+    "sourceCommit": "0fae348cac179e992ee98e74e1bbd290d1cb18f2",
+    "recovery": [
+      "Refreshed ignored Prisma Client from the checked-in schema; initial test client lacked the two new model delegates.",
+      "Rebuilt auth and workspace dependencies; initial cached auth declarations lacked the current browser role exports.",
+      "Ran Playwright with loopback access after the sandbox blocked localhost."
+    ],
+    "checks": [
+      {
+        "name": "targeted Vitest",
+        "result": "PASS",
+        "files": 4,
+        "passed": 45,
+        "logSha256": "5c6c81dc942176f014bbb06ebed85e4ebe231ed3b63fff662ba199683654aff9"
+      },
+      {
+        "name": "targeted Chromium Playwright",
+        "result": "PASS",
+        "passed": 2,
+        "logSha256": "cd82c769e2bbf149d02504dda6da5b41d9f7e6b43ffa79ad97b21031dae11174"
+      },
+      {
+        "name": "admin web typecheck",
+        "result": "PASS",
+        "logSha256": "2bf54865f5fa44d9d3a9656aada125a233af8a4c1b2a078e8dbb9b867520e5ea"
+      },
+      {
+        "name": "pnpm openapi:check",
+        "result": "PASS",
+        "logSha256": "6ff2980b3aecbf9c8e7b6feef8db7ee08b492c006029432b706bdcb37c4a27aa"
+      }
+    ]
+  },
+  "actions": {
+    "businessWrites": 0,
+    "physicalDeviceWrites": 0,
+    "admissionChanges": 0,
+    "migrationsStarted": 0,
+    "pushed": false,
+    "deployed": false
+  }
+}
